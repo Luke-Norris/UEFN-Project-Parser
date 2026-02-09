@@ -1,0 +1,46 @@
+{
+  // FortniteForge Configuration
+  // Copy this file to your UEFN project root as "forge.config.json" and update the paths.
+
+  // Path to your UEFN project root (the folder containing the .uproject file)
+  "projectPath": "C:\\Users\\Luke\\Documents\\FortniteProjects\\MyProject",
+
+  // Path to your UEFN/Fortnite installation (used for build commands)
+  "uefnInstallPath": "C:\\Program Files\\Epic Games\\Fortnite",
+
+  // Folders within Content/ that YOU own and can be modified.
+  // Leave empty to allow modifying any non-cooked asset in Content/.
+  // Example: ["MyMaps", "MyDevices", "MyBlueprints"]
+  "modifiableFolders": [],
+
+  // Folders that should NEVER be modified, even if they contain uncooked assets.
+  "readOnlyFolders": ["FortniteGame", "Engine"],
+
+  // Where to store backups (relative to project root)
+  "backupDirectory": ".fortniteforge/backups",
+
+  // Max number of backups to keep per file
+  "maxBackupsPerFile": 10,
+
+  // Require dry-run preview before any modification (strongly recommended)
+  "requireDryRun": true,
+
+  // Automatically backup files before modification
+  "autoBackup": true,
+
+  // Optional: path to forward Verse errors to another Claude session
+  "verseErrorForwardPath": null,
+
+  // Build configuration
+  "build": {
+    // Command to run for builds (auto-detected if left empty)
+    "buildCommand": "",
+    "buildArguments": "",
+
+    // Where build logs are written (auto-detected if left empty)
+    "logDirectory": "",
+
+    // Build timeout in seconds
+    "timeoutSeconds": 300
+  }
+}
