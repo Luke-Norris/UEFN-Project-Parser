@@ -4,6 +4,7 @@ using System.Text.Json;
 using FortniteForge.Core.Config;
 using FortniteForge.Core.Safety;
 using FortniteForge.Core.Services;
+using FortniteForge.Core.Services.MapGeneration;
 using Microsoft.Extensions.Logging;
 
 namespace FortniteForge.CLI;
@@ -80,8 +81,10 @@ public class Program
         var placementService = new ActorPlacementService(config, guard, backupService, loggerFactory.CreateLogger<ActorPlacementService>());
         var modService = new ModificationService(config, assetService, backupService, guard, digestService, placementService, loggerFactory.CreateLogger<ModificationService>());
         var buildService = new BuildService(config, loggerFactory.CreateLogger<BuildService>());
+        var catalog = new AssetCatalog(config, loggerFactory.CreateLogger<AssetCatalog>());
+        var mapGenerator = new MapGenerator(config, catalog, placementService, backupService, loggerFactory.CreateLogger<MapGenerator>());
 
-        return (config, new ServiceBundle(assetService, deviceService, auditService, modService, buildService, backupService, digestService, placementService));
+        return (config, new ServiceBundle(assetService, deviceService, auditService, modService, buildService, backupService, digestService, placementService, catalog, mapGenerator));
     }
 
     private static Command BuildListCommand()
@@ -279,4 +282,6 @@ internal record ServiceBundle(
     BuildService Build,
     BackupService Backup,
     DigestService Digest,
-    ActorPlacementService Placement);
+    ActorPlacementService Placement,
+    AssetCatalog Catalog,
+    MapGenerator MapGen);

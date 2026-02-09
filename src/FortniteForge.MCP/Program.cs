@@ -1,6 +1,7 @@
 using FortniteForge.Core.Config;
 using FortniteForge.Core.Safety;
 using FortniteForge.Core.Services;
+using FortniteForge.Core.Services.MapGeneration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -68,6 +69,8 @@ public class Program
         builder.Services.AddSingleton<ActorPlacementService>();
         builder.Services.AddSingleton<ModificationService>();
         builder.Services.AddSingleton<BuildService>();
+        builder.Services.AddSingleton<AssetCatalog>();
+        builder.Services.AddSingleton<MapGenerator>();
 
         // Register MCP server with stdio transport
         builder.Services
