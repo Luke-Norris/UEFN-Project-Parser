@@ -26,6 +26,7 @@ public class ModificationService
     private readonly BackupService _backupService;
     private readonly AssetGuard _guard;
     private readonly DigestService _digestService;
+    private readonly ActorPlacementService _placementService;
     private readonly ILogger<ModificationService> _logger;
 
     // Pending previews awaiting approval
@@ -37,6 +38,7 @@ public class ModificationService
         BackupService backupService,
         AssetGuard guard,
         DigestService digestService,
+        ActorPlacementService placementService,
         ILogger<ModificationService> logger)
     {
         _config = config;
@@ -44,6 +46,7 @@ public class ModificationService
         _backupService = backupService;
         _guard = guard;
         _digestService = digestService;
+        _placementService = placementService;
         _logger = logger;
     }
 
@@ -399,14 +402,24 @@ public class ModificationService
 
     private void ApplyAddDevice(ModificationRequest request)
     {
-        // Adding new actors to a level is complex — requires creating proper export entries
-        // with correct class references, outer references, and component hierarchies.
-        // This is a placeholder for the full implementation.
-        _logger.LogWarning("AddDevice is an advanced operation that requires careful UAsset manipulation.");
-        throw new NotImplementedException(
-            "Adding new devices to levels requires creating proper export entries with correct " +
-            "class references and component hierarchies. This feature is in development. " +
-            "For now, add devices in the UEFN editor, then use SetProperty to configure them.");
+        // AddDevice uses the clone-and-modify pattern via ActorPlacementService.
+        // It requires a SourceDevice (template actor already in the level) to clone from.
+        // If no source is specified, we explain the requirement.
+        if (string.IsNullOrEmpty(request.SourceDevice))
+        {
+            throw new InvalidOperationException(
+                "AddDevice requires a 'SourceDevice' — an existing actor in the level to clone from. " +
+                "Place one instance of the device manually in UEFN, then reference it as the source. " +
+                "FortniteForge will clone it with your specified properties and location.");
+        }
+
+        var result = _placementService.CloneActor(
+            request.AssetPath,
+            request.SourceDevice,
+            request.Location ?? new Vector3Info());
+
+        if (!result.Success)
+            throw new InvalidOperationException(result.Message);
     }
 
     private void ApplyRemoveDevice(ModificationRequest request)
@@ -426,9 +439,27 @@ public class ModificationService
         if (targetIndex < 0)
             throw new InvalidOperationException($"Actor '{request.TargetObject}' not found.");
 
-        // Remove the export and fix up references
-        // Note: this is simplified — in practice we need to handle child components too
-        asset.Exports.RemoveAt(targetIndex);
+        // Find child components owned by this actor
+        var targetRef = FPackageIndex.FromExport(targetIndex);
+        var childIndices = new List<int>();
+        for (int i = 0; i < asset.Exports.Count; i++)
+        {
+            if (asset.Exports[i].OuterIndex == targetRef)
+                childIndices.Add(i);
+        }
+
+        // Deregister from LevelExport.Actors
+        var levelExport = asset.Exports.OfType<LevelExport>().FirstOrDefault();
+        levelExport?.Actors.Remove(targetRef);
+
+        // Remove exports in reverse order to preserve indices during removal
+        var toRemove = new List<int> { targetIndex };
+        toRemove.AddRange(childIndices);
+        foreach (var idx in toRemove.OrderByDescending(i => i))
+        {
+            asset.Exports.RemoveAt(idx);
+        }
+
         asset.Write(request.AssetPath);
     }
 
@@ -447,9 +478,16 @@ public class ModificationService
 
     private void ApplyDuplicateDevice(ModificationRequest request)
     {
-        throw new NotImplementedException(
-            "Device duplication requires deep-cloning export entries with new unique names. " +
-            "This feature is in development.");
+        if (string.IsNullOrEmpty(request.TargetObject))
+            throw new InvalidOperationException("TargetObject (actor to duplicate) is required.");
+
+        var result = _placementService.CloneActor(
+            request.AssetPath,
+            request.TargetObject,
+            request.Location ?? new Vector3Info());
+
+        if (!result.Success)
+            throw new InvalidOperationException(result.Message);
     }
 
     // ========= Helpers =========

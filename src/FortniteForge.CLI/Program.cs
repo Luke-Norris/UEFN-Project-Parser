@@ -77,10 +77,11 @@ public class Program
         var digestService = new DigestService(config, loggerFactory.CreateLogger<DigestService>());
         var deviceService = new DeviceService(config, assetService, digestService, loggerFactory.CreateLogger<DeviceService>());
         var auditService = new AuditService(config, deviceService, assetService, digestService, guard, loggerFactory.CreateLogger<AuditService>());
-        var modService = new ModificationService(config, assetService, backupService, guard, digestService, loggerFactory.CreateLogger<ModificationService>());
+        var placementService = new ActorPlacementService(config, guard, backupService, loggerFactory.CreateLogger<ActorPlacementService>());
+        var modService = new ModificationService(config, assetService, backupService, guard, digestService, placementService, loggerFactory.CreateLogger<ModificationService>());
         var buildService = new BuildService(config, loggerFactory.CreateLogger<BuildService>());
 
-        return (config, new ServiceBundle(assetService, deviceService, auditService, modService, buildService, backupService, digestService));
+        return (config, new ServiceBundle(assetService, deviceService, auditService, modService, buildService, backupService, digestService, placementService));
     }
 
     private static Command BuildListCommand()
@@ -277,4 +278,5 @@ internal record ServiceBundle(
     ModificationService Modification,
     BuildService Build,
     BackupService Backup,
-    DigestService Digest);
+    DigestService Digest,
+    ActorPlacementService Placement);

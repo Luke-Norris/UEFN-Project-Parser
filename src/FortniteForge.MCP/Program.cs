@@ -65,6 +65,7 @@ public class Program
         builder.Services.AddSingleton<DigestService>();
         builder.Services.AddSingleton<DeviceService>();
         builder.Services.AddSingleton<AuditService>();
+        builder.Services.AddSingleton<ActorPlacementService>();
         builder.Services.AddSingleton<ModificationService>();
         builder.Services.AddSingleton<BuildService>();
 
