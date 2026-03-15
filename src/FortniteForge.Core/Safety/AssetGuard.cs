@@ -1,43 +1,45 @@
 using FortniteForge.Core.Config;
+using FortniteForge.Core.Services;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
+using UAssetAPI.ExportTypes;
+using UAssetAPI.UnrealTypes;
 
 namespace FortniteForge.Core.Safety;
 
 /// <summary>
 /// Central safety gate for all asset operations.
 /// Determines whether an asset is safe to modify based on:
-///   1. Cooked data flags in the .uasset binary header
-///   2. File path (must be within configured modifiable folders)
-///   3. Configuration allowlist/blocklist
+///   1. Operation mode (ReadOnly / Staged / Direct)
+///   2. Cooked data flags in the .uasset binary header
+///   3. File path (must be within configured modifiable folders)
+///   4. Configuration allowlist/blocklist
 /// </summary>
 public class AssetGuard
 {
     private readonly ForgeConfig _config;
+    private readonly UefnDetector _detector;
     private readonly ILogger<AssetGuard> _logger;
 
     // Package flags that indicate cooked/engine data
-    // PKG_FilterEditorOnly = 0x80000000
-    // PKG_Cooked (UE5) is typically indicated by the cooked flag in the summary
-    private const uint PKG_FilterEditorOnly = 0x80000000;
+    private const EPackageFlags PKG_FilterEditorOnly = EPackageFlags.PKG_FilterEditorOnly;
 
-    public AssetGuard(ForgeConfig config, ILogger<AssetGuard> logger)
+    public AssetGuard(ForgeConfig config, UefnDetector detector, ILogger<AssetGuard> logger)
     {
         _config = config;
+        _detector = detector;
         _logger = logger;
     }
 
     /// <summary>
     /// Checks whether an asset file is cooked (contains Epic's compiled data).
     /// Cooked assets must NEVER be modified.
+    /// Uses copy-on-read via SafeFileAccess to avoid locking conflicts.
     /// </summary>
-    public CookedCheckResult CheckIfCooked(string assetPath)
+    public CookedCheckResult CheckIfCooked(UAsset asset)
     {
         try
         {
-            // UAssetAPI can detect cooked status from the package summary
-            var asset = new UAsset(assetPath, EngineVersion.VER_FORTNITE_LATEST);
-
             bool isCooked = false;
             string reason = "";
 
@@ -56,7 +58,6 @@ public class AssetGuard
             }
 
             // Check 3: Check if asset has cooked serialization format
-            // Cooked assets typically have different internal structure
             if (asset.PackageFlags != 0 && HasCookedSerializationMarkers(asset))
             {
                 isCooked = true;
@@ -69,6 +70,28 @@ public class AssetGuard
                 Reason = isCooked ? reason : "Asset is uncooked (user-created).",
                 PackageFlags = asset.PackageFlags
             };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to check cooked status. Treating as cooked (safe default).");
+            return new CookedCheckResult
+            {
+                IsCooked = true,
+                Reason = $"Could not determine cooked status: {ex.Message}. Defaulting to read-only for safety."
+            };
+        }
+    }
+
+    /// <summary>
+    /// Overload that opens the file from path. Prefer the UAsset overload when
+    /// the asset is already loaded to avoid double-parsing.
+    /// </summary>
+    public CookedCheckResult CheckIfCooked(string assetPath, SafeFileAccess fileAccess)
+    {
+        try
+        {
+            var asset = fileAccess.OpenForRead(assetPath);
+            return CheckIfCooked(asset);
         }
         catch (Exception ex)
         {
@@ -138,12 +161,20 @@ public class AssetGuard
     }
 
     /// <summary>
-    /// Full safety check — combines cooked detection + path validation.
+    /// Full safety check — combines mode check + cooked detection + path validation.
     /// This is the primary gate before any write operation.
     /// </summary>
-    public SafetyCheckResult CanModify(string assetPath)
+    public SafetyCheckResult CanModify(string assetPath, SafeFileAccess? fileAccess = null)
     {
         var result = new SafetyCheckResult { AssetPath = assetPath };
+
+        // Check 0: Read-only mode
+        if (_config.ReadOnly)
+        {
+            result.IsAllowed = false;
+            result.Reasons.Add("BLOCKED: Read-only mode is enabled in config.");
+            return result;
+        }
 
         // Check 1: Path validation
         var pathCheck = CheckPath(assetPath);
@@ -154,8 +185,30 @@ public class AssetGuard
             return result;
         }
 
-        // Check 2: Cooked status
-        var cookedCheck = CheckIfCooked(assetPath);
+        // Check 2: Cooked status (use SafeFileAccess if available)
+        CookedCheckResult cookedCheck;
+        if (fileAccess != null)
+        {
+            cookedCheck = CheckIfCooked(assetPath, fileAccess);
+        }
+        else
+        {
+            // Fallback: open directly (legacy path)
+            try
+            {
+                var asset = new UAsset(assetPath, EngineVersion.VER_UE5_4);
+                cookedCheck = CheckIfCooked(asset);
+            }
+            catch (Exception ex)
+            {
+                cookedCheck = new CookedCheckResult
+                {
+                    IsCooked = true,
+                    Reason = $"Could not open asset: {ex.Message}"
+                };
+            }
+        }
+
         if (cookedCheck.IsCooked)
         {
             result.IsAllowed = false;
@@ -163,8 +216,21 @@ public class AssetGuard
             return result;
         }
 
-        result.IsAllowed = true;
-        result.Reasons.Add("Asset passed all safety checks.");
+        // Check 3: UEFN status — inform about operation mode
+        var status = _detector.GetStatus();
+        result.OperationMode = status.Mode;
+
+        if (status.Mode == OperationMode.Staged)
+        {
+            result.IsAllowed = true;
+            result.Reasons.Add($"STAGED MODE: {status.ModeReason}. Writes go to staging directory.");
+        }
+        else
+        {
+            result.IsAllowed = true;
+            result.Reasons.Add("Asset passed all safety checks.");
+        }
+
         return result;
     }
 
@@ -173,29 +239,15 @@ public class AssetGuard
     /// </summary>
     private bool HasCookedSerializationMarkers(UAsset asset)
     {
-        // Additional heuristic checks for cooked assets:
-        // - Cooked assets often have specific name map patterns
-        // - Cooked assets may have bulk data references
-        // - The presence of certain export types indicates cooking
-
-        // For UEFN specifically, user-created assets should NOT have:
-        // - Shader bytecode
-        // - Cooked texture data
-        // - Stripped editor-only properties
-
-        // This is a conservative check — if unsure, we err on the side of caution
         try
         {
             foreach (var export in asset.Exports)
             {
-                if (export is NormalExport normalExport)
+                if (export is NormalExport)
                 {
-                    // Check for cooked-only export class names
                     var className = export.GetExportClassType()?.ToString() ?? "";
                     if (IsCookedOnlyClass(className))
-                    {
                         return true;
-                    }
                 }
             }
         }
@@ -209,7 +261,6 @@ public class AssetGuard
 
     private static bool IsCookedOnlyClass(string className)
     {
-        // Classes that only exist in cooked assets
         var cookedOnlyClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "ShaderResource",
@@ -225,7 +276,7 @@ public class CookedCheckResult
 {
     public bool IsCooked { get; set; }
     public string Reason { get; set; } = "";
-    public uint PackageFlags { get; set; }
+    public EPackageFlags PackageFlags { get; set; }
 }
 
 public class PathCheckResult
@@ -239,4 +290,5 @@ public class SafetyCheckResult
     public string AssetPath { get; set; } = "";
     public bool IsAllowed { get; set; }
     public List<string> Reasons { get; set; } = new();
+    public OperationMode OperationMode { get; set; }
 }

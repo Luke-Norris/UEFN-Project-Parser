@@ -2,11 +2,14 @@
   // FortniteForge Configuration
   // Copy this file to your UEFN project root as "forge.config.json" and update the paths.
 
-  // Path to your UEFN project root (the folder containing the .uproject file)
-  "projectPath": "C:\\Users\\Luke\\Documents\\FortniteProjects\\MyProject",
+  // Path to your UEFN project root (the folder containing the .uefnproject file)
+  "projectPath": "C:\\Users\\YourName\\Documents\\Fortnite Projects\\MyProject",
 
   // Path to your UEFN/Fortnite installation (used for build commands)
   "uefnInstallPath": "C:\\Program Files\\Epic Games\\Fortnite",
+
+  // Hard read-only mode — blocks ALL writes. Recommended when pointing at your active project.
+  "readOnly": false,
 
   // Folders within Content/ that YOU own and can be modified.
   // Leave empty to allow modifying any non-cooked asset in Content/.
@@ -19,6 +22,9 @@
   // Where to store backups (relative to project root)
   "backupDirectory": ".fortniteforge/backups",
 
+  // Where staged modifications are written when UEFN is running (relative to project root)
+  "stagingDirectory": ".fortniteforge/staged",
+
   // Max number of backups to keep per file
   "maxBackupsPerFile": 10,
 
@@ -30,6 +36,9 @@
 
   // Optional: path to forward Verse errors to another Claude session
   "verseErrorForwardPath": null,
+
+  // Optional: path to a directory of .verse reference files
+  "referenceLibraryPath": null,
 
   // Build configuration
   "build": {

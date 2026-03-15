@@ -2,6 +2,7 @@ using FortniteForge.Core.Config;
 using FortniteForge.Core.Safety;
 using FortniteForge.Core.Services;
 using FortniteForge.Core.Services.MapGeneration;
+using FortniteForge.Core.Services.VerseGeneration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -60,6 +61,8 @@ public class Program
 
         // Register services
         builder.Services.AddSingleton(config);
+        builder.Services.AddSingleton<UefnDetector>();
+        builder.Services.AddSingleton<SafeFileAccess>();
         builder.Services.AddSingleton<AssetGuard>();
         builder.Services.AddSingleton<AssetService>();
         builder.Services.AddSingleton<BackupService>();
@@ -71,6 +74,10 @@ public class Program
         builder.Services.AddSingleton<BuildService>();
         builder.Services.AddSingleton<AssetCatalog>();
         builder.Services.AddSingleton<MapGenerator>();
+        builder.Services.AddSingleton<VerseUIGenerator>();
+        builder.Services.AddSingleton<VerseDeviceGenerator>();
+        builder.Services.AddSingleton<LevelAnalyticsService>();
+        builder.Services.AddSingleton<VerseReferenceService>();
 
         // Register MCP server with stdio transport
         builder.Services

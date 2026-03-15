@@ -12,18 +12,21 @@ namespace FortniteForge.Core.Services;
 
 /// <summary>
 /// Core service for reading and inspecting .uasset and .umap files.
-/// All read operations go through here.
+/// All read operations go through here. Uses SafeFileAccess for copy-on-read
+/// to prevent file locking conflicts with UEFN.
 /// </summary>
 public class AssetService
 {
     private readonly ForgeConfig _config;
     private readonly AssetGuard _guard;
+    private readonly SafeFileAccess _fileAccess;
     private readonly ILogger<AssetService> _logger;
 
-    public AssetService(ForgeConfig config, AssetGuard guard, ILogger<AssetService> logger)
+    public AssetService(ForgeConfig config, AssetGuard guard, SafeFileAccess fileAccess, ILogger<AssetService> logger)
     {
         _config = config;
         _guard = guard;
+        _fileAccess = fileAccess;
         _logger = logger;
     }
 
@@ -87,12 +90,13 @@ public class AssetService
 
     /// <summary>
     /// Gets a lightweight summary of an asset without full property loading.
+    /// Uses copy-on-read for safe access.
     /// </summary>
     public AssetInfo GetAssetSummary(string assetPath)
     {
         var fileInfo = new FileInfo(assetPath);
-        var asset = new UAsset(assetPath, EngineVersion.VER_FORTNITE_LATEST);
-        var cookedCheck = _guard.CheckIfCooked(assetPath);
+        var asset = _fileAccess.OpenForRead(assetPath);
+        var cookedCheck = _guard.CheckIfCooked(asset);
         var pathCheck = _guard.CheckPath(assetPath);
 
         var primaryExport = asset.Exports.FirstOrDefault();
@@ -117,11 +121,11 @@ public class AssetService
 
     /// <summary>
     /// Gets full details of an asset including all exports and properties.
-    /// This is the "drill-down" operation.
+    /// This is the "drill-down" operation. Uses copy-on-read.
     /// </summary>
     public AssetDetail InspectAsset(string assetPath)
     {
-        var asset = new UAsset(assetPath, EngineVersion.VER_FORTNITE_LATEST);
+        var asset = _fileAccess.OpenForRead(assetPath);
         var summary = GetAssetSummary(assetPath);
 
         var detail = new AssetDetail
@@ -153,7 +157,6 @@ public class AssetService
                 SerialSize = export.SerialSize
             };
 
-            // Extract properties from NormalExport types
             if (export is NormalExport normalExport)
             {
                 exportInfo.Properties = ExtractProperties(normalExport.Data);
@@ -172,7 +175,7 @@ public class AssetService
                 ObjectName = import.ObjectName?.ToString() ?? "",
                 ClassName = import.ClassName?.ToString() ?? "",
                 PackageName = import.OuterIndex.IsImport()
-                    ? asset.Imports[import.OuterIndex.ToImport(asset.Imports.Count)].ObjectName?.ToString() ?? ""
+                    ? import.OuterIndex.ToImport(asset).ObjectName?.ToString() ?? ""
                     : ""
             });
         }
@@ -182,7 +185,6 @@ public class AssetService
 
     /// <summary>
     /// Searches for assets matching a query across the project.
-    /// Searches by name, class, and content.
     /// </summary>
     public List<AssetInfo> SearchAssets(string query)
     {
@@ -196,12 +198,21 @@ public class AssetService
     }
 
     /// <summary>
-    /// Opens a UAsset for direct manipulation. Used by ModificationService.
-    /// The caller is responsible for safety checks.
+    /// Opens a UAsset for reading via copy-on-read.
+    /// The caller gets a parsed copy that is safe to inspect without affecting the source.
     /// </summary>
-    internal UAsset OpenAsset(string assetPath)
+    public UAsset OpenAsset(string assetPath)
     {
-        return new UAsset(assetPath, EngineVersion.VER_FORTNITE_LATEST);
+        return _fileAccess.OpenForRead(assetPath);
+    }
+
+    /// <summary>
+    /// Opens a UAsset for modification via SafeFileAccess.
+    /// Returns the parsed asset and the write path (staging or direct).
+    /// </summary>
+    public (UAsset Asset, string WritePath) OpenAssetForWrite(string assetPath)
+    {
+        return _fileAccess.OpenForWrite(assetPath);
     }
 
     /// <summary>
@@ -228,7 +239,6 @@ public class AssetService
             ArrayIndex = prop.ArrayIndex
         };
 
-        // Convert value to string representation based on type
         info.Value = prop switch
         {
             BoolPropertyData boolProp => boolProp.Value.ToString(),
@@ -238,14 +248,14 @@ public class AssetService
             NamePropertyData nameProp => nameProp.Value?.ToString() ?? "null",
             TextPropertyData textProp => textProp.Value?.ToString() ?? "null",
             ObjectPropertyData objProp => objProp.Value?.ToString() ?? "null",
-            SoftObjectPropertyData softProp => softProp.Value?.ToString() ?? "null",
+            SoftObjectPropertyData softProp => softProp.Value.ToString() ?? "null",
             EnumPropertyData enumProp => enumProp.Value?.ToString() ?? "null",
-            BytePropertyData byteProp => byteProp.Value?.ToString() ?? byteProp.EnumValue?.ToString() ?? "null",
+            BytePropertyData byteProp => byteProp.EnumValue?.ToString() ?? byteProp.Value.ToString(),
             StructPropertyData structProp => FormatStructValue(structProp),
+            SetPropertyData setProp => $"[Set: {setProp.Value?.Length ?? 0} elements]",
             ArrayPropertyData arrayProp => $"[Array: {arrayProp.Value?.Length ?? 0} elements]",
             MapPropertyData mapProp => $"[Map: {mapProp.Value?.Count ?? 0} entries]",
-            SetPropertyData setProp => $"[Set: {setProp.Value?.Length ?? 0} elements]",
-            _ => prop.ToString() ?? "unknown"
+            _ => SafeToString(prop)
         };
 
         return info;
@@ -256,7 +266,6 @@ public class AssetService
         if (structProp.Value == null || structProp.Value.Count == 0)
             return "{}";
 
-        // For known struct types, provide meaningful formatting
         var structType = structProp.StructType?.ToString() ?? "";
 
         if (structType is "Vector" or "Rotator" && structProp.Value.Count >= 3)
@@ -265,7 +274,6 @@ public class AssetService
             return $"({string.Join(", ", values)})";
         }
 
-        // For other structs, list property names and values
         var props = structProp.Value.Select(p =>
         {
             var converted = ConvertProperty(p);
@@ -284,5 +292,11 @@ public class AssetService
             .ToList();
 
         return $"{assetClass} with {asset.Exports.Count} exports ({string.Join(", ", exportTypes)})";
+    }
+
+    private static string SafeToString(PropertyData prop)
+    {
+        try { return prop.ToString() ?? prop.GetType().Name; }
+        catch { return $"[{prop.GetType().Name}]"; }
     }
 }

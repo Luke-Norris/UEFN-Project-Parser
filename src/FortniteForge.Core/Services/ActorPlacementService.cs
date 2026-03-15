@@ -28,17 +28,20 @@ public class ActorPlacementService
 {
     private readonly ForgeConfig _config;
     private readonly AssetGuard _guard;
+    private readonly SafeFileAccess _fileAccess;
     private readonly BackupService _backupService;
     private readonly ILogger<ActorPlacementService> _logger;
 
     public ActorPlacementService(
         ForgeConfig config,
         AssetGuard guard,
+        SafeFileAccess fileAccess,
         BackupService backupService,
         ILogger<ActorPlacementService> logger)
     {
         _config = config;
         _guard = guard;
+        _fileAccess = fileAccess;
         _backupService = backupService;
         _logger = logger;
     }
@@ -57,7 +60,7 @@ public class ActorPlacementService
         var preview = new PlacementPreview { LevelPath = levelPath };
 
         // Safety check
-        var safety = _guard.CanModify(levelPath);
+        var safety = _guard.CanModify(levelPath, _fileAccess);
         if (!safety.IsAllowed)
         {
             preview.IsBlocked = true;
@@ -67,7 +70,7 @@ public class ActorPlacementService
 
         try
         {
-            var asset = new UAsset(levelPath, EngineVersion.VER_FORTNITE_LATEST);
+            var asset = _fileAccess.OpenForRead(levelPath);
 
             // Find the source actor
             var (sourceExport, sourceIndex) = FindExportByName(asset, sourceActorName);
@@ -116,7 +119,7 @@ public class ActorPlacementService
         var result = new PlacementResult { LevelPath = levelPath };
 
         // Safety check
-        var safety = _guard.CanModify(levelPath);
+        var safety = _guard.CanModify(levelPath, _fileAccess);
         if (!safety.IsAllowed)
         {
             result.Success = false;
@@ -126,13 +129,13 @@ public class ActorPlacementService
 
         try
         {
-            // Backup first
-            if (_config.AutoBackup)
+            // Backup first (only in direct mode)
+            if (_config.AutoBackup && safety.OperationMode == OperationMode.Direct)
             {
                 result.BackupPath = _backupService.CreateBackup(levelPath);
             }
 
-            var asset = new UAsset(levelPath, EngineVersion.VER_FORTNITE_LATEST);
+            var (asset, writePath) = _fileAccess.OpenForWrite(levelPath);
 
             // Find source actor and its children
             var (sourceExport, sourceIndex) = FindExportByName(asset, sourceActorName);
@@ -190,8 +193,9 @@ public class ActorPlacementService
                 _logger.LogWarning("Could not find LevelExport — actor created but not registered in level.");
             }
 
-            // Save
-            asset.Write(levelPath);
+            // Save to appropriate path (staged or direct)
+            asset.Write(writePath);
+            _logger.LogInformation("Wrote modified level to: {Path}", writePath);
 
             result.Success = true;
             result.NewActorName = newActorName;
@@ -310,7 +314,7 @@ public class ActorPlacementService
         };
 
         // Safety check
-        var safety = _guard.CanModify(levelPath);
+        var safety = _guard.CanModify(levelPath, _fileAccess);
         if (!safety.IsAllowed)
         {
             result.IsBlocked = true;
@@ -318,8 +322,8 @@ public class ActorPlacementService
             return result;
         }
 
-        // Backup
-        if (_config.AutoBackup)
+        // Backup (only in direct mode)
+        if (_config.AutoBackup && safety.OperationMode == OperationMode.Direct)
         {
             result.BackupPath = _backupService.CreateBackup(levelPath);
         }
@@ -460,7 +464,7 @@ public class ActorPlacementService
                 var newStruct = new StructPropertyData(source.Name)
                 {
                     StructType = structProp.StructType,
-                    StructGuid = structProp.StructGuid,
+                    StructGUID = structProp.StructGUID,
                     SerializationControl = structProp.SerializationControl,
                     Value = ClonePropertyList(structProp.Value, asset)
                 };

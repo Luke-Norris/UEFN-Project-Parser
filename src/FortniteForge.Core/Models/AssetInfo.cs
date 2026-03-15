@@ -84,7 +84,7 @@ public class AssetDetail : AssetInfo
     /// <summary>
     /// Package flags from the asset header.
     /// </summary>
-    public uint PackageFlags { get; set; }
+    public UAssetAPI.UnrealTypes.EPackageFlags PackageFlags { get; set; }
 
     /// <summary>
     /// Custom version information.

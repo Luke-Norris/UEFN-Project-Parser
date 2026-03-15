@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="UAssetAPI" Version="1.0.4" />
+    <ProjectReference Include="..\..\lib\UAssetAPI\UAssetAPI\UAssetAPI.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
   </ItemGroup>
 

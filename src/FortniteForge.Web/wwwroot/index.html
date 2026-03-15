@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FortniteForge</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>FORTNITEFORGE</h1>
+        <div class="project-name" id="sidebar-project">Loading...</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#/" data-page="dashboard"><span class="icon">&#9673;</span> Dashboard</a>
+        <a href="#/levels" data-page="levels"><span class="icon">&#9635;</span> Levels</a>
+        <a href="#/assets" data-page="assets"><span class="icon">&#9830;</span> Assets</a>
+        <a href="#/audit" data-page="audit"><span class="icon">&#9888;</span> Audit</a>
+        <a href="#/staged" data-page="staged"><span class="icon">&#8680;</span> Staged</a>
+      </nav>
+      <div class="sidebar-status" id="sidebar-status"></div>
+    </aside>
+
+    <main class="main" id="content">
+      <div class="loading"><div class="spinner"></div> Loading...</div>
+    </main>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

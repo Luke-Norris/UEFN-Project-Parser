@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -10,6 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.CLI", "src\FortniteForge.CLI\FortniteForge.CLI.csproj", "{A1B2C3D4-1111-2222-3333-444455558888}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.Tests", "tests\FortniteForge.Tests\FortniteForge.Tests.csproj", "{A1B2C3D4-1111-2222-3333-444455559999}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D414C80A-7472-41F6-A654-70FCDA6BEE57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.Web", "src\FortniteForge.Web\FortniteForge.Web.csproj", "{B546BC42-89AD-49DC-A281-B0DF52185FBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,5 +37,12 @@ Global
 		{A1B2C3D4-1111-2222-3333-444455559999}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-1111-2222-3333-444455559999}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-1111-2222-3333-444455559999}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B546BC42-89AD-49DC-A281-B0DF52185FBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B546BC42-89AD-49DC-A281-B0DF52185FBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B546BC42-89AD-49DC-A281-B0DF52185FBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B546BC42-89AD-49DC-A281-B0DF52185FBB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B546BC42-89AD-49DC-A281-B0DF52185FBB} = {D414C80A-7472-41F6-A654-70FCDA6BEE57}
 	EndGlobalSection
 EndGlobal

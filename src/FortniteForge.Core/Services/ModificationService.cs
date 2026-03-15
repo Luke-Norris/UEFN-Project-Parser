@@ -25,6 +25,7 @@ public class ModificationService
     private readonly AssetService _assetService;
     private readonly BackupService _backupService;
     private readonly AssetGuard _guard;
+    private readonly SafeFileAccess _fileAccess;
     private readonly DigestService _digestService;
     private readonly ActorPlacementService _placementService;
     private readonly ILogger<ModificationService> _logger;
@@ -37,6 +38,7 @@ public class ModificationService
         AssetService assetService,
         BackupService backupService,
         AssetGuard guard,
+        SafeFileAccess fileAccess,
         DigestService digestService,
         ActorPlacementService placementService,
         ILogger<ModificationService> logger)
@@ -45,6 +47,7 @@ public class ModificationService
         _assetService = assetService;
         _backupService = backupService;
         _guard = guard;
+        _fileAccess = fileAccess;
         _digestService = digestService;
         _placementService = placementService;
         _logger = logger;
@@ -63,7 +66,7 @@ public class ModificationService
         };
 
         // Safety check
-        var safetyResult = _guard.CanModify(request.AssetPath);
+        var safetyResult = _guard.CanModify(request.AssetPath, _fileAccess);
         if (!safetyResult.IsAllowed)
         {
             preview.IsSafe = false;
@@ -376,7 +379,7 @@ public class ModificationService
 
     private void ApplySetProperty(ModificationRequest request)
     {
-        var asset = _assetService.OpenAsset(request.AssetPath);
+        var (asset, writePath) = _assetService.OpenAssetForWrite(request.AssetPath);
         var target = FindExport(asset, request.TargetObject!)
                      ?? throw new InvalidOperationException($"Export '{request.TargetObject}' not found.");
 
@@ -385,7 +388,7 @@ public class ModificationService
             var prop = FindProperty(normalExport, request.PropertyName!);
             if (prop != null)
             {
-                SetPropertyValue(prop, request.NewValue!);
+                SetPropertyValue(asset, prop, request.NewValue!);
             }
             else
             {
@@ -397,7 +400,8 @@ public class ModificationService
             }
         }
 
-        asset.Write(request.AssetPath);
+        asset.Write(writePath);
+        _logger.LogInformation("Wrote modified asset to: {Path}", writePath);
     }
 
     private void ApplyAddDevice(ModificationRequest request)
@@ -424,7 +428,7 @@ public class ModificationService
 
     private void ApplyRemoveDevice(ModificationRequest request)
     {
-        var asset = _assetService.OpenAsset(request.AssetPath);
+        var (asset, writePath) = _assetService.OpenAssetForWrite(request.AssetPath);
         var targetIndex = -1;
 
         for (int i = 0; i < asset.Exports.Count; i++)
@@ -460,7 +464,8 @@ public class ModificationService
             asset.Exports.RemoveAt(idx);
         }
 
-        asset.Write(request.AssetPath);
+        asset.Write(writePath);
+        _logger.LogInformation("Wrote modified asset to: {Path}", writePath);
     }
 
     private void ApplyWireDevices(ModificationRequest request)
@@ -505,7 +510,7 @@ public class ModificationService
             p.Name?.ToString()?.Equals(propertyName, StringComparison.OrdinalIgnoreCase) == true);
     }
 
-    private static void SetPropertyValue(PropertyData prop, string newValue)
+    private static void SetPropertyValue(UAsset asset, PropertyData prop, string newValue)
     {
         switch (prop)
         {
@@ -525,16 +530,16 @@ public class ModificationService
                 strProp.Value = FString.FromString(newValue);
                 break;
             case NamePropertyData nameProp:
-                nameProp.Value = FName.FromString(prop.Asset, newValue);
+                nameProp.Value = FName.FromString(asset, newValue);
                 break;
             case EnumPropertyData enumProp:
-                enumProp.Value = FName.FromString(prop.Asset, newValue);
+                enumProp.Value = FName.FromString(asset, newValue);
                 break;
             case BytePropertyData byteProp:
                 if (byte.TryParse(newValue, out var byteVal))
                     byteProp.Value = byteVal;
                 else
-                    byteProp.EnumValue = FName.FromString(prop.Asset, newValue);
+                    byteProp.EnumValue = FName.FromString(asset, newValue);
                 break;
             default:
                 throw new NotSupportedException(
