@@ -18,7 +18,7 @@ function toast(msg, type = 'info') {
 }
 
 // ========= Router =========
-const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderAssets, '/asset': renderAssetDetail, '/audit': renderAudit, '/staged': renderStaged, '/projects': renderProjects, '/device': renderDeviceDetail };
+const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderAssets, '/asset': renderAssetDetail, '/audit': renderAudit, '/staged': renderStaged, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
 
 let _currentRoute = null;
 function navigate() {
@@ -49,7 +49,7 @@ let _status = null;
 let _assetCache = null;
 let _levelCache = {};
 
-function clearCaches() { _assetCache = null; _levelCache = {}; _status = null; }
+function clearCaches() { _assetCache = null; _epicAssetCache = null; _levelCache = {}; _status = null; }
 
 async function getStatus() {
   if (!_status) { try { _status = await api('/status'); } catch { _status = {}; } }
@@ -326,43 +326,83 @@ async function renderDeviceDetail(params) {
   const path = params.get('path');
   if (!path) return;
   const dv = await api(`/device/inspect?path=${encodeURIComponent(path)}`);
-  const ed = dv.properties.filter(p => p.isEditable);
-  const other = dv.properties.filter(p => !p.isEditable);
+
+  // Group properties by component
+  const compGroups = {};
+  dv.properties.forEach(p => {
+    const key = p.componentClass || 'Other';
+    (compGroups[key] = compGroups[key] || []).push(p);
+  });
+
+  // Sort: main actor component first, then by property count
+  const mainClass = dv.className;
+  const sortedGroups = Object.entries(compGroups).sort((a, b) => {
+    if (a[0] === mainClass) return -1;
+    if (b[0] === mainClass) return 1;
+    return b[1].length - a[1].length;
+  });
+
+  const totalEditable = dv.properties.filter(p => p.isEditable).length;
 
   content().innerHTML = `
-    <div class="page-header"><h2>${esc(dv.displayName)}</h2><div class="subtitle">${esc(dv.className)}</div></div>
-    <div class="card-grid" style="margin-bottom:20px">
+    <div class="page-header">
+      <h2>${esc(dv.displayName)}</h2>
+      <div class="subtitle">${esc(dv.className)}</div>
+    </div>
+    <div class="card-grid" style="margin-bottom:16px">
       <div class="card"><div class="card-label">Class</div><div style="font-size:12px;color:var(--accent)">${esc(dv.className)}</div></div>
       ${dv.hasPosition ? `<div class="card"><div class="card-label">Position</div><div style="font-size:12px">(${dv.x.toFixed(0)}, ${dv.y.toFixed(0)}, ${dv.z.toFixed(0)})</div></div>` : ''}
       <div class="card"><div class="card-label">Components</div><div class="card-value purple">${dv.components.length}</div></div>
-      <div class="card"><div class="card-label">Editable</div><div class="card-value green">${ed.length}</div></div>
+      <div class="card"><div class="card-label">Editable</div><div class="card-value green">${totalEditable}</div></div>
     </div>
 
     <div id="pending-banner"></div>
 
-    ${ed.length > 0 ? `<h3 style="margin-bottom:8px">Configurable Properties</h3>
-    <div class="table-wrapper"><table><thead><tr><th>Property</th><th>Value</th><th style="width:80px">Type</th><th style="width:20px"></th></tr></thead><tbody>
-      ${ed.map(p => {
-        const inputType = p.type === 'BoolProperty' ? 'checkbox' : p.type === 'IntProperty' ? 'number' : 'text';
-        return `<tr data-prop="${esc(p.name)}" data-orig="${esc(p.value)}" data-type="${esc(p.type)}">
-          <td><span class="prop-name">${esc(p.name)}</span></td>
-          <td>${inputType === 'checkbox'
-            ? `<label class="toggle"><input type="checkbox" class="prop-edit" ${p.value==='True'?'checked':''} data-prop="${esc(p.name)}"><span class="toggle-label">${p.value}</span></label>`
-            : `<input type="${inputType}" class="prop-edit prop-input" value="${esc(p.value)}" data-prop="${esc(p.name)}">`}</td>
-          <td><span class="badge badge-dim">${esc(p.type.replace('Property',''))}</span></td>
-          <td class="change-indicator"></td></tr>`;
+    <div id="prop-groups">
+      ${sortedGroups.map(([compClass, props]) => {
+        const editable = props.filter(p => p.isEditable);
+        const other = props.filter(p => !p.isEditable);
+        const compName = props[0]?.componentName || compClass;
+        const isMain = compClass === mainClass;
+        const cleanClass = DeviceClassifier_cleanName(compClass);
+
+        return `<details class="prop-group" ${isMain ? 'open' : ''}>
+          <summary class="prop-group-header">
+            <span class="prop-group-title">
+              ${isMain ? '<span class="badge badge-blue" style="font-size:10px">Main</span>' : '<span class="badge badge-purple" style="font-size:10px">Component</span>'}
+              ${esc(cleanClass)}
+            </span>
+            <span class="prop-group-count">${editable.length} editable${other.length ? ` / ${other.length} other` : ''}</span>
+          </summary>
+          <div class="prop-group-body">
+            ${editable.length > 0 ? `<table class="prop-table"><tbody>
+              ${editable.map(p => {
+                const inputType = p.type === 'BoolProperty' ? 'checkbox' : p.type === 'IntProperty' || p.type === 'FloatProperty' || p.type === 'DoubleProperty' ? 'number' : 'text';
+                const step = p.type === 'FloatProperty' || p.type === 'DoubleProperty' ? 'step="any"' : '';
+                return `<tr data-prop="${esc(p.name)}" data-orig="${esc(p.value)}" data-type="${esc(p.type)}" data-comp="${esc(p.componentName)}">
+                  <td class="prop-td-name"><span class="override-dot" title="Non-default value"></span><span class="prop-name">${esc(p.name)}</span></td>
+                  <td class="prop-td-value">${inputType === 'checkbox'
+                    ? `<label class="toggle"><input type="checkbox" class="prop-edit" ${p.value==='True'?'checked':''} data-prop="${esc(p.name)}"> ${p.value}</label>`
+                    : `<input type="${inputType}" ${step} class="prop-edit prop-input" value="${esc(p.value)}" data-prop="${esc(p.name)}">`}</td>
+                  <td class="prop-td-type">${esc(p.type.replace('Property',''))}</td>
+                  <td class="prop-td-status"></td>
+                </tr>`;
+              }).join('')}
+            </tbody></table>` : ''}
+            ${other.length > 0 ? `<details class="prop-other-toggle"><summary>${other.length} other properties</summary>
+              <table class="prop-table"><tbody>
+                ${other.map(p => `<tr>
+                  <td class="prop-td-name"><span class="override-dot"></span><span class="prop-name" style="color:var(--text-secondary)">${esc(p.name)}</span></td>
+                  <td class="prop-td-value" style="color:var(--text-muted);font-size:11px">${esc(truncate(p.value, 80))}</td>
+                  <td class="prop-td-type">${esc(p.type.replace('Property',''))}</td>
+                  <td class="prop-td-status"></td>
+                </tr>`).join('')}
+              </tbody></table></details>` : ''}
+          </div>
+        </details>`;
       }).join('')}
-    </tbody></table></div>` : ''}
+    </div>
 
-    ${other.length > 0 ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--text-secondary);font-size:13px">Other Properties (${other.length})</summary>
-      <div class="table-wrapper" style="margin-top:8px"><table><thead><tr><th>Property</th><th>Value</th><th>Type</th></tr></thead><tbody>
-        ${other.map(p => `<tr><td style="color:var(--text-secondary);font-size:12px">${esc(p.name)}</td><td style="color:var(--text-muted);font-size:11px">${esc(truncate(p.value,100))}</td><td><span class="badge badge-dim" style="font-size:10px">${esc(p.type.replace('Property',''))}</span></td></tr>`).join('')}
-      </tbody></table></div></details>` : ''}
-
-    <details style="margin-top:16px"><summary style="cursor:pointer;color:var(--text-secondary);font-size:13px">Components (${dv.components.length})</summary>
-      <div class="table-wrapper" style="margin-top:8px"><table><thead><tr><th>Name</th><th>Class</th><th>Props</th></tr></thead><tbody>
-        ${dv.components.map(c => `<tr><td style="font-size:12px">${esc(c.objectName)}</td><td><span class="badge badge-purple" style="font-size:10px">${esc(c.className)}</span></td><td>${c.propertyCount}</td></tr>`).join('')}
-      </tbody></table></div></details>
     <div style="margin-top:20px;font-size:10px;color:var(--text-muted)">${esc(path)}</div>`;
 
   // Wire editing
@@ -371,16 +411,16 @@ async function renderDeviceDetail(params) {
       const row = input.closest('tr');
       const propName = input.dataset.prop;
       const origVal = row.dataset.orig;
+      const compName = row.dataset.comp;
       const newVal = input.type === 'checkbox' ? (input.checked ? 'True' : 'False') : input.value;
-      const indicator = row.querySelector('.change-indicator');
-      const comp = dv.components.find(c => c.properties.some(p => p.name === propName));
+      const status = row.querySelector('.prop-td-status');
 
       if (newVal !== origVal) {
-        indicator.innerHTML = '<span style="color:var(--yellow)">&#9679;</span>';
+        status.innerHTML = '<span class="change-dot" title="Modified"></span>';
         input.style.borderColor = 'var(--yellow)';
-        await apiPost('/changes/add', { filePath: path, exportName: comp?.objectName || '', propertyName: propName, oldValue: origVal, newValue: newVal, propertyType: row.dataset.type, deviceName: dv.displayName });
+        await apiPost('/changes/add', { filePath: path, exportName: compName || '', propertyName: propName, oldValue: origVal, newValue: newVal, propertyType: row.dataset.type, deviceName: dv.displayName });
       } else {
-        indicator.innerHTML = '';
+        status.innerHTML = '';
         input.style.borderColor = '';
         await apiPost('/changes/remove', { filePath: path, exportName: '', propertyName: propName });
       }
@@ -388,6 +428,11 @@ async function renderDeviceDetail(params) {
     });
   });
   refreshPendingBanner();
+}
+
+// Clean component class name for display
+function DeviceClassifier_cleanName(cls) {
+  return cls.replace('Device_','').replace(/_C$/,'').replace(/_/g,' ').replace(/  /g,' ').trim();
 }
 
 async function refreshPendingBanner() {
@@ -423,60 +468,154 @@ window.applyChanges = async () => {
 };
 window.discardChanges = async () => { await apiPost('/changes/clear'); refreshPendingBanner(); toast('Changes discarded'); };
 
-// ========= Assets =========
-async function renderAssets() {
-  content().innerHTML = `<div class="page-header"><h2>Asset Definitions</h2><div class="subtitle">Blueprints, materials, custom props (excludes placed instances)</div></div>
-    <div class="search-bar"><input type="text" id="asset-search" placeholder="Search..."></div>
-    <div id="asset-list"><div class="loading"><div class="spinner"></div></div></div>`;
+// ========= Device Type Browser =========
+async function renderDeviceType(params) {
+  const className = params.get('class');
+  if (!className) return;
 
+  // We need a level path — get it from the active project's first level
+  let levelPath = params.get('level');
+  if (!levelPath) {
+    try {
+      const levels = await api('/levels');
+      if (levels.length > 0) levelPath = levels[0].filePath;
+    } catch {}
+  }
+  if (!levelPath) { content().innerHTML = '<div class="empty">No level found to scan</div>'; return; }
+
+  content().innerHTML = `<div class="page-header"><h2>Loading...</h2></div><div class="loading"><div class="spinner"></div> Scanning instances...</div>`;
+
+  const data = await api(`/levels/devices-by-class?levelPath=${encodeURIComponent(levelPath)}&className=${encodeURIComponent(className)}`);
+
+  content().innerHTML = `
+    <div class="page-header">
+      <h2>${esc(data.displayName)}</h2>
+      <div class="subtitle">${esc(data.className)} &mdash; ${data.count} instance(s) ${data.isDevice ? '<span class="badge badge-blue">Device</span>' : '<span class="badge badge-dim">Prop</span>'}</div>
+    </div>
+
+    <div class="search-bar"><input type="text" id="instance-search" placeholder="Search by name or property..."></div>
+
+    <div id="instance-list">
+      ${data.instances.map((inst, i) => `
+        <div class="device-card" data-search="${esc((inst.label + ' ' + (inst.keyProperties||[]).map(p=>p.value).join(' ')).toLowerCase())}">
+          <div class="device-card-header">
+            <div>
+              <strong>${esc(inst.label)}</strong>
+              <span style="color:var(--text-muted);font-size:11px;margin-left:8px">${inst.totalPropertyCount} props (${inst.editableCount} editable)</span>
+            </div>
+            <a href="#/device?path=${encodeURIComponent(inst.filePath)}" class="btn" style="font-size:11px;padding:3px 10px">Inspect</a>
+          </div>
+          ${inst.hasPosition ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Position: (${inst.x.toFixed(0)}, ${inst.y.toFixed(0)}, ${inst.z.toFixed(0)}) &middot; Rotation: ${inst.rotationYaw.toFixed(0)}&deg;</div>` : ''}
+          ${(inst.keyProperties && inst.keyProperties.length > 0) ? `
+            <div class="device-props-preview">
+              ${inst.keyProperties.map(p => `<div class="prop-row"><span class="prop-name">${esc(p.name)}</span><span class="prop-value editable">${esc(truncate(p.value, 50))}</span></div>`).join('')}
+            </div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  $('#instance-search')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    $$('.device-card').forEach(card => card.style.display = !q || card.dataset.search.includes(q) ? '' : 'none');
+  });
+}
+
+// ========= Assets =========
+let _epicAssetCache = null;
+
+async function renderAssets() {
+  content().innerHTML = `<div class="page-header"><h2>Assets</h2></div>
+    <div class="tabs"><button class="tab active" data-tab="user">User-Created</button><button class="tab" data-tab="epic">Epic Assets (Placed)</button></div>
+    <div id="asset-content"><div class="loading"><div class="spinner"></div></div></div>`;
+
+  $$('.tab', content()).forEach(t => t.addEventListener('click', () => {
+    $$('.tab', content()).forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    if (t.dataset.tab === 'user') renderUserAssets(); else renderEpicAssets();
+  }));
+  renderUserAssets();
+}
+
+async function renderUserAssets() {
+  const ac = $('#asset-content');
+  ac.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   if (!_assetCache) _assetCache = await api('/assets');
 
-  // Build class filter options
+  if (!_assetCache.length) {
+    ac.innerHTML = `<div class="empty">No user-created assets in this project.<br><span style="font-size:12px;color:var(--text-muted)">Check the "Epic Assets" tab to see what's placed in the level.</span></div>`;
+    return;
+  }
+
   const classes = [...new Set(_assetCache.map(a => a.assetClass))].sort();
-  const filterHtml = `<select id="asset-class-filter" style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px">
-    <option value="">All Types (${_assetCache.length})</option>
-    ${classes.map(c => `<option value="${esc(c)}">${esc(c)} (${_assetCache.filter(a=>a.assetClass===c).length})</option>`).join('')}
-  </select>`;
-  $('.search-bar').insertAdjacentHTML('beforeend', filterHtml);
+  ac.innerHTML = `<div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary)">Custom assets created by the map author</div>
+    <div class="search-bar"><input type="text" id="asset-search" placeholder="Search...">
+      <select id="asset-class-filter" style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px">
+        <option value="">All Types (${_assetCache.length})</option>
+        ${classes.map(c => `<option value="${esc(c)}">${esc(c)} (${_assetCache.filter(a=>a.assetClass===c).length})</option>`).join('')}
+      </select></div><div id="asset-list"></div>`;
 
   const render = (f) => {
-    if (!f.length) { $('#asset-list').innerHTML = '<div class="empty">No definitions found</div>'; return; }
-
-    // Group by class
-    const groups = {};
-    f.forEach(a => (groups[a.assetClass] = groups[a.assetClass] || []).push(a));
+    if (!f.length) { $('#asset-list').innerHTML = '<div class="empty">No matches</div>'; return; }
+    const groups = {}; f.forEach(a => (groups[a.assetClass] = groups[a.assetClass] || []).push(a));
     const sorted = Object.entries(groups).sort((a,b) => b[1].length - a[1].length);
-
-    let html = `<div style="margin-bottom:6px;font-size:11px;color:var(--text-muted)">${f.length} definition(s) across ${sorted.length} type(s)</div>`;
+    let html = `<div style="margin-bottom:6px;font-size:11px;color:var(--text-muted)">${f.length} asset(s)</div>`;
     sorted.forEach(([cls, assets]) => {
-      html += `<div class="device-group" style="margin-bottom:6px">
-        <div class="device-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
-          <span class="tree-toggle">&#9662;</span>
-          <span class="badge badge-purple">${esc(cls)}</span>
-          <span class="tree-count">${assets.length}</span>
-        </div>
-        <div class="device-group-items">
-          <div class="table-wrapper" style="margin:0"><table><tbody>
-            ${assets.slice(0,50).map(a => `<tr>
-              <td><a href="#/asset?path=${encodeURIComponent(a.filePath)}">${esc(a.name)}</a></td>
-              <td style="font-size:11px;color:var(--text-muted);width:80px">${fileSize(a.fileSize)}</td>
-            </tr>`).join('')}
-            ${assets.length > 50 ? `<tr><td colspan="2" style="color:var(--text-muted);font-size:11px">+${assets.length - 50} more</td></tr>` : ''}
-          </tbody></table></div>
-        </div>
-      </div>`;
+      html += `<div class="device-group" style="margin-bottom:6px"><div class="device-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <span class="tree-toggle">&#9662;</span><span class="badge badge-purple">${esc(cls)}</span><span class="tree-count">${assets.length}</span></div>
+        <div class="device-group-items"><div class="table-wrapper" style="margin:0"><table><tbody>
+          ${assets.slice(0,50).map(a => `<tr><td><a href="#/asset?path=${encodeURIComponent(a.filePath)}">${esc(a.name)}</a></td><td style="font-size:11px;color:var(--text-muted);width:80px">${fileSize(a.fileSize)}</td></tr>`).join('')}
+        </tbody></table></div></div></div>`;
     });
     $('#asset-list').innerHTML = html;
   };
-
-  const filter = () => {
-    const q = $('#asset-search').value.toLowerCase();
-    const cls = $('#asset-class-filter')?.value || '';
-    render(_assetCache.filter(a => (!q || a.name.toLowerCase().includes(q) || (a.relativePath||'').toLowerCase().includes(q)) && (!cls || a.assetClass === cls)));
-  };
+  const filter = () => { const q = $('#asset-search').value.toLowerCase(), cls = $('#asset-class-filter')?.value || '';
+    render(_assetCache.filter(a => (!q || a.name.toLowerCase().includes(q)) && (!cls || a.assetClass === cls))); };
   $('#asset-search').addEventListener('input', filter);
   $('#asset-class-filter')?.addEventListener('change', filter);
   filter();
+}
+
+async function renderEpicAssets() {
+  const ac = $('#asset-content');
+  ac.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning placed actors...</div>';
+  if (!_epicAssetCache) _epicAssetCache = await api('/assets/epic');
+  if (!_epicAssetCache.length) { ac.innerHTML = '<div class="empty">No placed actors found</div>'; return; }
+
+  const devices = _epicAssetCache.filter(a => a.isDevice);
+  const props = _epicAssetCache.filter(a => !a.isDevice);
+  const total = _epicAssetCache.reduce((s, a) => s + a.count, 0);
+  const pal = ['#58a6ff','#3fb950','#d29922','#f85149','#bc8cff','#39d2c0','#d18616','#f778ba','#79c0ff','#7ee787'];
+
+  const renderBar = (items) => {
+    if (!items.length) return '<div style="color:var(--text-muted);font-size:12px">None</div>';
+    const max = items[0].count;
+    return items.map((a, i) => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0">
+      <div style="width:200px;font-size:11px;text-align:right;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.className)}">${esc(a.displayName)}</div>
+      <div style="flex:1;height:14px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden"><div style="width:${(a.count/max*100).toFixed(0)}%;height:100%;background:${pal[i%pal.length]};border-radius:3px;min-width:2px"></div></div>
+      <div style="width:36px;font-size:11px;font-weight:600;text-align:right">${a.count}</div>
+      ${a.samplePaths?.length ? `<a href="#/device-type?class=${encodeURIComponent(a.className)}" style="font-size:10px;color:var(--accent);text-decoration:none">inspect</a>` : ''}
+    </div>`).join('');
+  };
+
+  ac.innerHTML = `
+    <div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary)">Epic's built-in assets placed in this level. Only exposed properties can be edited.</div>
+    <div class="card-grid" style="margin-bottom:16px">
+      <div class="card"><div class="card-label">Total Placed</div><div class="card-value accent">${total.toLocaleString()}</div></div>
+      <div class="card"><div class="card-label">Asset Types</div><div class="card-value purple">${_epicAssetCache.length}</div></div>
+      <div class="card"><div class="card-label">Devices</div><div class="card-value green">${devices.reduce((s,d)=>s+d.count,0)}</div></div>
+      <div class="card"><div class="card-label">Props/Terrain</div><div class="card-value">${props.reduce((s,p)=>s+p.count,0)}</div></div>
+    </div>
+    <div class="search-bar"><input type="text" id="epic-search" placeholder="Search asset types..."></div>
+    ${devices.length ? `<h3 style="margin:12px 0 8px">Devices <span class="tree-count">${devices.length} types</span></h3><div id="epic-devices">${renderBar(devices)}</div>` : ''}
+    <h3 style="margin:12px 0 8px">Props &amp; Terrain <span class="tree-count">${props.length} types</span></h3>
+    <div id="epic-props">${renderBar(props)}</div>`;
+
+  $('#epic-search')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    if ($('#epic-devices')) $('#epic-devices').innerHTML = renderBar(devices.filter(a => !q || a.displayName.toLowerCase().includes(q) || a.className.toLowerCase().includes(q)));
+    $('#epic-props').innerHTML = renderBar(props.filter(a => !q || a.displayName.toLowerCase().includes(q) || a.className.toLowerCase().includes(q)));
+  });
 }
 
 async function renderAssetDetail(params) {

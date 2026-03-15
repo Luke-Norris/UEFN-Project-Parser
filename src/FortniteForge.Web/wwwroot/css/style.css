@@ -605,3 +605,90 @@ td a:hover { text-decoration: underline; }
 /* Toggle for bools */
 .toggle { cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .toggle-label { color: var(--text-secondary); }
+
+/* Property Groups */
+.prop-group {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.prop-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--bg-tertiary);
+  list-style: none;
+}
+.prop-group-header::-webkit-details-marker { display: none; }
+.prop-group-header::before {
+  content: '\25B6';
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-right: 8px;
+  transition: transform 0.15s;
+}
+details[open] > .prop-group-header::before { transform: rotate(90deg); }
+
+.prop-group-title { display: flex; align-items: center; gap: 6px; }
+.prop-group-count { font-size: 11px; color: var(--text-muted); }
+.prop-group-body { padding: 0; }
+
+/* Compact Property Table */
+.prop-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.prop-table td { padding: 4px 10px; border-bottom: 1px solid var(--border); }
+.prop-table tr:last-child td { border-bottom: none; }
+.prop-table tr:hover td { background: var(--bg-hover); }
+
+.prop-td-name {
+  width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prop-td-value { }
+.prop-td-type { width: 60px; color: var(--text-muted); font-size: 10px; text-align: right; }
+.prop-td-status { width: 16px; text-align: center; }
+
+/* Override indicator (non-default value) */
+.override-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.override-dot[title]:hover { opacity: 1; }
+
+/* Modified indicator */
+.change-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+}
+
+/* Nested other properties */
+.prop-other-toggle { padding: 0 10px 6px; }
+.prop-other-toggle summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+/* Compact prop-input in groups */
+.prop-table .prop-input {
+  padding: 3px 6px;
+  font-size: 11px;
+  width: 100%;
+}

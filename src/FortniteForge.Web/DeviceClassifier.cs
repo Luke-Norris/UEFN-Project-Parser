@@ -15,22 +15,34 @@ namespace FortniteForge.Web;
 /// </summary>
 public static class DeviceClassifier
 {
-    // Class name patterns that indicate a "device" (interactive gameplay element)
-    private static readonly string[] DevicePatterns =
+    // Prefixes that definitively mark an asset as a device
+    private static readonly string[] DevicePrefixes =
     {
-        "Device_", "Spawner", "Timer", "Trigger", "Button", "Barrier",
-        "Checkpoint", "VendingMachine", "ClassSelector", "ItemSpawner",
-        "ScoreManager", "HUD", "Mutator", "Teleporter", "Sequencer",
-        "Billboard", "Popup", "Tracker", "Elimination", "StormController",
-        "SkydiveVolume", "MapIndicator", "Objective", "Explosive",
-        "Creature", "Guard", "Wildlife", "Vehicle", "Sentry",
-        "Capture", "Scoreboard", "Matchmaking", "Playlist",
-        "Accolade", "Conditional", "Perception", "Prop",
-        "Musical", "Radio", "Speaker", "Camera", "Cinematic",
-        "Grind_Rail", "Bounce", "Zip", "Glider", "Launch",
-        "Minigame", "Round", "Team", "Player",
-        "Signal", "Receiver", "Transmitter", "Channel",
-        "creative_device", "ToyOptionsComponent"
+        "Device_",
+        "BP_Device_",
+        "BP_Creative_",
+    };
+
+    // Class name patterns that indicate a device ONLY when not prefixed with Prop_/Athena_Prop_/CP_Prop_
+    private static readonly string[] DeviceKeywords =
+    {
+        "Spawner", "Timer", "Trigger", "Button", "Barrier",
+        "Checkpoint", "VendingMachine", "ClassSelector", "ClassDesigner",
+        "ItemSpawner", "ScoreManager", "Mutator", "Teleporter",
+        "Sequencer", "Tracker", "Elimination", "StormController",
+        "MapIndicator", "Objective", "Scoreboard", "Matchmaking",
+        "Sentry", "Minigame", "Powerup", "DamageVolume",
+        "HealVolume", "SafeZone", "Keylock", "PinballBumper",
+        "creative_device", "Transmitter", "Receiver",
+    };
+
+    // Patterns that are NEVER devices (static/decorative)
+    private static readonly string[] NotDevicePrefixes =
+    {
+        "Prop_", "Athena_Prop_", "CP_Prop_", "CP_Apollo_", "CP_Asteria_",
+        "MilitaryBase_", "CP_Glass_", "CP_Tree_", "CP_Rock_", "CP_Cliff_",
+        "AssetImportData", "StaticMesh", "Material", "Texture",
+        "Landscape", "Foliage", "HLOD", "LayerInfo",
     };
 
     // Internal properties that aren't useful to show in the UI
@@ -45,7 +57,16 @@ public static class DeviceClassifier
 
     public static bool IsDevice(string className)
     {
-        return DevicePatterns.Any(p => className.Contains(p, StringComparison.OrdinalIgnoreCase));
+        // Definitely NOT a device
+        if (NotDevicePrefixes.Any(p => className.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        // Definitely a device (Device_ prefix, BP_Device_, BP_Creative_)
+        if (DevicePrefixes.Any(p => className.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        // Check keywords in the name
+        return DeviceKeywords.Any(kw => className.Contains(kw, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -151,13 +172,17 @@ public static class DeviceClassifier
 
         if (actorClass == null) return null;
 
-        // Collect all non-internal properties for the device detail view
+        // Collect all non-internal properties, tagged with component info
         foreach (var comp in components)
         {
             foreach (var prop in comp.Properties)
             {
                 if (!InternalProperties.Contains(prop.Name))
+                {
+                    prop.ComponentName = comp.ObjectName;
+                    prop.ComponentClass = comp.ClassName;
                     allProperties.Add(prop);
+                }
             }
         }
 
@@ -347,6 +372,16 @@ public class ActorProperty
     public string Type { get; set; } = "";
     public string Value { get; set; } = "";
     public bool IsEditable { get; set; }
+    /// <summary>
+    /// True for all properties in external actor files — they only store overrides,
+    /// so every property present IS a non-default value.
+    /// </summary>
+    public bool IsOverride { get; set; } = true;
+    /// <summary>
+    /// Which component this property belongs to.
+    /// </summary>
+    public string ComponentName { get; set; } = "";
+    public string ComponentClass { get; set; } = "";
 }
 
 public class ComponentInfo

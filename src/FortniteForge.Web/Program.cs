@@ -272,6 +272,46 @@ public class Program
             catch (Exception ex) { return Results.Problem(ex.Message); }
         });
 
+        // All instances of a specific class in a level
+        api.MapGet("/levels/devices-by-class", (ProjectManager pm, string levelPath, string className) =>
+        {
+            try
+            {
+                var project = pm.ListProjects().FirstOrDefault(p => levelPath.StartsWith(p.ProjectPath, StringComparison.OrdinalIgnoreCase));
+                var cfg = project != null ? pm.BuildConfig(project) : new ForgeConfig();
+                var contents = DeviceClassifier.ClassifyLevel(levelPath, cfg);
+
+                var allActors = contents.Devices.Concat(contents.StaticActors);
+                var matches = allActors.Where(a => a.ClassName == className).ToList();
+
+                return Results.Ok(new
+                {
+                    ClassName = className,
+                    DisplayName = matches.FirstOrDefault()?.DisplayName ?? DeviceClassifier.CleanActorName(className, className),
+                    IsDevice = DeviceClassifier.IsDevice(className),
+                    Count = matches.Count,
+                    Instances = matches.Select((m, i) => new
+                    {
+                        m.DisplayName,
+                        // Use ActorLabel property if available, otherwise generate numbered name
+                        Label = m.Properties.FirstOrDefault(p => p.Name == "ActorLabel")?.Value
+                            ?? m.Properties.FirstOrDefault(p => p.Name == "Label")?.Value
+                            ?? $"{m.DisplayName} #{i + 1}",
+                        m.FilePath,
+                        m.X, m.Y, m.Z, m.HasPosition, m.RotationYaw,
+                        m.TotalPropertyCount,
+                        EditableCount = m.Properties.Count(p => p.IsEditable),
+                        // Include a few key property previews
+                        KeyProperties = m.Properties
+                            .Where(p => p.IsEditable && !new[] { "CullDistance", "DataVersion", "LDMaxDrawDistance", "CachedMaxDrawDistance" }.Contains(p.Name))
+                            .Take(4)
+                            .Select(p => new { p.Name, p.Value })
+                    })
+                });
+            }
+            catch (Exception ex) { return Results.Problem(ex.Message); }
+        });
+
         api.MapGet("/device/inspect", (string path) =>
         {
             try
@@ -282,8 +322,9 @@ public class Program
             catch (Exception ex) { return Results.Problem(ex.Message); }
         });
 
-        // ========= Assets (definitions only — excludes External*) =========
-        api.MapGet("/assets", (ProjectManager pm, ILoggerFactory lf, string? projectId) =>
+        // ========= Assets =========
+        // User-created definitions (Content/ minus External*)
+        api.MapGet("/assets", (ProjectManager pm, string? projectId) =>
         {
             var project = projectId != null ? pm.GetProject(projectId) : pm.GetActiveProject();
             if (project == null) return Results.BadRequest("No active project");
@@ -294,7 +335,6 @@ public class Program
             var files = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
                 .Where(f => !f.Contains("__External")).ToList();
 
-            // Parse asset class from each file
             foreach (var file in files)
             {
                 var fi = new FileInfo(file);
@@ -313,10 +353,64 @@ public class Program
                     Name = Path.GetFileNameWithoutExtension(file),
                     AssetClass = assetClass,
                     FileSize = fi.Length,
-                    LastModified = fi.LastWriteTime
+                    LastModified = fi.LastWriteTime,
+                    Source = "User"
                 });
             }
             return Results.Ok(results.OrderBy(r => ((dynamic)r).AssetClass).ThenBy(r => ((dynamic)r).Name));
+        });
+
+        // Epic-referenced asset types used in levels (from external actors)
+        api.MapGet("/assets/epic", (ProjectManager pm, string? levelPath) =>
+        {
+            var project = pm.GetActiveProject();
+            if (project == null) return Results.BadRequest("No active project");
+            var cfg = pm.BuildConfig(project);
+            if (!Directory.Exists(cfg.ContentPath)) return Results.Ok(Array.Empty<object>());
+
+            // Find all external actor directories
+            var extDirs = Directory.EnumerateDirectories(cfg.ContentPath, "__ExternalActors__", SearchOption.AllDirectories).ToList();
+            var classCounts = new Dictionary<string, (int Count, List<string> SamplePaths)>();
+
+            foreach (var extDir in extDirs)
+            {
+                var actorFiles = Directory.EnumerateFiles(extDir, "*.uasset", SearchOption.AllDirectories);
+                foreach (var file in actorFiles)
+                {
+                    try
+                    {
+                        var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                        foreach (var export in asset.Exports)
+                        {
+                            var cls = export.GetExportClassType()?.ToString() ?? "";
+                            if (string.IsNullOrEmpty(cls) || cls.Contains("Component") || cls.Contains("Model")
+                                || cls == "Level" || cls == "MetaData" || cls == "Brush") continue;
+
+                            if (!classCounts.ContainsKey(cls))
+                                classCounts[cls] = (0, new List<string>());
+
+                            var entry = classCounts[cls];
+                            classCounts[cls] = (entry.Count + 1, entry.SamplePaths);
+                            if (entry.SamplePaths.Count < 3) // Keep a few sample file paths
+                                entry.SamplePaths.Add(file);
+                            break; // Only count primary export per file
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            var results = classCounts.Select(kv => new
+            {
+                ClassName = kv.Key,
+                DisplayName = DeviceClassifier.CleanActorName(kv.Key, kv.Key),
+                Count = kv.Value.Count,
+                IsDevice = DeviceClassifier.IsDevice(kv.Key),
+                SamplePaths = kv.Value.SamplePaths,
+                Source = "Epic"
+            }).OrderByDescending(r => r.Count).ToList();
+
+            return Results.Ok(results);
         });
 
         api.MapGet("/assets/inspect", (ProjectManager pm, ILoggerFactory lf, string path) =>
