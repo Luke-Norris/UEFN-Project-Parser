@@ -283,7 +283,7 @@ public class Program
         });
 
         // ========= Assets (definitions only — excludes External*) =========
-        api.MapGet("/assets", (ProjectManager pm, string? projectId) =>
+        api.MapGet("/assets", (ProjectManager pm, ILoggerFactory lf, string? projectId) =>
         {
             var project = projectId != null ? pm.GetProject(projectId) : pm.GetActiveProject();
             if (project == null) return Results.BadRequest("No active project");
@@ -292,21 +292,31 @@ public class Program
 
             var results = new List<object>();
             var files = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
-                .Where(f => !f.Contains("__External"));
+                .Where(f => !f.Contains("__External")).ToList();
 
+            // Parse asset class from each file
             foreach (var file in files)
             {
                 var fi = new FileInfo(file);
+                string assetClass = "Unknown";
+                try
+                {
+                    var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                    assetClass = asset.Exports.FirstOrDefault()?.GetExportClassType()?.ToString() ?? "Unknown";
+                }
+                catch { }
+
                 results.Add(new
                 {
                     FilePath = file,
                     RelativePath = Path.GetRelativePath(cfg.ContentPath, file),
                     Name = Path.GetFileNameWithoutExtension(file),
+                    AssetClass = assetClass,
                     FileSize = fi.Length,
                     LastModified = fi.LastWriteTime
                 });
             }
-            return Results.Ok(results.OrderBy(r => ((dynamic)r).RelativePath));
+            return Results.Ok(results.OrderBy(r => ((dynamic)r).AssetClass).ThenBy(r => ((dynamic)r).Name));
         });
 
         api.MapGet("/assets/inspect", (ProjectManager pm, ILoggerFactory lf, string path) =>
@@ -346,6 +356,95 @@ public class Program
                 return Results.Ok(audit.AuditLevel(path));
             }
             catch (Exception ex) { return Results.Problem(ex.Message); }
+        });
+
+        // ========= Pending Changes (in-memory queue) =========
+        var pendingChanges = new List<PendingChange>();
+
+        api.MapGet("/changes", () => Results.Ok(pendingChanges));
+
+        api.MapPost("/changes/add", async (HttpContext ctx) =>
+        {
+            var change = await ctx.Request.ReadFromJsonAsync<PendingChange>();
+            if (change == null) return Results.BadRequest("Invalid change");
+
+            // Check for existing change on same property
+            var existing = pendingChanges.FindIndex(c =>
+                c.FilePath == change.FilePath && c.PropertyName == change.PropertyName && c.ExportName == change.ExportName);
+            if (existing >= 0)
+                pendingChanges[existing] = change;
+            else
+                pendingChanges.Add(change);
+
+            return Results.Ok(new { count = pendingChanges.Count, change });
+        });
+
+        api.MapPost("/changes/remove", async (HttpContext ctx) =>
+        {
+            var body = await ctx.Request.ReadFromJsonAsync<PendingChange>();
+            if (body == null) return Results.BadRequest();
+            pendingChanges.RemoveAll(c => c.FilePath == body.FilePath && c.PropertyName == body.PropertyName && c.ExportName == body.ExportName);
+            return Results.Ok(new { count = pendingChanges.Count });
+        });
+
+        api.MapPost("/changes/clear", () =>
+        {
+            pendingChanges.Clear();
+            return Results.Ok(new { count = 0 });
+        });
+
+        api.MapPost("/changes/apply", (ProjectManager pm, ILoggerFactory lf) =>
+        {
+            if (pendingChanges.Count == 0)
+                return Results.Ok(new { applied = 0, message = "No pending changes" });
+
+            var project = pm.GetActiveProject();
+            if (project == null) return Results.BadRequest("No active project");
+            if (project.Type == ProjectType.Library)
+                return Results.BadRequest("Cannot modify a Library project. Change project type to 'My Project' first.");
+
+            var cfg = pm.BuildConfig(project);
+            var (assetSvc, _, _, _, fileAccess) = BuildProjectServices(cfg, lf);
+
+            var results = new List<object>();
+            foreach (var change in pendingChanges.ToList())
+            {
+                try
+                {
+                    var (asset, writePath) = fileAccess.OpenForWrite(change.FilePath);
+                    var export = asset.Exports
+                        .OfType<UAssetAPI.ExportTypes.NormalExport>()
+                        .FirstOrDefault(e => e.ObjectName?.ToString() == change.ExportName);
+
+                    if (export == null)
+                    {
+                        results.Add(new { change.PropertyName, success = false, error = $"Export '{change.ExportName}' not found" });
+                        continue;
+                    }
+
+                    var prop = export.Data.FirstOrDefault(p => p.Name?.ToString() == change.PropertyName);
+                    if (prop == null)
+                    {
+                        results.Add(new { change.PropertyName, success = false, error = $"Property '{change.PropertyName}' not found" });
+                        continue;
+                    }
+
+                    // Apply the value change
+                    PropertyValueSetter.SetPropertyValue(asset, prop, change.NewValue);
+                    asset.Write(writePath);
+
+                    results.Add(new { change.PropertyName, success = true, writePath });
+                }
+                catch (Exception ex)
+                {
+                    results.Add(new { change.PropertyName, success = false, error = ex.Message });
+                }
+            }
+
+            fileAccess.Dispose();
+            var applied = results.Count(r => ((dynamic)r).success);
+            pendingChanges.Clear();
+            return Results.Ok(new { applied, total = results.Count, results });
         });
 
         // ========= Staged =========
@@ -397,3 +496,44 @@ public class Program
 // Request models
 public record AddProjectRequest(string Path, string? Type, string? Name);
 public record IdRequest(string Id);
+
+public class PendingChange
+{
+    public string FilePath { get; set; } = "";
+    public string ExportName { get; set; } = "";
+    public string PropertyName { get; set; } = "";
+    public string OldValue { get; set; } = "";
+    public string NewValue { get; set; } = "";
+    public string PropertyType { get; set; } = "";
+    public string DeviceName { get; set; } = "";
+}
+
+public static class PropertyValueSetter
+{
+    public static void SetPropertyValue(UAssetAPI.UAsset asset, UAssetAPI.PropertyTypes.Objects.PropertyData prop, string newValue)
+    {
+        switch (prop)
+        {
+            case UAssetAPI.PropertyTypes.Objects.BoolPropertyData b:
+                b.Value = bool.Parse(newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.IntPropertyData i:
+                i.Value = int.Parse(newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.FloatPropertyData f:
+                f.Value = float.Parse(newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.DoublePropertyData d:
+                d.Value = double.Parse(newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.StrPropertyData s:
+                s.Value = UAssetAPI.UnrealTypes.FString.FromString(newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.NamePropertyData n:
+                n.Value = UAssetAPI.UnrealTypes.FName.FromString(asset, newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.EnumPropertyData e:
+                e.Value = UAssetAPI.UnrealTypes.FName.FromString(asset, newValue); break;
+            case UAssetAPI.PropertyTypes.Objects.BytePropertyData bp:
+                if (byte.TryParse(newValue, out var bv)) bp.Value = bv;
+                else bp.EnumValue = UAssetAPI.UnrealTypes.FName.FromString(asset, newValue);
+                break;
+            default:
+                throw new NotSupportedException($"Cannot set value on {prop.GetType().Name}. Supported: Bool, Int, Float, Double, String, Name, Enum, Byte.");
+        }
+    }
+}
