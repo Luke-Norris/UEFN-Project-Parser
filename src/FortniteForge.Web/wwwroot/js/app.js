@@ -654,22 +654,49 @@ async function renderAssetDetail(params) {
   const path = params.get('path');
   if (!path) return;
   const d = await api(`/assets/inspect?path=${encodeURIComponent(path)}`);
+
   content().innerHTML = `
-    <div class="page-header"><h2>${esc(d.name)}</h2><div class="subtitle">${esc(d.relativePath)}</div></div>
-    <div class="card-grid" style="margin-bottom:20px">
-      <div class="card"><div class="card-label">Class</div><div style="font-size:12px;color:var(--accent)">${esc(d.assetClass)}</div></div>
-      <div class="card"><div class="card-label">Size</div><div style="font-size:12px">${fileSize(d.fileSize)}</div></div>
-      <div class="card"><div class="card-label">Exports</div><div class="card-value purple">${d.exportCount}</div></div>
-      <div class="card"><div class="card-label">Imports</div><div class="card-value">${d.importCount}</div></div>
+    ${breadcrumb([{ label: 'Dashboard', href: '#/' }, { label: 'Assets', href: '#/assets' }, { label: d.name }])}
+    <div style="display:flex;gap:24px;margin-bottom:20px">
+      <div class="asset-thumb" id="asset-thumb"></div>
+      <div style="flex:1">
+        <div class="page-header" style="margin-bottom:12px"><h2>${esc(d.name)}</h2><div class="subtitle">${esc(d.relativePath)}</div></div>
+        <div class="card-grid">
+          <div class="card"><div class="card-label">Class</div><div style="font-size:12px;color:var(--accent)">${esc(d.assetClass)}</div></div>
+          <div class="card"><div class="card-label">Size</div><div style="font-size:12px">${fileSize(d.fileSize)}</div></div>
+          <div class="card"><div class="card-label">Exports</div><div class="card-value purple">${d.exportCount}</div></div>
+          <div class="card"><div class="card-label">Imports</div><div class="card-value">${d.importCount}</div></div>
+        </div>
+      </div>
     </div>
-    ${(d.exports||[]).map(e => `<details class="card" style="margin-bottom:6px">
-      <summary style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-        <span><span class="badge badge-purple" style="font-size:10px">${esc(e.className)}</span> <span style="font-size:12px">${esc(e.objectName)}</span></span>
-        <span style="font-size:10px;color:var(--text-muted)">${e.properties?.length||0} props</span></summary>
-      ${(e.properties?.length > 0) ? `<div class="prop-list" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-        ${e.properties.map(p => `<div class="prop-name">${esc(p.name)} <span class="prop-type">${esc(p.type)}</span></div><div class="prop-value">${esc(truncate(p.value,100))}</div>`).join('')}
-      </div>` : '<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">No properties</div>'}
+    <h3 style="margin-bottom:8px">Exports</h3>
+    ${(d.exports||[]).map(e => `<details class="prop-group">
+      <summary class="prop-group-header">
+        <span class="prop-group-title"><span class="badge badge-purple" style="font-size:10px">${esc(e.className)}</span> ${esc(e.objectName)}</span>
+        <span class="prop-group-count">${e.properties?.length||0} props</span></summary>
+      <div class="prop-group-body">
+      ${(e.properties?.length > 0) ? `<table class="prop-table"><tbody>
+        ${e.properties.map(p => `<tr><td class="prop-td-name"><span class="prop-name">${esc(p.name)}</span></td>
+          <td class="prop-td-value" style="font-size:11px">${esc(truncate(p.value,100))}</td>
+          <td class="prop-td-type">${esc(p.type)}</td></tr>`).join('')}
+      </tbody></table>` : '<div style="padding:8px 10px;font-size:11px;color:var(--text-muted)">No properties</div>'}
+      </div>
     </details>`).join('')}`;
+
+  // Load thumbnail
+  const thumb = $('#asset-thumb');
+  try {
+    const res = await fetch(`/api/assets/thumbnail?path=${encodeURIComponent(path)}`);
+    if (res.ok && res.headers.get('content-type')?.includes('image')) {
+      const blob = await res.blob();
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(blob);
+      img.className = 'thumb-img';
+      thumb.appendChild(img);
+    } else {
+      thumb.innerHTML = '<div class="thumb-placeholder">No Preview</div>';
+    }
+  } catch { thumb.innerHTML = '<div class="thumb-placeholder">No Preview</div>'; }
 }
 
 // ========= Audit =========

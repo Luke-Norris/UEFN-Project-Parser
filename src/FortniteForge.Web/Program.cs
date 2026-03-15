@@ -541,6 +541,68 @@ public class Program
             return Results.Ok(new { applied, total = results.Count, results });
         });
 
+        // ========= Thumbnail Preview =========
+        // Returns raw JPEG image data for assets that have embedded thumbnails
+        api.MapGet("/assets/thumbnail", (string path) =>
+        {
+            try
+            {
+                var asset = new UAssetAPI.UAsset(path, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                if (asset.Thumbnails == null || asset.Thumbnails.Count == 0)
+                    return Results.NotFound();
+
+                var thumb = asset.Thumbnails.Values.First();
+
+                // CompressedImageData is typically JPEG
+                if (thumb.CompressedImageData != null && thumb.CompressedImageData.Length > 0)
+                    return Results.File(thumb.CompressedImageData, "image/jpeg");
+
+                // ImageData is raw BGRA8 — less common but possible
+                if (thumb.ImageData != null && thumb.ImageData.Length > 0)
+                    return Results.File(thumb.ImageData, "application/octet-stream");
+
+                return Results.NotFound();
+            }
+            catch { return Results.NotFound(); }
+        });
+
+        // Check which assets in a list have thumbnails (batch check)
+        api.MapGet("/assets/thumbnails/check", (ProjectManager pm) =>
+        {
+            var project = pm.GetActiveProject();
+            if (project == null) return Results.Ok(Array.Empty<object>());
+            var cfg = pm.BuildConfig(project);
+            if (!Directory.Exists(cfg.ContentPath)) return Results.Ok(Array.Empty<object>());
+
+            var results = new List<object>();
+            var files = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
+                .Where(f => !f.Contains("__External")).ToList();
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                    if (asset.Thumbnails != null && asset.Thumbnails.Count > 0)
+                    {
+                        var thumb = asset.Thumbnails.Values.First();
+                        if ((thumb.CompressedImageData?.Length ?? 0) > 0 || (thumb.ImageData?.Length ?? 0) > 0)
+                        {
+                            results.Add(new
+                            {
+                                FilePath = file,
+                                Name = Path.GetFileNameWithoutExtension(file),
+                                Width = Math.Abs(thumb.Width),
+                                Height = Math.Abs(thumb.Height)
+                            });
+                        }
+                    }
+                }
+                catch { }
+            }
+            return Results.Ok(results);
+        });
+
         // ========= Staged =========
         api.MapGet("/staged", (SafeFileAccess fa) => Results.Ok(fa.ListStagedFiles()));
         api.MapPost("/staged/apply", (SafeFileAccess fa, BackupService b) => Results.Ok(fa.ApplyAllStaged(b)));
