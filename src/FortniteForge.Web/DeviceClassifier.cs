@@ -45,14 +45,34 @@ public static class DeviceClassifier
         "Landscape", "Foliage", "HLOD", "LayerInfo",
     };
 
-    // Internal properties that aren't useful to show in the UI
+    // Internal/engine properties — never shown
     private static readonly HashSet<string> InternalProperties = new(StringComparer.OrdinalIgnoreCase)
     {
         "UCSSerializationIndex", "bNetAddressable", "CreationMethod",
         "AttachParent", "bReplicates", "bAutoActivate",
         "GenerateOverlapEvents", "bHiddenInGame", "bIsEditorOnly",
         "CanCharacterStepUpOn", "bCanEverAffectNavigation",
-        "bVisualizeComponent", "bEditableWhenInherited"
+        "bVisualizeComponent", "bEditableWhenInherited",
+        "bIsMainWorldOnly", "bNetUseOwnerRelevancy",
+    };
+
+    // Rendering/engine noise — shown but deprioritized (collapsed by default)
+    private static readonly HashSet<string> NoiseProperties = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CachedMaxDrawDistance", "LDMaxDrawDistance", "CullDistance",
+        "MaxDrawDistance", "MaxDistanceFadeRange", "MinDrawDistance",
+        "DataVersion", "ActorTemplateID", "PlaysetPackagePathName",
+        "BodyInstance", "LightmassSettings", "bOverrideLightMapRes",
+        "OverriddenLightMapRes", "bCastStaticShadow", "bCastDynamicShadow",
+        "CastShadow", "bAffectDynamicIndirectLighting",
+        "IndirectLightingCacheQuality", "bUseAttachParentBound",
+        "BoundsScale", "bReceivesDecals", "bAllowCullDistanceVolume",
+        "bRenderInMainPass", "bRenderInDepthPass",
+        "VisibilityId", "RuntimeGrid", "bIsSpatiallyLoaded",
+        "bIsHLODRelevant", "HLODLayer", "bEnableAutoLODGeneration",
+        "LODParentPrimitive", "bUseAsOccluder",
+        "OnComponentPhysicsStateChanged", "VolumetricScatteringIntensity",
+        "SerializationControl",
     };
 
     public static bool IsDevice(string className)
@@ -172,17 +192,17 @@ public static class DeviceClassifier
 
         if (actorClass == null) return null;
 
-        // Collect all non-internal properties, tagged with component info
+        // Collect all non-internal properties, tagged with component info and importance
         foreach (var comp in components)
         {
             foreach (var prop in comp.Properties)
             {
-                if (!InternalProperties.Contains(prop.Name))
-                {
-                    prop.ComponentName = comp.ObjectName;
-                    prop.ComponentClass = comp.ClassName;
-                    allProperties.Add(prop);
-                }
+                if (InternalProperties.Contains(prop.Name)) continue;
+
+                prop.ComponentName = comp.ObjectName;
+                prop.ComponentClass = comp.ClassName;
+                prop.Importance = NoiseProperties.Contains(prop.Name) ? "low" : "high";
+                allProperties.Add(prop);
             }
         }
 
@@ -377,11 +397,11 @@ public class ActorProperty
     /// so every property present IS a non-default value.
     /// </summary>
     public bool IsOverride { get; set; } = true;
-    /// <summary>
-    /// Which component this property belongs to.
-    /// </summary>
+    /// <summary>Which component this property belongs to.</summary>
     public string ComponentName { get; set; } = "";
     public string ComponentClass { get; set; } = "";
+    /// <summary>high = meaningful config, low = rendering/engine noise</summary>
+    public string Importance { get; set; } = "high";
 }
 
 public class ComponentInfo

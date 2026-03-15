@@ -8,6 +8,14 @@ const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 const fileSize = b => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
 const truncate = (s, max) => s && s.length > max ? s.slice(0, max) + '...' : (s || '');
 
+function breadcrumb(items) {
+  return `<nav class="breadcrumb">${items.map((item, i) =>
+    i < items.length - 1
+      ? `<a href="${item.href}">${esc(item.label)}</a><span class="bc-sep">/</span>`
+      : `<span class="bc-current">${esc(item.label)}</span>`
+  ).join('')}</nav>`;
+}
+
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
@@ -231,6 +239,7 @@ async function renderLevelDetail(params) {
   const tab = params.get('tab') || 'devices';
 
   content().innerHTML = `
+    ${breadcrumb([{ label: 'Dashboard', href: '#/' }, { label: name }])}
     <div class="page-header"><h2>${esc(name)}</h2></div>
     <div class="tabs">
       <button class="tab ${tab==='devices'?'active':''}" data-tab="devices">Devices</button>
@@ -344,16 +353,62 @@ async function renderDeviceDetail(params) {
 
   const totalEditable = dv.properties.filter(p => p.isEditable).length;
 
+  // Separate high-importance from noise within each group
+  const renderPropTable = (props, editable) => {
+    const high = props.filter(p => p.importance === 'high');
+    const low = props.filter(p => p.importance === 'low');
+
+    let html = '';
+    if (high.length > 0) {
+      html += `<table class="prop-table"><tbody>${high.map(p => renderPropRow(p, editable)).join('')}</tbody></table>`;
+    }
+    if (low.length > 0) {
+      html += `<details class="prop-other-toggle"><summary>${low.length} rendering/engine properties</summary>
+        <table class="prop-table"><tbody>${low.map(p => renderPropRow(p, false)).join('')}</tbody></table></details>`;
+    }
+    return html;
+  };
+
+  const renderPropRow = (p, editable) => {
+    if (editable && p.isEditable) {
+      const inputType = p.type === 'BoolProperty' ? 'checkbox' : p.type.match(/Int|Float|Double/) ? 'number' : 'text';
+      const step = p.type.match(/Float|Double/) ? 'step="any"' : '';
+      return `<tr data-prop="${esc(p.name)}" data-orig="${esc(p.value)}" data-type="${esc(p.type)}" data-comp="${esc(p.componentName)}">
+        <td class="prop-td-name"><span class="override-dot" title="Non-default override"></span><span class="prop-name">${esc(p.name)}</span></td>
+        <td class="prop-td-value">${inputType === 'checkbox'
+          ? `<label class="toggle"><input type="checkbox" class="prop-edit" ${p.value==='True'?'checked':''} data-prop="${esc(p.name)}"> ${p.value}</label>`
+          : `<input type="${inputType}" ${step} class="prop-edit prop-input" value="${esc(p.value)}" data-prop="${esc(p.name)}">`}</td>
+        <td class="prop-td-type">${esc(p.type.replace('Property',''))}</td>
+        <td class="prop-td-status"></td></tr>`;
+    }
+    return `<tr><td class="prop-td-name"><span class="override-dot"></span><span class="prop-name" style="color:var(--text-secondary)">${esc(p.name)}</span></td>
+      <td class="prop-td-value" style="color:var(--text-muted);font-size:11px">${esc(truncate(p.value, 80))}</td>
+      <td class="prop-td-type">${esc(p.type.replace('Property',''))}</td><td class="prop-td-status"></td></tr>`;
+  };
+
+  // Get level path for breadcrumb from the file path
+  const pathParts = path.replace(/\\/g,'/').split('/');
+  const extIdx = pathParts.indexOf('__ExternalActors__');
+  const levelName = extIdx > 0 ? pathParts[extIdx + 1] : '';
+  const contentIdx = pathParts.indexOf('Content');
+  const levelPath = contentIdx > 0 ? pathParts.slice(0, contentIdx + 1).join('/') + '/' + levelName + '.umap' : '';
+
   content().innerHTML = `
+    ${breadcrumb([
+      { label: 'Dashboard', href: '#/' },
+      ...(levelName ? [{ label: levelName, href: '#/level?path=' + encodeURIComponent(levelPath) }] : []),
+      { label: dv.displayName }
+    ])}
+
     <div class="page-header">
       <h2>${esc(dv.displayName)}</h2>
       <div class="subtitle">${esc(dv.className)}</div>
     </div>
+
     <div class="card-grid" style="margin-bottom:16px">
-      <div class="card"><div class="card-label">Class</div><div style="font-size:12px;color:var(--accent)">${esc(dv.className)}</div></div>
       ${dv.hasPosition ? `<div class="card"><div class="card-label">Position</div><div style="font-size:12px">(${dv.x.toFixed(0)}, ${dv.y.toFixed(0)}, ${dv.z.toFixed(0)})</div></div>` : ''}
       <div class="card"><div class="card-label">Components</div><div class="card-value purple">${dv.components.length}</div></div>
-      <div class="card"><div class="card-label">Editable</div><div class="card-value green">${totalEditable}</div></div>
+      <div class="card"><div class="card-label">Config Fields</div><div class="card-value green">${totalEditable}</div></div>
     </div>
 
     <div id="pending-banner"></div>
@@ -361,10 +416,10 @@ async function renderDeviceDetail(params) {
     <div id="prop-groups">
       ${sortedGroups.map(([compClass, props]) => {
         const editable = props.filter(p => p.isEditable);
-        const other = props.filter(p => !p.isEditable);
-        const compName = props[0]?.componentName || compClass;
+        const nonEditable = props.filter(p => !p.isEditable);
         const isMain = compClass === mainClass;
         const cleanClass = DeviceClassifier_cleanName(compClass);
+        const highCount = props.filter(p => p.importance === 'high').length;
 
         return `<details class="prop-group" ${isMain ? 'open' : ''}>
           <summary class="prop-group-header">
@@ -372,32 +427,12 @@ async function renderDeviceDetail(params) {
               ${isMain ? '<span class="badge badge-blue" style="font-size:10px">Main</span>' : '<span class="badge badge-purple" style="font-size:10px">Component</span>'}
               ${esc(cleanClass)}
             </span>
-            <span class="prop-group-count">${editable.length} editable${other.length ? ` / ${other.length} other` : ''}</span>
+            <span class="prop-group-count">${highCount} config${editable.length !== highCount ? ` / ${props.length} total` : ''}</span>
           </summary>
           <div class="prop-group-body">
-            ${editable.length > 0 ? `<table class="prop-table"><tbody>
-              ${editable.map(p => {
-                const inputType = p.type === 'BoolProperty' ? 'checkbox' : p.type === 'IntProperty' || p.type === 'FloatProperty' || p.type === 'DoubleProperty' ? 'number' : 'text';
-                const step = p.type === 'FloatProperty' || p.type === 'DoubleProperty' ? 'step="any"' : '';
-                return `<tr data-prop="${esc(p.name)}" data-orig="${esc(p.value)}" data-type="${esc(p.type)}" data-comp="${esc(p.componentName)}">
-                  <td class="prop-td-name"><span class="override-dot" title="Non-default value"></span><span class="prop-name">${esc(p.name)}</span></td>
-                  <td class="prop-td-value">${inputType === 'checkbox'
-                    ? `<label class="toggle"><input type="checkbox" class="prop-edit" ${p.value==='True'?'checked':''} data-prop="${esc(p.name)}"> ${p.value}</label>`
-                    : `<input type="${inputType}" ${step} class="prop-edit prop-input" value="${esc(p.value)}" data-prop="${esc(p.name)}">`}</td>
-                  <td class="prop-td-type">${esc(p.type.replace('Property',''))}</td>
-                  <td class="prop-td-status"></td>
-                </tr>`;
-              }).join('')}
-            </tbody></table>` : ''}
-            ${other.length > 0 ? `<details class="prop-other-toggle"><summary>${other.length} other properties</summary>
-              <table class="prop-table"><tbody>
-                ${other.map(p => `<tr>
-                  <td class="prop-td-name"><span class="override-dot"></span><span class="prop-name" style="color:var(--text-secondary)">${esc(p.name)}</span></td>
-                  <td class="prop-td-value" style="color:var(--text-muted);font-size:11px">${esc(truncate(p.value, 80))}</td>
-                  <td class="prop-td-type">${esc(p.type.replace('Property',''))}</td>
-                  <td class="prop-td-status"></td>
-                </tr>`).join('')}
-              </tbody></table></details>` : ''}
+            ${renderPropTable(editable, true)}
+            ${nonEditable.length > 0 ? `<details class="prop-other-toggle"><summary>${nonEditable.length} non-editable properties</summary>
+              ${renderPropTable(nonEditable, false)}</details>` : ''}
           </div>
         </details>`;
       }).join('')}
@@ -473,51 +508,48 @@ async function renderDeviceType(params) {
   const className = params.get('class');
   if (!className) return;
 
-  // We need a level path — get it from the active project's first level
   let levelPath = params.get('level');
   if (!levelPath) {
-    try {
-      const levels = await api('/levels');
-      if (levels.length > 0) levelPath = levels[0].filePath;
-    } catch {}
+    try { const lvls = await api('/levels'); if (lvls.length) levelPath = lvls[0].filePath; } catch {}
   }
-  if (!levelPath) { content().innerHTML = '<div class="empty">No level found to scan</div>'; return; }
+  if (!levelPath) { content().innerHTML = '<div class="empty">No level found</div>'; return; }
 
-  content().innerHTML = `<div class="page-header"><h2>Loading...</h2></div><div class="loading"><div class="spinner"></div> Scanning instances...</div>`;
+  const levelName = levelPath.split(/[\\/]/).pop().replace(/\.\w+$/,'');
+  content().innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
   const data = await api(`/levels/devices-by-class?levelPath=${encodeURIComponent(levelPath)}&className=${encodeURIComponent(className)}`);
 
   content().innerHTML = `
+    ${breadcrumb([
+      { label: 'Dashboard', href: '#/' },
+      { label: levelName, href: '#/level?path=' + encodeURIComponent(levelPath) },
+      { label: 'Devices', href: '#/level?path=' + encodeURIComponent(levelPath) + '&tab=devices' },
+      { label: data.displayName }
+    ])}
     <div class="page-header">
       <h2>${esc(data.displayName)}</h2>
-      <div class="subtitle">${esc(data.className)} &mdash; ${data.count} instance(s) ${data.isDevice ? '<span class="badge badge-blue">Device</span>' : '<span class="badge badge-dim">Prop</span>'}</div>
+      <div class="subtitle">${data.count} instance(s) ${data.isDevice ? '<span class="badge badge-blue">Device</span>' : '<span class="badge badge-dim">Prop</span>'}</div>
     </div>
 
-    <div class="search-bar"><input type="text" id="instance-search" placeholder="Search by name or property..."></div>
+    <div class="search-bar"><input type="text" id="instance-search" placeholder="Search instances..."></div>
 
-    <div id="instance-list">
-      ${data.instances.map((inst, i) => `
-        <div class="device-card" data-search="${esc((inst.label + ' ' + (inst.keyProperties||[]).map(p=>p.value).join(' ')).toLowerCase())}">
-          <div class="device-card-header">
-            <div>
-              <strong>${esc(inst.label)}</strong>
-              <span style="color:var(--text-muted);font-size:11px;margin-left:8px">${inst.totalPropertyCount} props (${inst.editableCount} editable)</span>
-            </div>
-            <a href="#/device?path=${encodeURIComponent(inst.filePath)}" class="btn" style="font-size:11px;padding:3px 10px">Inspect</a>
-          </div>
-          ${inst.hasPosition ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Position: (${inst.x.toFixed(0)}, ${inst.y.toFixed(0)}, ${inst.z.toFixed(0)}) &middot; Rotation: ${inst.rotationYaw.toFixed(0)}&deg;</div>` : ''}
-          ${(inst.keyProperties && inst.keyProperties.length > 0) ? `
-            <div class="device-props-preview">
-              ${inst.keyProperties.map(p => `<div class="prop-row"><span class="prop-name">${esc(p.name)}</span><span class="prop-value editable">${esc(truncate(p.value, 50))}</span></div>`).join('')}
-            </div>` : ''}
-        </div>
-      `).join('')}
-    </div>
+    <div class="table-wrapper"><table>
+      <thead><tr><th>Name</th><th style="width:80px">Editable</th><th style="width:60px"></th></tr></thead>
+      <tbody id="instance-list">
+        ${data.instances.map(inst => `
+          <tr data-search="${esc(inst.label.toLowerCase())}">
+            <td><strong>${esc(inst.label)}</strong></td>
+            <td style="color:var(--text-muted);font-size:12px">${inst.editableCount}</td>
+            <td><a href="#/device?path=${encodeURIComponent(inst.filePath)}" class="btn" style="font-size:10px;padding:2px 8px">View</a></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table></div>
   `;
 
   $('#instance-search')?.addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    $$('.device-card').forEach(card => card.style.display = !q || card.dataset.search.includes(q) ? '' : 'none');
+    $$('#instance-list tr').forEach(row => row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none');
   });
 }
 
