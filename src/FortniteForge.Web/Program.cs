@@ -621,6 +621,32 @@ public class Program
             return Results.Ok(indexer.GetMaterials());
         });
 
+        // ========= Favorites =========
+        var favoritesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "favorites.json");
+        var favorites = new HashSet<string>();
+        if (File.Exists(favoritesPath))
+        {
+            try { favorites = JsonSerializer.Deserialize<HashSet<string>>(File.ReadAllText(favoritesPath)) ?? new(); } catch { }
+        }
+        void SaveFavorites()
+        {
+            var dir = Path.GetDirectoryName(favoritesPath)!;
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(favoritesPath, JsonSerializer.Serialize(favorites));
+        }
+
+        api.MapGet("/favorites", () => Results.Ok(favorites));
+
+        api.MapPost("/favorites/toggle", async (HttpContext ctx) =>
+        {
+            var body = await ctx.Request.ReadFromJsonAsync<Dictionary<string, string>>();
+            var path = body?.GetValueOrDefault("path") ?? "";
+            if (string.IsNullOrEmpty(path)) return Results.BadRequest("path required");
+            if (favorites.Contains(path)) favorites.Remove(path); else favorites.Add(path);
+            SaveFavorites();
+            return Results.Ok(new { favorited = favorites.Contains(path), count = favorites.Count });
+        });
+
         // ========= Thumbnail Preview =========
         // Returns raw JPEG image data for assets that have embedded thumbnails
         api.MapGet("/assets/thumbnail", (string path) =>

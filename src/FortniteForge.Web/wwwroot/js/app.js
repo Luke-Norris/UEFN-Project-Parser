@@ -26,7 +26,7 @@ function toast(msg, type = 'info') {
 }
 
 // ========= Router =========
-const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderUserAssetsPage, '/epic-assets': renderEpicAssetsPage, '/asset': renderAssetDetail, '/stats': renderStats, '/audit': renderAudit, '/staged': renderStaged, '/library': renderLibrary, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
+const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderUserAssetsPage, '/epic-assets': renderEpicAssetsPage, '/asset': renderAssetDetail, '/stats': renderStats, '/audit': renderAudit, '/staged': renderStaged, '/library': renderLibrary, '/library/verse': renderVerseFilesPage, '/library/materials': renderMaterialsPage, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
 
 let _currentRoute = null;
 function navigate() {
@@ -932,6 +932,112 @@ function highlightVerse(source) {
   result = result.replace(/:(\s*)([\w_]+)/g, ':<span class="vs-type">$1$2</span>');
 
   return result;
+}
+
+// ========= Verse Files Page =========
+let _favs = null;
+async function getFavs() { if (!_favs) _favs = new Set(await api('/favorites')); return _favs; }
+
+async function renderVerseFilesPage() {
+  content().innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const status = await api('/library/status');
+  if (!status.indexed) { content().innerHTML = `<div class="empty">Library not indexed. <a href="#/library">Build index first</a></div>`; return; }
+
+  const files = await api('/library/verse');
+  const favs = await getFavs();
+
+  // Group by project
+  const groups = {};
+  files.forEach(f => (groups[f.projectName] = groups[f.projectName] || []).push(f));
+  const favFiles = files.filter(f => favs.has(f.filePath));
+
+  content().innerHTML = `
+    ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: 'Verse Files' }])}
+    <div class="page-header"><h2>Verse Files</h2><div class="subtitle">${files.length} files across ${Object.keys(groups).length} projects</div></div>
+    <div class="search-bar" style="margin-bottom:16px"><input type="text" id="vf-search" placeholder="Search verse files..."></div>
+
+    ${favFiles.length > 0 ? `
+      <details class="prop-group" open style="margin-bottom:12px">
+        <summary class="prop-group-header"><span class="prop-group-title" style="color:var(--yellow)">&#9733; Favorites</span><span class="prop-group-count">${favFiles.length}</span></summary>
+        <div class="prop-group-body">${renderVerseTable(favFiles, favs)}</div>
+      </details>` : ''}
+
+    <div id="vf-groups">
+    ${Object.entries(groups).sort((a,b) => b[1].length - a[1].length).map(([proj, pFiles]) => `
+      <details class="prop-group">
+        <summary class="prop-group-header"><span class="prop-group-title"><span class="badge badge-purple" style="font-size:10px">${esc(proj)}</span></span><span class="prop-group-count">${pFiles.length} files</span></summary>
+        <div class="prop-group-body">${renderVerseTable(pFiles, favs)}</div>
+      </details>
+    `).join('')}
+    </div>`;
+
+  $('#vf-search')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    $$('.prop-group').forEach(g => {
+      const rows = $$('tr[data-search]', g);
+      let anyVisible = false;
+      rows.forEach(r => { const show = !q || r.dataset.search.includes(q); r.style.display = show ? '' : 'none'; if (show) anyVisible = true; });
+      // Don't hide favorites group
+      if (!g.querySelector('.prop-group-title')?.textContent?.includes('Favorites'))
+        g.style.display = anyVisible ? '' : 'none';
+    });
+  });
+}
+
+function renderVerseTable(files, favs) {
+  return `<table class="prop-table"><tbody>
+    ${files.map(f => `<tr data-search="${esc((f.name+' '+f.projectName+' '+(f.summary||'')).toLowerCase())}">
+      <td style="width:24px;text-align:center;cursor:pointer" onclick="toggleFav('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}',this)">
+        <span style="color:${favs.has(f.filePath) ? 'var(--yellow)' : 'var(--text-muted)'}">&#9733;</span></td>
+      <td><a href="#" onclick="viewVerseSource('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(f.name)}</a></td>
+      <td style="width:50px;font-size:11px;color:var(--text-muted)">${f.lineCount}L</td>
+      <td style="width:80px"><button class="btn" style="font-size:10px;padding:1px 5px" onclick="toggleVerseSummaryInline(this)">Summary</button></td>
+    </tr>
+    <tr class="verse-summary-row" style="display:none"><td colspan="4" style="padding:6px 12px;background:var(--bg-tertiary);border:none">
+      ${(f.classes||[]).length ? `<span style="font-size:10px;color:var(--text-muted)">Classes:</span> ${f.classes.map(c => `<span class="badge badge-blue" style="font-size:10px">${esc(c)}</span>`).join(' ')} ` : ''}
+      ${(f.functions||[]).length ? `<span style="font-size:10px;color:var(--text-muted)">Fn:</span> ${f.functions.slice(0,8).map(fn => `<span class="badge badge-green" style="font-size:10px">${esc(fn)}</span>`).join(' ')} ` : ''}
+      ${(f.deviceReferences||[]).length ? `<span style="font-size:10px;color:var(--text-muted)">Dev:</span> ${f.deviceReferences.slice(0,5).map(d => `<span class="badge badge-dim" style="font-size:10px">${esc(d)}</span>`).join(' ')}` : ''}
+    </td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+window.toggleVerseSummaryInline = (btn) => {
+  const row = btn.closest('tr').nextElementSibling;
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+};
+
+window.toggleFav = async (path, el) => {
+  await apiPost('/favorites/toggle', { path });
+  _favs = null; // Clear cache
+  const favs = await getFavs();
+  const star = el.querySelector('span');
+  if (star) star.style.color = favs.has(path) ? 'var(--yellow)' : 'var(--text-muted)';
+  toast(favs.has(path) ? 'Added to favorites' : 'Removed from favorites');
+};
+
+// ========= Materials Page =========
+async function renderMaterialsPage() {
+  content().innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const status = await api('/library/status');
+  if (!status.indexed) { content().innerHTML = `<div class="empty">Library not indexed. <a href="#/library">Build index first</a></div>`; return; }
+
+  const mats = await api('/library/materials');
+  content().innerHTML = `
+    ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: 'Materials' }])}
+    <div class="page-header"><h2>Materials</h2><div class="subtitle">${mats.length} materials across the library</div></div>
+    <div class="search-bar" style="margin-bottom:12px"><input type="text" id="mat-search" placeholder="Search materials..."></div>
+    <div class="table-wrapper"><table><thead><tr><th>Material</th><th>Type</th><th>Path</th></tr></thead><tbody id="mat-list">
+      ${mats.map(m => `<tr data-search="${esc((m.name+' '+m.assetClass+' '+m.relativePath).toLowerCase())}">
+        <td><strong>${esc(m.name)}</strong></td>
+        <td><span class="badge badge-dim">${esc(m.assetClass)}</span></td>
+        <td style="font-size:11px;color:var(--text-muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.relativePath)}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+
+  $('#mat-search')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    $$('#mat-list tr').forEach(r => r.style.display = !q || r.dataset.search.includes(q) ? '' : 'none');
+  });
 }
 
 // ========= Statistics =========
