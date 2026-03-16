@@ -529,7 +529,7 @@ public class Program
                     }
 
                     // Apply the value change
-                    PropertyValueSetter.SetPropertyValue(asset, prop, change.NewValue);
+                    FortniteForge.Core.Services.PropertyValueSetter.SetPropertyValue(asset, prop, change.NewValue);
                     asset.Write(writePath);
 
                     results.Add(new { change.PropertyName, success = true, writePath });
@@ -803,32 +803,4 @@ public class PendingChange
     public string DeviceName { get; set; } = "";
 }
 
-public static class PropertyValueSetter
-{
-    public static void SetPropertyValue(UAssetAPI.UAsset asset, UAssetAPI.PropertyTypes.Objects.PropertyData prop, string newValue)
-    {
-        switch (prop)
-        {
-            case UAssetAPI.PropertyTypes.Objects.BoolPropertyData b:
-                b.Value = bool.Parse(newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.IntPropertyData i:
-                i.Value = int.Parse(newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.FloatPropertyData f:
-                f.Value = float.Parse(newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.DoublePropertyData d:
-                d.Value = double.Parse(newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.StrPropertyData s:
-                s.Value = UAssetAPI.UnrealTypes.FString.FromString(newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.NamePropertyData n:
-                n.Value = UAssetAPI.UnrealTypes.FName.FromString(asset, newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.EnumPropertyData e:
-                e.Value = UAssetAPI.UnrealTypes.FName.FromString(asset, newValue); break;
-            case UAssetAPI.PropertyTypes.Objects.BytePropertyData bp:
-                if (byte.TryParse(newValue, out var bv)) bp.Value = bv;
-                else bp.EnumValue = UAssetAPI.UnrealTypes.FName.FromString(asset, newValue);
-                break;
-            default:
-                throw new NotSupportedException($"Cannot set value on {prop.GetType().Name}. Supported: Bool, Int, Float, Double, String, Name, Enum, Byte.");
-        }
-    }
-}
+// PropertyValueSetter is now in FortniteForge.Core.Services
