@@ -635,6 +635,29 @@ td a:hover { text-decoration: underline; }
   font-size: 13px;
 }
 
+/* Verse Syntax Highlighting */
+.verse-source {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+.verse-source pre {
+  margin: 0;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  color: var(--text-primary);
+}
+.vs-keyword { color: #ff7b72; font-weight: 600; }
+.vs-builtin { color: #d2a8ff; }
+.vs-string { color: #a5d6ff; }
+.vs-number { color: #79c0ff; }
+.vs-comment { color: #8b949e; font-style: italic; }
+.vs-decorator { color: #ffa657; font-weight: 600; }
+.vs-type { color: #7ee787; }
+
 .prop-name { color: var(--purple); font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px; }
 .prop-value { color: var(--text-primary); word-break: break-all; }
 .prop-type { color: var(--text-muted); font-size: 11px; }

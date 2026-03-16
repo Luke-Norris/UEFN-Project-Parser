@@ -837,17 +837,31 @@ async function renderLibrary() {
     const files = await api('/library/verse');
     $('#lib-browse-results').innerHTML = `<h3 style="margin-bottom:8px">All Verse Files (${files.length})</h3>
       <div class="search-bar" style="margin-bottom:8px"><input type="text" id="verse-filter" placeholder="Filter verse files..."></div>
-      <div class="table-wrapper"><table><thead><tr><th>File</th><th>Project</th><th>Lines</th><th>Summary</th></tr></thead><tbody id="verse-list">
-        ${files.map(f => `<tr data-search="${esc((f.name+' '+f.projectName+' '+f.summary).toLowerCase())}">
+      <div class="table-wrapper"><table><thead><tr><th>File</th><th>Project</th><th>Lines</th><th style="width:120px"></th></tr></thead><tbody id="verse-list">
+        ${files.map((f, i) => `<tr data-search="${esc((f.name+' '+f.projectName+' '+(f.summary||'')+' '+(f.classes||[]).join(' ')+' '+(f.functions||[]).join(' ')).toLowerCase())}">
           <td><a href="#" onclick="viewVerseSource('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(f.name)}</a></td>
           <td><span class="badge badge-purple">${esc(f.projectName)}</span></td>
           <td>${f.lineCount}</td>
-          <td style="font-size:11px;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.summary)}</td>
+          <td><button class="btn" style="font-size:10px;padding:2px 6px" onclick="toggleVerseSummary(this,${i})">Summary</button></td>
+        </tr>
+        <tr class="verse-summary-row" id="vs-${i}" style="display:none" data-search="${esc((f.name+' '+f.projectName).toLowerCase())}">
+          <td colspan="4" style="padding:8px 16px;background:var(--bg-tertiary);border:none">
+            ${(f.classes||[]).length ? `<div style="margin-bottom:4px"><span style="font-size:10px;color:var(--text-muted)">Classes:</span> ${f.classes.map(c => `<span class="badge badge-blue" style="font-size:10px;margin-right:4px">${esc(c)}</span>`).join('')}</div>` : ''}
+            ${(f.functions||[]).length ? `<div style="margin-bottom:4px"><span style="font-size:10px;color:var(--text-muted)">Functions:</span> ${f.functions.map(fn => `<span class="badge badge-green" style="font-size:10px;margin-right:4px">${esc(fn)}</span>`).join('')}</div>` : ''}
+            ${(f.deviceReferences||[]).length ? `<div><span style="font-size:10px;color:var(--text-muted)">Devices:</span> ${f.deviceReferences.map(d => `<span class="badge badge-purple" style="font-size:10px;margin-right:4px">${esc(d)}</span>`).join('')}</div>` : ''}
+            ${!(f.classes||[]).length && !(f.functions||[]).length ? '<div style="font-size:11px;color:var(--text-muted)">No classes or functions detected</div>' : ''}
+          </td>
         </tr>`).join('')}
       </tbody></table></div>`;
     $('#verse-filter')?.addEventListener('input', e => {
       const q = e.target.value.toLowerCase();
-      $$('#verse-list tr').forEach(r => r.style.display = !q || r.dataset.search.includes(q) ? '' : 'none');
+      $$('#verse-list tr:not(.verse-summary-row)').forEach(r => {
+        const show = !q || r.dataset.search.includes(q);
+        r.style.display = show ? '' : 'none';
+        // Also hide corresponding summary row
+        const next = r.nextElementSibling;
+        if (next?.classList.contains('verse-summary-row') && !show) next.style.display = 'none';
+      });
     });
   });
 
@@ -872,15 +886,53 @@ async function renderLibrary() {
   });
 }
 
+window.toggleVerseSummary = (btn, idx) => {
+  const row = $(`#vs-${idx}`);
+  if (row) { row.style.display = row.style.display === 'none' ? '' : 'none'; }
+};
+
 window.viewVerseSource = async (path) => {
   try {
     const data = await api(`/library/verse/source?path=${encodeURIComponent(path)}`);
     content().innerHTML = `
       ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: data.name }])}
       <div class="page-header"><h2>${esc(data.name)}</h2></div>
-      <pre style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto;font-size:12px;line-height:1.6;color:var(--text-primary);font-family:'Cascadia Code','Fira Code',monospace">${esc(data.source)}</pre>`;
+      <div class="verse-source"><pre><code>${highlightVerse(data.source)}</code></pre></div>`;
   } catch (err) { toast(err.message, 'error'); }
 };
+
+function highlightVerse(source) {
+  // Verse syntax highlighting
+  const keywords = ['using','var','let','set','if','else','for','loop','return','break','class','interface','struct','enum','module','where','case','then','do','block','spawn','sync','rush','race','branch','defer','not','and','or','true','false','self','super','new','array','map','option','logic','int','float','string','char','void','type','of','is','extends'];
+  const builtins = ['Print','Sleep','Await','MakeMessage','ToString','Log','GetPlayspace','GetPlayers','Eliminate','Respawn','Enable','Disable','Activate','Deactivate','Subscribe','Signal','Send','Receive','SetText','GetTransform','SetTransform','TeleportTo','MoveTo'];
+
+  let result = esc(source);
+
+  // Comments (# line comments)
+  result = result.replace(/(#[^\n]*)/g, '<span class="vs-comment">$1</span>');
+
+  // Strings
+  result = result.replace(/(&quot;[^&]*?&quot;)/g, '<span class="vs-string">$1</span>');
+
+  // Numbers
+  result = result.replace(/\b(\d+\.?\d*)\b/g, '<span class="vs-number">$1</span>');
+
+  // Keywords
+  const kwPattern = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
+  result = result.replace(kwPattern, '<span class="vs-keyword">$1</span>');
+
+  // Builtins
+  const biPattern = new RegExp(`\\b(${builtins.join('|')})\\b`, 'g');
+  result = result.replace(biPattern, '<span class="vs-builtin">$1</span>');
+
+  // Decorators (@editable, @replicated)
+  result = result.replace(/(@\w+)/g, '<span class="vs-decorator">$1</span>');
+
+  // Type annotations after :
+  result = result.replace(/:(\s*)([\w_]+)/g, ':<span class="vs-type">$1$2</span>');
+
+  return result;
+}
 
 // ========= Statistics =========
 async function renderStats() {
