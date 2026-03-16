@@ -590,7 +590,19 @@ public class Program
                 var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
                 indexer.LoadIndex(savePath);
             }
-            return Results.Ok(indexer.GetVerseFiles(filter));
+            var files = indexer.GetVerseFiles(filter);
+            // Return as proper objects (not tuples)
+            return Results.Ok(files.Select(f => new
+            {
+                projectName = f.ProjectName,
+                name = f.File.Name,
+                filePath = f.File.FilePath,
+                lineCount = f.File.LineCount,
+                classes = f.File.Classes,
+                functions = f.File.Functions,
+                deviceReferences = f.File.DeviceReferences,
+                summary = f.File.Summary
+            }));
         });
 
         api.MapGet("/library/verse/source", (string path) =>

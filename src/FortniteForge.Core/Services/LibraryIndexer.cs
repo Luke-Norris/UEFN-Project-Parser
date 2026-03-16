@@ -173,19 +173,19 @@ public class LibraryIndexer
     /// <summary>
     /// Gets all verse files with optional keyword filter.
     /// </summary>
-    public List<(string ProjectName, VerseFileEntry File)> GetVerseFiles(string? filter = null)
+    public List<VerseFileWithProject> GetVerseFiles(string? filter = null)
     {
         if (_index == null) return new();
-        var results = new List<(string, VerseFileEntry)>();
+        var results = new List<VerseFileWithProject>();
 
         foreach (var p in _index.Projects)
             foreach (var vf in p.VerseFiles)
                 if (filter == null || vf.SearchText.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                    results.Add((p.Name, vf));
+                    results.Add(new VerseFileWithProject { ProjectName = p.Name, File = vf });
 
         foreach (var vf in _index.StandaloneVerseFiles)
             if (filter == null || vf.SearchText.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                results.Add((vf.PackName ?? "Standalone", vf));
+                results.Add(new VerseFileWithProject { ProjectName = vf.PackName ?? "Standalone", File = vf });
 
         return results;
     }
@@ -410,6 +410,12 @@ public class LibrarySearchResult
     public List<SearchHit<VerseFileEntry>> VerseFiles { get; set; } = new();
     public List<SearchHit<AssetEntry>> Assets { get; set; } = new();
     public List<SearchHit<DeviceTypeEntry>> DeviceTypes { get; set; } = new();
+}
+
+public class VerseFileWithProject
+{
+    public string ProjectName { get; set; } = "";
+    public VerseFileEntry File { get; set; } = new();
 }
 
 public class SearchHit<T>

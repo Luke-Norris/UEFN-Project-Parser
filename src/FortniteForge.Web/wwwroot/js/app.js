@@ -836,14 +836,19 @@ async function renderLibrary() {
     $('#lib-browse-results').innerHTML = '<div class="loading" style="padding:8px"><div class="spinner"></div></div>';
     const files = await api('/library/verse');
     $('#lib-browse-results').innerHTML = `<h3 style="margin-bottom:8px">All Verse Files (${files.length})</h3>
-      <div class="table-wrapper"><table><thead><tr><th>File</th><th>Project</th><th>Lines</th><th>Summary</th></tr></thead><tbody>
-        ${files.map(f => `<tr>
-          <td><a href="#" onclick="viewVerseSource('${esc(f.item2.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(f.item2.name)}</a></td>
-          <td><span class="badge badge-purple">${esc(f.item1)}</span></td>
-          <td>${f.item2.lineCount}</td>
-          <td style="font-size:11px;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.item2.summary)}</td>
+      <div class="search-bar" style="margin-bottom:8px"><input type="text" id="verse-filter" placeholder="Filter verse files..."></div>
+      <div class="table-wrapper"><table><thead><tr><th>File</th><th>Project</th><th>Lines</th><th>Summary</th></tr></thead><tbody id="verse-list">
+        ${files.map(f => `<tr data-search="${esc((f.name+' '+f.projectName+' '+f.summary).toLowerCase())}">
+          <td><a href="#" onclick="viewVerseSource('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(f.name)}</a></td>
+          <td><span class="badge badge-purple">${esc(f.projectName)}</span></td>
+          <td>${f.lineCount}</td>
+          <td style="font-size:11px;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.summary)}</td>
         </tr>`).join('')}
       </tbody></table></div>`;
+    $('#verse-filter')?.addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      $$('#verse-list tr').forEach(r => r.style.display = !q || r.dataset.search.includes(q) ? '' : 'none');
+    });
   });
 
   $('#lib-mat-btn').addEventListener('click', async () => {

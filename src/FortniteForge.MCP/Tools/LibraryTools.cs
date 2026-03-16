@@ -102,11 +102,11 @@ public class LibraryTools
 
         var output = new List<string> { $"Verse files{(filter != null ? $" matching '{filter}'" : "")}: {files.Count}\n" };
 
-        foreach (var (project, vf) in files.Take(30))
+        foreach (var f in files.Take(30))
         {
-            output.Add($"  [{project}] {vf.Name} ({vf.LineCount} lines)");
-            if (!string.IsNullOrEmpty(vf.Summary))
-                output.Add($"    {vf.Summary}");
+            output.Add($"  [{f.ProjectName}] {f.File.Name} ({f.File.LineCount} lines)");
+            if (!string.IsNullOrEmpty(f.File.Summary))
+                output.Add($"    {f.File.Summary}");
         }
 
         return string.Join("\n", output);
