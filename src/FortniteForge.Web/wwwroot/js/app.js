@@ -891,13 +891,25 @@ window.toggleVerseSummary = (btn, idx) => {
   if (row) { row.style.display = row.style.display === 'none' ? '' : 'none'; }
 };
 
+window.openInExplorer = async (path) => {
+  try { await apiPost('/open-in-explorer', { path }); toast('Opened in Explorer'); }
+  catch (err) { toast(err.message, 'error'); }
+};
+
 window.viewVerseSource = async (path) => {
   try {
     const data = await api(`/library/verse/source?path=${encodeURIComponent(path)}`);
     content().innerHTML = `
-      ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: data.name }])}
-      <div class="page-header"><h2>${esc(data.name)}</h2></div>
-      <div class="verse-source"><pre><code>${highlightVerse(data.source)}</code></pre></div>`;
+      ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: 'Verse Files', href: '#/library/verse' }, { label: data.name }])}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="page-header" style="margin-bottom:0"><h2>${esc(data.name)}</h2></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn" style="font-size:11px" onclick="navigator.clipboard.writeText(document.getElementById('verse-raw').textContent);toast('Copied to clipboard','success')">Copy Source</button>
+          <button class="btn" style="font-size:11px" onclick="openInExplorer('${esc(path).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">Open in Explorer</button>
+        </div>
+      </div>
+      <div class="verse-source"><pre><code>${highlightVerse(data.source)}</code></pre></div>
+      <pre id="verse-raw" style="display:none">${esc(data.source)}</pre>`;
   } catch (err) { toast(err.message, 'error'); }
 };
 
@@ -973,6 +985,7 @@ async function renderVerseFilesPage() {
             <span class="badge badge-purple" style="font-size:10px">${esc(proj)}</span>
             <a href="#" onclick="viewVerseSource('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false" style="flex:1;font-size:12px">${esc(f.name)}</a>
             <span style="font-size:11px;color:var(--text-muted)">${f.lineCount}L</span>
+            <span class="icon-btn" onclick="openInExplorer('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="Open in Explorer">&#128194;</span>
           </div>
         </div>`;
       }
@@ -1007,7 +1020,10 @@ function renderVerseTable(files, favs) {
         <span style="color:${favs.has(f.filePath) ? 'var(--yellow)' : 'var(--text-muted)'}">&#9733;</span></td>
       <td><a href="#" onclick="viewVerseSource('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(f.name)}</a></td>
       <td style="width:50px;font-size:11px;color:var(--text-muted)">${f.lineCount}L</td>
-      <td style="width:80px"><button class="btn" style="font-size:10px;padding:1px 5px" onclick="toggleVerseSummaryInline(this)">Summary</button></td>
+      <td style="width:100px;white-space:nowrap">
+        <button class="btn" style="font-size:10px;padding:1px 5px" onclick="toggleVerseSummaryInline(this)">Summary</button>
+        <span class="icon-btn" onclick="openInExplorer('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="Open in Explorer">&#128194;</span>
+      </td>
     </tr>
     <tr class="verse-summary-row" style="display:none"><td colspan="4" style="padding:6px 12px;background:var(--bg-tertiary);border:none">
       ${(f.classes||[]).length ? `<span style="font-size:10px;color:var(--text-muted)">Classes:</span> ${f.classes.map(c => `<span class="badge badge-blue" style="font-size:10px">${esc(c)}</span>`).join(' ')} ` : ''}
@@ -1038,22 +1054,58 @@ async function renderMaterialsPage() {
   if (!status.indexed) { content().innerHTML = `<div class="empty">Library not indexed. <a href="#/library">Build index first</a></div>`; return; }
 
   const mats = await api('/library/materials');
+  let viewMode = 'grid';
+
   content().innerHTML = `
     ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: 'Materials' }])}
-    <div class="page-header"><h2>Materials</h2><div class="subtitle">${mats.length} materials across the library</div></div>
-    <div class="search-bar" style="margin-bottom:12px"><input type="text" id="mat-search" placeholder="Search materials..."></div>
-    <div class="table-wrapper"><table><thead><tr><th>Material</th><th>Type</th><th>Path</th></tr></thead><tbody id="mat-list">
-      ${mats.map(m => `<tr data-search="${esc((m.name+' '+m.assetClass+' '+m.relativePath).toLowerCase())}">
+    <div class="page-header"><h2>Materials</h2><div class="subtitle">${mats.length} materials</div></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+      <div class="search-bar" style="flex:1;margin-bottom:0"><input type="text" id="mat-search" placeholder="Search materials..."></div>
+      <div style="display:flex;gap:4px">
+        <button class="btn view-btn active" data-view="grid" style="font-size:11px;padding:3px 8px">Grid</button>
+        <button class="btn view-btn" data-view="list" style="font-size:11px;padding:3px 8px">List</button>
+      </div>
+    </div>
+    <div id="mat-list"></div>`;
+
+  const renderGrid = (filtered) => {
+    if (!filtered.length) { $('#mat-list').innerHTML = '<div class="empty">No matches</div>'; return; }
+    $('#mat-list').innerHTML = `<div class="asset-grid">${filtered.slice(0,200).map(m =>
+      `<div class="asset-tile" title="${esc(m.name)}\n${esc(m.assetClass)}">
+        <div class="asset-tile-thumb">${m.hasThumbnail
+          ? `<img src="/api/assets/thumbnail?path=${encodeURIComponent(m.filePath)}" loading="lazy">`
+          : `<span class="thumb-placeholder">MAT</span>`}</div>
+        <div class="asset-tile-name">${esc(m.name)}</div>
+        <div class="asset-tile-class" style="display:flex;justify-content:space-between;align-items:center">
+          <span>${esc(m.assetClass)}</span>
+          <span class="icon-btn" onclick="openInExplorer('${esc(m.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="Open in Explorer">&#128194;</span>
+        </div>
+      </div>`).join('')}</div>`;
+  };
+
+  const renderList = (filtered) => {
+    if (!filtered.length) { $('#mat-list').innerHTML = '<div class="empty">No matches</div>'; return; }
+    $('#mat-list').innerHTML = `<div class="table-wrapper"><table><thead><tr><th></th><th>Material</th><th>Type</th><th></th></tr></thead><tbody>
+      ${filtered.slice(0,200).map(m => `<tr>
+        <td style="width:32px;padding:4px">${m.hasThumbnail ? `<img src="/api/assets/thumbnail?path=${encodeURIComponent(m.filePath)}" style="width:28px;height:28px;border-radius:3px;object-fit:cover" loading="lazy">` : ''}</td>
         <td><strong>${esc(m.name)}</strong></td>
         <td><span class="badge badge-dim">${esc(m.assetClass)}</span></td>
-        <td style="font-size:11px;color:var(--text-muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.relativePath)}</td>
+        <td style="width:30px"><span class="icon-btn" onclick="openInExplorer('${esc(m.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="Open in Explorer">&#128194;</span></td>
       </tr>`).join('')}
     </tbody></table></div>`;
+  };
 
-  $('#mat-search')?.addEventListener('input', e => {
-    const q = e.target.value.toLowerCase();
-    $$('#mat-list tr').forEach(r => r.style.display = !q || r.dataset.search.includes(q) ? '' : 'none');
-  });
+  const render = (f) => { if (viewMode === 'grid') renderGrid(f); else renderList(f); };
+  const filter = () => { const q = $('#mat-search').value.toLowerCase(); render(mats.filter(m => !q || m.name.toLowerCase().includes(q) || m.assetClass.toLowerCase().includes(q))); };
+
+  $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
+    $$('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.view;
+    filter();
+  }));
+  $('#mat-search').addEventListener('input', filter);
+  filter();
 }
 
 // ========= Statistics =========

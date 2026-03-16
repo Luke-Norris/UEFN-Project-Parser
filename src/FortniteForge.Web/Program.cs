@@ -621,6 +621,21 @@ public class Program
             return Results.Ok(indexer.GetMaterials());
         });
 
+        // ========= Open in Explorer =========
+        api.MapPost("/open-in-explorer", async (HttpContext ctx) =>
+        {
+            var body = await ctx.Request.ReadFromJsonAsync<Dictionary<string, string>>();
+            var path = body?.GetValueOrDefault("path") ?? "";
+            if (string.IsNullOrEmpty(path)) return Results.BadRequest("path required");
+            try
+            {
+                var target = File.Exists(path) ? Path.GetDirectoryName(path)! : path;
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = "explorer.exe", Arguments = $"\"{target}\"" });
+                return Results.Ok(new { opened = target });
+            }
+            catch (Exception ex) { return Results.Problem(ex.Message); }
+        });
+
         // ========= Favorites =========
         var favoritesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "favorites.json");
         var favorites = new HashSet<string>();
