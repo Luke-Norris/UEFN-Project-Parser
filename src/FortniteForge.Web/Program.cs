@@ -51,6 +51,7 @@ public class Program
         builder.Services.AddSingleton<AssetCatalog>();
         builder.Services.AddSingleton<MapGenerator>();
         builder.Services.AddSingleton<LevelAnalyticsService>();
+        builder.Services.AddSingleton<LibraryIndexer>();
 
         builder.Services.ConfigureHttpJsonOptions(opts =>
         {
@@ -543,6 +544,69 @@ public class Program
             var applied = results.Count(r => ((dynamic)r).success);
             pendingChanges.Clear();
             return Results.Ok(new { applied, total = results.Count, results });
+        });
+
+        // ========= Library =========
+        api.MapPost("/library/build", async (LibraryIndexer indexer, HttpContext ctx) =>
+        {
+            var body = await ctx.Request.ReadFromJsonAsync<Dictionary<string, string>>();
+            var path = body?.GetValueOrDefault("path") ?? "";
+            if (!Directory.Exists(path)) return Results.BadRequest("Directory not found");
+
+            var index = indexer.BuildIndex(path);
+            var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+            indexer.SaveIndex(savePath);
+
+            return Results.Ok(new { index.TotalVerseFiles, index.TotalAssets, index.TotalDeviceTypes, ProjectCount = index.Projects.Count, savedTo = savePath });
+        });
+
+        api.MapGet("/library/status", (LibraryIndexer indexer) =>
+        {
+            var idx = indexer.Index;
+            if (idx == null)
+            {
+                // Try to load from disk
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                idx = indexer.LoadIndex(savePath);
+            }
+            if (idx == null) return Results.Ok(new { indexed = false });
+            return Results.Ok(new { indexed = true, idx.TotalVerseFiles, idx.TotalAssets, idx.TotalDeviceTypes, ProjectCount = idx.Projects.Count, idx.IndexedAt, idx.LibraryPath });
+        });
+
+        api.MapGet("/library/search", (LibraryIndexer indexer, string q) =>
+        {
+            if (indexer.Index == null)
+            {
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                indexer.LoadIndex(savePath);
+            }
+            return Results.Ok(indexer.Search(q));
+        });
+
+        api.MapGet("/library/verse", (LibraryIndexer indexer, string? filter) =>
+        {
+            if (indexer.Index == null)
+            {
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                indexer.LoadIndex(savePath);
+            }
+            return Results.Ok(indexer.GetVerseFiles(filter));
+        });
+
+        api.MapGet("/library/verse/source", (string path) =>
+        {
+            if (!File.Exists(path) || !path.EndsWith(".verse")) return Results.NotFound();
+            return Results.Ok(new { source = File.ReadAllText(path), name = Path.GetFileName(path) });
+        });
+
+        api.MapGet("/library/materials", (LibraryIndexer indexer) =>
+        {
+            if (indexer.Index == null)
+            {
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                indexer.LoadIndex(savePath);
+            }
+            return Results.Ok(indexer.GetMaterials());
         });
 
         // ========= Thumbnail Preview =========

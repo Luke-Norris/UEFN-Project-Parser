@@ -4,6 +4,7 @@ using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 using UAssetAPI;
+using UAssetAPI.UnrealTypes;
 
 namespace FortniteForge.MCP.Tools;
 
@@ -149,7 +150,7 @@ public class UtilityTools
         [Description("Path to the .uasset or .umap file")] string assetPath,
         [Description("Only export a specific export by index (omit for all)")] int? exportIndex = null)
     {
-        var asset = new UAsset(assetPath, EngineVersion.VER_FORTNITE_LATEST);
+        var asset = new UAsset(assetPath, EngineVersion.VER_UE5_4);
 
         if (exportIndex.HasValue)
         {

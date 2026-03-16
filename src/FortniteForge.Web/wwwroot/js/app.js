@@ -26,7 +26,7 @@ function toast(msg, type = 'info') {
 }
 
 // ========= Router =========
-const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderUserAssetsPage, '/epic-assets': renderEpicAssetsPage, '/asset': renderAssetDetail, '/stats': renderStats, '/audit': renderAudit, '/staged': renderStaged, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
+const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderUserAssetsPage, '/epic-assets': renderEpicAssetsPage, '/asset': renderAssetDetail, '/stats': renderStats, '/audit': renderAudit, '/staged': renderStaged, '/library': renderLibrary, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
 
 let _currentRoute = null;
 function navigate() {
@@ -730,6 +730,152 @@ async function renderAssetDetail(params) {
     }
   } catch { thumb.innerHTML = '<div class="thumb-placeholder">No Preview</div>'; }
 }
+
+// ========= Library =========
+async function renderLibrary() {
+  content().innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const status = await api('/library/status');
+
+  if (!status.indexed) {
+    content().innerHTML = `
+      <div class="page-header"><h2>Library</h2><div class="subtitle">UEFN asset and verse reference library</div></div>
+      <div class="card" style="max-width:500px">
+        <p style="margin-bottom:12px;font-size:13px">Build a searchable index of all UEFN projects, verse files, and assets in your map collection.</p>
+        <div class="search-bar" style="margin-bottom:8px">
+          <input type="text" id="lib-path" placeholder="Path to UEFN library" value="Z:\\UEFN_Resources\\mapContent">
+          <button class="btn" id="lib-browse">Browse</button>
+        </div>
+        <button class="btn btn-primary" id="lib-build">Build Library Index</button>
+        <div id="lib-status" style="margin-top:8px"></div>
+      </div>`;
+
+    $('#lib-browse').addEventListener('click', () => pickFolder('lib-path'));
+    $('#lib-build').addEventListener('click', async () => {
+      const path = $('#lib-path').value.trim();
+      if (!path) return;
+      $('#lib-status').innerHTML = '<div class="loading" style="padding:8px"><div class="spinner"></div> Indexing (this may take a few minutes)...</div>';
+      try {
+        const result = await apiPost('/library/build', { path });
+        toast(`Library indexed: ${result.totalVerseFiles} verse, ${result.totalAssets} assets`, 'success');
+        _currentRoute = null; renderLibrary();
+      } catch (err) { $('#lib-status').innerHTML = `<div style="color:var(--red);font-size:12px">${esc(err.message)}</div>`; }
+    });
+    return;
+  }
+
+  // Library is indexed — show search + browse
+  content().innerHTML = `
+    <div class="page-header"><h2>Library</h2><div class="subtitle">Indexed ${status.indexedAt ? new Date(status.indexedAt).toLocaleString() : ''} &mdash; ${status.projectCount} projects</div></div>
+    <div class="card-grid" style="margin-bottom:16px">
+      <div class="card"><div class="card-label">Verse Files</div><div class="card-value accent">${status.totalVerseFiles}</div></div>
+      <div class="card"><div class="card-label">Assets</div><div class="card-value purple">${status.totalAssets}</div></div>
+      <div class="card"><div class="card-label">Device Types</div><div class="card-value green">${status.totalDeviceTypes}</div></div>
+      <div class="card"><div class="card-label">Projects</div><div class="card-value">${status.projectCount}</div></div>
+    </div>
+
+    <div class="search-bar" style="margin-bottom:16px">
+      <input type="text" id="lib-search" placeholder="Search library (e.g. ranked system, vending machine, damage volume)...">
+      <button class="btn btn-primary" id="lib-search-btn">Search</button>
+    </div>
+    <div id="lib-results"></div>
+
+    <div style="margin-top:24px;display:flex;gap:8px">
+      <button class="btn" id="lib-verse-btn">Browse Verse Files</button>
+      <button class="btn" id="lib-mat-btn">Browse Materials</button>
+      <button class="btn btn-danger" style="font-size:11px" id="lib-rebuild">Rebuild Index</button>
+    </div>
+    <div id="lib-browse-results" style="margin-top:16px"></div>
+  `;
+
+  const doSearch = async () => {
+    const q = $('#lib-search').value.trim();
+    if (!q) return;
+    $('#lib-results').innerHTML = '<div class="loading" style="padding:8px"><div class="spinner"></div></div>';
+    const result = await api(`/library/search?q=${encodeURIComponent(q)}`);
+
+    let html = '';
+    if (result.verseFiles.length) {
+      html += `<h3 style="margin:12px 0 8px">Verse Files (${result.verseFiles.length})</h3>
+        <div class="table-wrapper"><table><thead><tr><th>File</th><th>Project</th><th>Lines</th><th>Summary</th></tr></thead><tbody>
+          ${result.verseFiles.map(h => `<tr>
+            <td><a href="#" onclick="viewVerseSource('${esc(h.item.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(h.item.name)}</a></td>
+            <td><span class="badge badge-purple">${esc(h.projectName)}</span></td>
+            <td>${h.item.lineCount}</td>
+            <td style="font-size:11px;color:var(--text-secondary)">${esc(h.item.summary)}</td>
+          </tr>`).join('')}
+        </tbody></table></div>`;
+    }
+    if (result.assets.length) {
+      html += `<h3 style="margin:12px 0 8px">Assets (${result.assets.length})</h3>
+        <div class="table-wrapper"><table><thead><tr><th>Asset</th><th>Project</th><th>Type</th></tr></thead><tbody>
+          ${result.assets.map(h => `<tr>
+            <td>${esc(h.item.name)}</td>
+            <td><span class="badge badge-purple">${esc(h.projectName)}</span></td>
+            <td><span class="badge badge-dim">${esc(h.item.assetClass)}</span></td>
+          </tr>`).join('')}
+        </tbody></table></div>`;
+    }
+    if (result.deviceTypes.length) {
+      html += `<h3 style="margin:12px 0 8px">Device Types (${result.deviceTypes.length})</h3>
+        <div class="table-wrapper"><table><thead><tr><th>Device</th><th>Project</th><th>Count</th></tr></thead><tbody>
+          ${result.deviceTypes.map(h => `<tr>
+            <td>${esc(h.item.displayName)}</td>
+            <td><span class="badge badge-purple">${esc(h.projectName)}</span></td>
+            <td>${h.item.count}</td>
+          </tr>`).join('')}
+        </tbody></table></div>`;
+    }
+    if (!html) html = '<div class="empty">No results found</div>';
+    $('#lib-results').innerHTML = html;
+  };
+
+  $('#lib-search-btn').addEventListener('click', doSearch);
+  $('#lib-search').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  $('#lib-verse-btn').addEventListener('click', async () => {
+    $('#lib-browse-results').innerHTML = '<div class="loading" style="padding:8px"><div class="spinner"></div></div>';
+    const files = await api('/library/verse');
+    $('#lib-browse-results').innerHTML = `<h3 style="margin-bottom:8px">All Verse Files (${files.length})</h3>
+      <div class="table-wrapper"><table><thead><tr><th>File</th><th>Project</th><th>Lines</th><th>Summary</th></tr></thead><tbody>
+        ${files.map(f => `<tr>
+          <td><a href="#" onclick="viewVerseSource('${esc(f.item2.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false">${esc(f.item2.name)}</a></td>
+          <td><span class="badge badge-purple">${esc(f.item1)}</span></td>
+          <td>${f.item2.lineCount}</td>
+          <td style="font-size:11px;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.item2.summary)}</td>
+        </tr>`).join('')}
+      </tbody></table></div>`;
+  });
+
+  $('#lib-mat-btn').addEventListener('click', async () => {
+    $('#lib-browse-results').innerHTML = '<div class="loading" style="padding:8px"><div class="spinner"></div></div>';
+    const mats = await api('/library/materials');
+    $('#lib-browse-results').innerHTML = `<h3 style="margin-bottom:8px">Materials (${mats.length})</h3>
+      <div class="table-wrapper"><table><thead><tr><th>Material</th><th>Type</th><th>Path</th></tr></thead><tbody>
+        ${mats.map(m => `<tr><td>${esc(m.name)}</td><td><span class="badge badge-dim">${esc(m.assetClass)}</span></td><td style="font-size:11px;color:var(--text-muted)">${esc(m.relativePath)}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  });
+
+  $('#lib-rebuild').addEventListener('click', async () => {
+    const path = prompt('Library path:', status.libraryPath || 'Z:\\UEFN_Resources\\mapContent\\map_resources');
+    if (!path) return;
+    toast('Rebuilding library index...', 'info');
+    try {
+      await apiPost('/library/build', { path });
+      toast('Library rebuilt', 'success');
+      _currentRoute = null; renderLibrary();
+    } catch (err) { toast(err.message, 'error'); }
+  });
+}
+
+window.viewVerseSource = async (path) => {
+  try {
+    const data = await api(`/library/verse/source?path=${encodeURIComponent(path)}`);
+    content().innerHTML = `
+      ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: data.name }])}
+      <div class="page-header"><h2>${esc(data.name)}</h2></div>
+      <pre style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-x:auto;font-size:12px;line-height:1.6;color:var(--text-primary);font-family:'Cascadia Code','Fira Code',monospace">${esc(data.source)}</pre>`;
+  } catch (err) { toast(err.message, 'error'); }
+};
 
 // ========= Statistics =========
 async function renderStats() {

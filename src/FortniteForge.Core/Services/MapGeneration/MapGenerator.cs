@@ -624,6 +624,13 @@ public class MapGenerator
 
     // ========= Helpers =========
 
+    private static PoiTemplate PickPoiTemplate(BiomeConfig biome, Random rng)
+    {
+        if (biome.PoiTemplates.Count > 0)
+            return biome.PoiTemplates[rng.Next(biome.PoiTemplates.Count)];
+        return PoiTemplate.SmallOutpost;
+    }
+
     private static Vector3Info GetEdgePosition(Vector3Info center, float radius, Random rng)
     {
         var angle = (float)(rng.NextDouble() * 2 * Math.PI);

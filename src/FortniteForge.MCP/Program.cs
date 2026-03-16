@@ -78,6 +78,7 @@ public class Program
         builder.Services.AddSingleton<VerseDeviceGenerator>();
         builder.Services.AddSingleton<LevelAnalyticsService>();
         builder.Services.AddSingleton<VerseReferenceService>();
+        builder.Services.AddSingleton<LibraryIndexer>();
 
         // Register MCP server with stdio transport
         builder.Services

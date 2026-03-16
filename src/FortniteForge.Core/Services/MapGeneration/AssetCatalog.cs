@@ -48,7 +48,7 @@ public class AssetCatalog
 
         try
         {
-            var asset = new UAsset(levelPath, EngineVersion.VER_FORTNITE_LATEST);
+            var asset = new UAsset(levelPath, EngineVersion.VER_UE5_4);
             SeedLevelPath = levelPath;
 
             // Find the LevelExport to get the actor list
