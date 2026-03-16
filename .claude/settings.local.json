@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)",
+      "Bash(git *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(cat *)",
+      "Bash(cd *)",
+      "Bash(npm *)"
+    ]
+  }
+}
