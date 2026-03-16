@@ -963,23 +963,39 @@ async function renderVerseFilesPage() {
       </details>` : ''}
 
     <div id="vf-groups">
-    ${Object.entries(groups).sort((a,b) => b[1].length - a[1].length).map(([proj, pFiles]) => `
-      <details class="prop-group">
+    ${Object.entries(groups).sort((a,b) => b[1].length - a[1].length).map(([proj, pFiles]) => {
+      if (pFiles.length === 1) {
+        const f = pFiles[0];
+        return `<div class="prop-group" style="margin-bottom:4px" data-search-group="${esc((f.name+' '+proj).toLowerCase())}">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius)">
+            <span style="cursor:pointer" onclick="toggleFav('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}',this)">
+              <span style="color:${favs.has(f.filePath) ? 'var(--yellow)' : 'var(--text-muted)'}">&#9733;</span></span>
+            <span class="badge badge-purple" style="font-size:10px">${esc(proj)}</span>
+            <a href="#" onclick="viewVerseSource('${esc(f.filePath).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');return false" style="flex:1;font-size:12px">${esc(f.name)}</a>
+            <span style="font-size:11px;color:var(--text-muted)">${f.lineCount}L</span>
+          </div>
+        </div>`;
+      }
+      return `<details class="prop-group" data-search-group="${esc((pFiles.map(f=>f.name).join(' ')+' '+proj).toLowerCase())}">
         <summary class="prop-group-header"><span class="prop-group-title"><span class="badge badge-purple" style="font-size:10px">${esc(proj)}</span></span><span class="prop-group-count">${pFiles.length} files</span></summary>
         <div class="prop-group-body">${renderVerseTable(pFiles, favs)}</div>
-      </details>
-    `).join('')}
+      </details>`;
+    }).join('')}
     </div>`;
 
   $('#vf-search')?.addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    $$('.prop-group').forEach(g => {
+    $$('#vf-groups > .prop-group').forEach(g => {
+      const searchAttr = g.dataset.searchGroup || '';
       const rows = $$('tr[data-search]', g);
-      let anyVisible = false;
-      rows.forEach(r => { const show = !q || r.dataset.search.includes(q); r.style.display = show ? '' : 'none'; if (show) anyVisible = true; });
-      // Don't hide favorites group
-      if (!g.querySelector('.prop-group-title')?.textContent?.includes('Favorites'))
+      if (rows.length) {
+        let anyVisible = false;
+        rows.forEach(r => { const show = !q || r.dataset.search.includes(q); r.style.display = show ? '' : 'none'; if (show) anyVisible = true; });
         g.style.display = anyVisible ? '' : 'none';
+      } else {
+        // Single-file entry
+        g.style.display = !q || searchAttr.includes(q) ? '' : 'none';
+      }
     });
   });
 }
