@@ -26,7 +26,7 @@ function toast(msg, type = 'info') {
 }
 
 // ========= Router =========
-const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderAssets, '/asset': renderAssetDetail, '/audit': renderAudit, '/staged': renderStaged, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
+const routes = { '/': renderDashboard, '/levels': renderLevels, '/level': renderLevelDetail, '/assets': renderUserAssetsPage, '/epic-assets': renderEpicAssetsPage, '/asset': renderAssetDetail, '/stats': renderStats, '/audit': renderAudit, '/staged': renderStaged, '/projects': renderProjects, '/device': renderDeviceDetail, '/device-type': renderDeviceType };
 
 let _currentRoute = null;
 function navigate() {
@@ -217,17 +217,22 @@ async function renderDashboard() {
 
 // ========= Levels =========
 async function renderLevels() {
-  const pData = await api('/projects');
-  let allLevels = [];
-  for (const p of pData.projects) {
-    try { const lvls = await api(`/levels?projectId=${p.id}`); lvls.forEach(l => { l._project = p.name; l._type = p.type; }); allLevels.push(...lvls); } catch {}
+  const levels = await api('/levels');
+  const s = await getStatus();
+
+  if (!levels.length) {
+    content().innerHTML = `<div class="page-header"><h2>Levels</h2></div><div class="empty">No levels found in ${esc(s.projectName || 'this project')}</div>`;
+    return;
   }
+
   content().innerHTML = `
-    <div class="page-header"><h2>All Levels</h2><div class="subtitle">${allLevels.length} level(s) across ${pData.projects.length} project(s)</div></div>
-    <div class="table-wrapper"><table><thead><tr><th>Level</th><th>Project</th><th></th></tr></thead><tbody>
-      ${allLevels.map(l => `<tr><td><a href="#/level?path=${encodeURIComponent(l.filePath)}">${esc(l.name)}</a></td>
-        <td><span class="badge ${l._type==='Library'?'badge-purple':'badge-green'}">${esc(l._project)}</span></td>
-        <td style="text-align:right"><a href="#/level?path=${encodeURIComponent(l.filePath)}&tab=devices" class="btn" style="font-size:11px">Devices</a></td></tr>`).join('')}
+    <div class="page-header"><h2>Levels</h2><div class="subtitle">${esc(s.projectName)} &mdash; ${levels.length} level(s)</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>Level</th><th></th></tr></thead><tbody>
+      ${levels.map(l => `<tr>
+        <td><a href="#/level?path=${encodeURIComponent(l.filePath)}">${esc(l.name)}</a>
+          <div style="font-size:10px;color:var(--text-muted)">${esc(l.relativePath)}</div></td>
+        <td style="text-align:right"><a href="#/level?path=${encodeURIComponent(l.filePath)}&tab=devices" class="btn" style="font-size:11px">Devices</a></td>
+      </tr>`).join('')}
     </tbody></table></div>`;
 }
 
@@ -277,38 +282,27 @@ async function renderDevicesTab(c, path) {
   const sorted = Object.entries(groups).sort((a,b) => b[1].length - a[1].length);
 
   let h = `
-    <div class="card-grid" style="margin-bottom:16px">
-      <div class="card"><div class="card-label">Devices</div><div class="card-value accent">${d.deviceCount}</div></div>
-      <div class="card"><div class="card-label">Types</div><div class="card-value purple">${sorted.length}</div></div>
-      <div class="card"><div class="card-label">Static Actors</div><div class="card-value">${d.staticActorCount}</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text-secondary)">${d.deviceCount} devices across ${sorted.length} types</div>
+      <a href="#/stats" style="font-size:11px;color:var(--accent);text-decoration:none">View statistics &rarr;</a>
     </div>
-    <div class="search-bar"><input type="text" id="dev-search" placeholder="Search devices..."></div><div id="dev-list">`;
+    <div class="search-bar" style="margin-bottom:12px"><input type="text" id="dev-search" placeholder="Search device types..."></div>
+    <div class="table-wrapper"><table>
+      <thead><tr><th>Device Type</th><th style="width:60px">Count</th><th style="width:60px"></th></tr></thead>
+      <tbody id="dev-list">
+        ${sorted.map(([cls, devs]) => `<tr data-search="${esc((devs[0].displayName+' '+cls).toLowerCase())}">
+          <td><strong>${esc(devs[0].displayName)}</strong></td>
+          <td style="text-align:center">${devs.length}</td>
+          <td><a href="#/device-type?class=${encodeURIComponent(cls)}&level=${encodeURIComponent(path)}" class="btn" style="font-size:10px;padding:2px 8px">View</a></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
 
-  sorted.forEach(([cls, devs]) => {
-    h += `<div class="device-group"><div class="device-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
-      <span class="tree-toggle">&#9662;</span><span class="badge badge-blue">${esc(devs[0].displayName)}</span>
-      <span class="tree-count">${devs.length}</span></div><div class="device-group-items">`;
-    devs.forEach((dv, i) => {
-      const ed = dv.properties.filter(p => p.isEditable);
-      h += `<div class="device-card" data-search="${esc((dv.displayName+' '+dv.className).toLowerCase())}">
-        <div class="device-card-header"><div><strong>${esc(dv.displayName)}${devs.length>1?' #'+(i+1):''}</strong>
-          <span style="color:var(--text-muted);font-size:11px;margin-left:6px">${dv.totalPropertyCount} props</span></div>
-          <a href="#/device?path=${encodeURIComponent(dv.filePath)}" class="btn" style="font-size:11px;padding:3px 10px">Inspect</a></div>
-        ${dv.hasPosition ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:4px">(${dv.x.toFixed(0)}, ${dv.y.toFixed(0)}, ${dv.z.toFixed(0)})</div>` : ''}
-        ${ed.length > 0 ? `<div class="device-props-preview">${ed.slice(0,3).map(p =>
-          `<div class="prop-row"><span class="prop-name">${esc(p.name)}</span><span class="prop-value editable">${esc(truncate(p.value,40))}</span></div>`
-        ).join('')}${ed.length>3?`<div style="font-size:10px;color:var(--text-muted)">+${ed.length-3} more</div>`:''}</div>` : ''}
-      </div>`;
-    });
-    h += '</div></div>';
-  });
-  h += '</div>';
   c.innerHTML = h;
 
   $('#dev-search')?.addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    $$('.device-card').forEach(card => card.style.display = !q || card.dataset.search.includes(q) ? '' : 'none');
-    $$('.device-group').forEach(g => g.style.display = $$('.device-card',g).some(c => c.style.display !== 'none') ? '' : 'none');
+    $$('#dev-list tr').forEach(row => row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none');
   });
 }
 
@@ -316,18 +310,27 @@ async function renderActorsTab(c, path) {
   if (!_levelCache[path]) _levelCache[path] = await api(`/levels/devices-full?path=${encodeURIComponent(path)}`);
   const d = _levelCache[path];
   const bd = d.staticActorBreakdown || [];
-  const max = bd[0]?.count || 1;
-  const pal = ['#58a6ff','#3fb950','#d29922','#f85149','#bc8cff','#39d2c0','#d18616','#f778ba','#79c0ff','#7ee787'];
+
   c.innerHTML = `
-    <div class="card-grid" style="margin-bottom:16px">
-      <div class="card"><div class="card-label">Static Actors</div><div class="card-value">${d.staticActorCount}</div></div>
-      <div class="card"><div class="card-label">Class Types</div><div class="card-value purple">${bd.length}</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text-secondary)">${d.staticActorCount} static actors across ${bd.length} types</div>
+      <a href="#/stats" style="font-size:11px;color:var(--accent);text-decoration:none">View charts &rarr;</a>
     </div>
-    <div style="display:flex;flex-direction:column;gap:3px">${bd.map((cls,i) =>
-      `<div style="display:flex;align-items:center;gap:10px"><div style="width:200px;font-size:11px;text-align:right;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cls.displayName)}</div>
-      <div style="flex:1;height:16px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden"><div style="width:${(cls.count/max*100).toFixed(0)}%;height:100%;background:${pal[i%pal.length]};border-radius:3px;min-width:2px"></div></div>
-      <div style="width:36px;font-size:11px;font-weight:600;text-align:right">${cls.count}</div></div>`
-    ).join('')}</div>`;
+    <div class="search-bar" style="margin-bottom:12px"><input type="text" id="actor-search" placeholder="Search actor types..."></div>
+    <div class="table-wrapper"><table>
+      <thead><tr><th>Actor Type</th><th style="width:60px">Count</th></tr></thead>
+      <tbody id="actor-list">
+        ${bd.map(cls => `<tr data-search="${esc((cls.displayName+' '+cls.className).toLowerCase())}">
+          <td>${esc(cls.displayName)} <span style="font-size:10px;color:var(--text-muted)">${esc(cls.className)}</span></td>
+          <td style="text-align:center">${cls.count}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+
+  $('#actor-search')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    $$('#actor-list tr').forEach(row => row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none');
+  });
 }
 
 // ========= Device Detail =========
@@ -553,39 +556,37 @@ async function renderDeviceType(params) {
   });
 }
 
-// ========= Assets =========
+// ========= User Assets Page =========
 let _epicAssetCache = null;
 
-async function renderAssets() {
-  content().innerHTML = `<div class="page-header"><h2>Assets</h2></div>
-    <div class="tabs"><button class="tab active" data-tab="user">User-Created</button><button class="tab" data-tab="epic">Epic Assets (Placed)</button></div>
-    <div id="asset-content"><div class="loading"><div class="spinner"></div></div></div>`;
-
-  $$('.tab', content()).forEach(t => t.addEventListener('click', () => {
-    $$('.tab', content()).forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    if (t.dataset.tab === 'user') renderUserAssets(); else renderEpicAssets();
-  }));
-  renderUserAssets();
-}
-
-async function renderUserAssets() {
-  const ac = $('#asset-content');
-  ac.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+async function renderUserAssetsPage() {
+  content().innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   if (!_assetCache) _assetCache = await api('/assets');
+  const s = await getStatus();
 
   if (!_assetCache.length) {
-    ac.innerHTML = `<div class="empty">No user-created assets in this project.<br><span style="font-size:12px;color:var(--text-muted)">Check the "Epic Assets" tab to see what's placed in the level.</span></div>`;
+    content().innerHTML = `<div class="page-header"><h2>User Assets</h2><div class="subtitle">${esc(s.projectName)}</div></div>
+      <div class="empty">No user-created assets in this project.</div>`;
     return;
   }
 
   const classes = [...new Set(_assetCache.map(a => a.assetClass))].sort();
-  ac.innerHTML = `<div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary)">Custom assets created by the map author</div>
-    <div class="search-bar"><input type="text" id="asset-search" placeholder="Search...">
-      <select id="asset-class-filter" style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px">
-        <option value="">All Types (${_assetCache.length})</option>
-        ${classes.map(c => `<option value="${esc(c)}">${esc(c)} (${_assetCache.filter(a=>a.assetClass===c).length})</option>`).join('')}
-      </select></div><div id="asset-list"></div>`;
+  content().innerHTML = `
+    <div class="page-header"><h2>User Assets</h2><div class="subtitle">${_assetCache.length} assets in ${esc(s.projectName)}</div></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+      <div class="search-bar" style="flex:1;margin-bottom:0">
+        <input type="text" id="asset-search" placeholder="Search assets...">
+        <select id="asset-class-filter" style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px">
+          <option value="">All Types (${_assetCache.length})</option>
+          ${classes.map(c => `<option value="${esc(c)}">${esc(c)} (${_assetCache.filter(a=>a.assetClass===c).length})</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn view-btn active" data-view="grid" style="font-size:11px;padding:3px 8px">Grid</button>
+        <button class="btn view-btn" data-view="list" style="font-size:11px;padding:3px 8px">List</button>
+      </div>
+    </div>
+    <div id="asset-list"></div>`;
 
   let viewMode = 'grid';
 
@@ -626,10 +627,6 @@ async function renderUserAssets() {
     render(_assetCache.filter(a => (!q || a.name.toLowerCase().includes(q) || a.assetClass.toLowerCase().includes(q)) && (!cls || a.assetClass === cls)));
   };
 
-  // Add view toggle buttons
-  ac.querySelector('.search-bar').insertAdjacentHTML('afterend',
-    `<div style="display:flex;gap:4px;margin-bottom:12px"><button class="btn view-btn active" data-view="grid" style="font-size:11px;padding:3px 8px">Grid</button><button class="btn view-btn" data-view="list" style="font-size:11px;padding:3px 8px">List</button></div>`);
-
   $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
     $$('.view-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -642,45 +639,46 @@ async function renderUserAssets() {
   filter();
 }
 
-async function renderEpicAssets() {
-  const ac = $('#asset-content');
-  ac.innerHTML = '<div class="loading"><div class="spinner"></div> Scanning placed actors...</div>';
+async function renderEpicAssetsPage() {
+  content().innerHTML = '<div class="loading"><div class="spinner"></div> Scanning placed actors...</div>';
   if (!_epicAssetCache) _epicAssetCache = await api('/assets/epic');
-  if (!_epicAssetCache.length) { ac.innerHTML = '<div class="empty">No placed actors found</div>'; return; }
+  const s = await getStatus();
+  if (!_epicAssetCache.length) { content().innerHTML = `<div class="page-header"><h2>Epic Assets</h2></div><div class="empty">No placed actors found</div>`; return; }
 
   const devices = _epicAssetCache.filter(a => a.isDevice);
   const props = _epicAssetCache.filter(a => !a.isDevice);
   const total = _epicAssetCache.reduce((s, a) => s + a.count, 0);
   const pal = ['#58a6ff','#3fb950','#d29922','#f85149','#bc8cff','#39d2c0','#d18616','#f778ba','#79c0ff','#7ee787'];
 
-  const renderBar = (items) => {
-    if (!items.length) return '<div style="color:var(--text-muted);font-size:12px">None</div>';
-    const max = items[0].count;
-    return items.map((a, i) => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0">
-      <div style="width:200px;font-size:11px;text-align:right;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.className)}">${esc(a.displayName)}</div>
-      <div style="flex:1;height:14px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden"><div style="width:${(a.count/max*100).toFixed(0)}%;height:100%;background:${pal[i%pal.length]};border-radius:3px;min-width:2px"></div></div>
-      <div style="width:36px;font-size:11px;font-weight:600;text-align:right">${a.count}</div>
-      ${a.samplePaths?.length ? `<a href="#/device-type?class=${encodeURIComponent(a.className)}" style="font-size:10px;color:var(--accent);text-decoration:none">inspect</a>` : ''}
-    </div>`).join('');
+  const renderTable = (items) => {
+    if (!items.length) return '<div style="color:var(--text-muted);font-size:12px;padding:8px">None</div>';
+    return `<div class="table-wrapper"><table><thead><tr><th>Asset Type</th><th style="width:60px">Count</th><th style="width:60px"></th></tr></thead><tbody>
+      ${items.map(a => `<tr data-search="${esc((a.displayName+' '+a.className).toLowerCase())}">
+        <td><strong>${esc(a.displayName)}</strong></td>
+        <td style="text-align:center">${a.count}</td>
+        <td>${a.samplePaths?.length ? `<a href="#/device-type?class=${encodeURIComponent(a.className)}" class="btn" style="font-size:10px;padding:2px 8px">View</a>` : ''}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
   };
 
-  ac.innerHTML = `
-    <div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary)">Epic's built-in assets placed in this level. Only exposed properties can be edited.</div>
+  content().innerHTML = `
+    <div class="page-header"><h2>Epic Assets</h2><div class="subtitle">${total.toLocaleString()} placed instances in ${esc(s.projectName)}</div></div>
     <div class="card-grid" style="margin-bottom:16px">
       <div class="card"><div class="card-label">Total Placed</div><div class="card-value accent">${total.toLocaleString()}</div></div>
       <div class="card"><div class="card-label">Asset Types</div><div class="card-value purple">${_epicAssetCache.length}</div></div>
       <div class="card"><div class="card-label">Devices</div><div class="card-value green">${devices.reduce((s,d)=>s+d.count,0)}</div></div>
       <div class="card"><div class="card-label">Props/Terrain</div><div class="card-value">${props.reduce((s,p)=>s+p.count,0)}</div></div>
     </div>
-    <div class="search-bar"><input type="text" id="epic-search" placeholder="Search asset types..."></div>
-    ${devices.length ? `<h3 style="margin:12px 0 8px">Devices <span class="tree-count">${devices.length} types</span></h3><div id="epic-devices">${renderBar(devices)}</div>` : ''}
+    <div class="search-bar" style="margin-bottom:12px"><input type="text" id="epic-search" placeholder="Search asset types..."></div>
+    ${devices.length ? `<h3 style="margin:12px 0 8px">Devices <span class="tree-count">${devices.length} types</span></h3><div id="epic-devices">${renderTable(devices)}</div>` : ''}
     <h3 style="margin:12px 0 8px">Props &amp; Terrain <span class="tree-count">${props.length} types</span></h3>
-    <div id="epic-props">${renderBar(props)}</div>`;
+    <div id="epic-props">${renderTable(props)}</div>`;
 
   $('#epic-search')?.addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    if ($('#epic-devices')) $('#epic-devices').innerHTML = renderBar(devices.filter(a => !q || a.displayName.toLowerCase().includes(q) || a.className.toLowerCase().includes(q)));
-    $('#epic-props').innerHTML = renderBar(props.filter(a => !q || a.displayName.toLowerCase().includes(q) || a.className.toLowerCase().includes(q)));
+    $$('#epic-devices tr, #epic-props tr').forEach(row => {
+      if (row.dataset.search) row.style.display = !q || row.dataset.search.includes(q) ? '' : 'none';
+    });
   });
 }
 
@@ -731,6 +729,85 @@ async function renderAssetDetail(params) {
       thumb.innerHTML = '<div class="thumb-placeholder">No Preview</div>';
     }
   } catch { thumb.innerHTML = '<div class="thumb-placeholder">No Preview</div>'; }
+}
+
+// ========= Statistics =========
+async function renderStats() {
+  const s = await getStatus();
+  if (!s.projectName || s.projectName === 'No Project') {
+    content().innerHTML = '<div class="empty">No active project. <a href="#/projects">Add one</a></div>';
+    return;
+  }
+
+  content().innerHTML = `${breadcrumb([{ label: 'Dashboard', href: '#/' }, { label: 'Statistics' }])}
+    <div class="page-header"><h2>Statistics</h2><div class="subtitle">${esc(s.projectName)}</div></div>
+    <div id="stats-content"><div class="loading"><div class="spinner"></div> Analyzing project...</div></div>`;
+
+  let levels = []; try { levels = await api('/levels'); } catch {}
+  const sc = $('#stats-content');
+
+  // Overview cards
+  let html = `<div class="card-grid" style="margin-bottom:24px">
+    <div class="card"><div class="card-label">Definitions</div><div class="card-value accent">${s.definitionCount || 0}</div></div>
+    <div class="card"><div class="card-label">Placed Actors</div><div class="card-value purple">${((s.assetCount||0) - (s.definitionCount||0)).toLocaleString()}</div></div>
+    <div class="card"><div class="card-label">Levels</div><div class="card-value">${levels.length}</div></div>
+    <div class="card"><div class="card-label">Verse Files</div><div class="card-value green">${s.verseCount || 0}</div></div>
+  </div>`;
+
+  // Load level data for charts
+  if (levels.length > 0) {
+    const path = levels[0].filePath;
+    try {
+      if (!_levelCache[path]) _levelCache[path] = await api(`/levels/devices-full?path=${encodeURIComponent(path)}`);
+      const d = _levelCache[path];
+      const groups = {};
+      d.devices.forEach(dv => (groups[dv.className] = groups[dv.className] || []).push(dv));
+      const deviceTypes = Object.entries(groups).sort((a,b) => b[1].length - a[1].length);
+      const bd = d.staticActorBreakdown || [];
+      const pal = ['#58a6ff','#3fb950','#d29922','#f85149','#bc8cff','#39d2c0','#d18616','#f778ba','#79c0ff','#7ee787'];
+
+      // Device distribution chart
+      if (deviceTypes.length > 0) {
+        const maxD = deviceTypes[0][1].length;
+        html += `<h3 style="margin-bottom:10px">Device Distribution <span class="tree-count">${d.deviceCount} devices, ${deviceTypes.length} types</span></h3>
+          <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:28px">${deviceTypes.map(([cls, devs], i) => {
+            const pct = (devs.length / maxD * 100).toFixed(0);
+            return `<div style="display:flex;align-items:center;gap:10px">
+              <div style="width:180px;font-size:11px;text-align:right;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(devs[0].displayName)}</div>
+              <div style="flex:1;height:18px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pal[i%pal.length]};border-radius:3px;min-width:2px"></div></div>
+              <div style="width:36px;font-size:11px;font-weight:600;text-align:right">${devs.length}</div></div>`;
+          }).join('')}</div>`;
+      }
+
+      // Static actor distribution chart
+      if (bd.length > 0) {
+        const maxA = bd[0].count;
+        html += `<h3 style="margin-bottom:10px">Static Actor Distribution <span class="tree-count">${d.staticActorCount} actors, ${bd.length} types</span></h3>
+          <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:28px">${bd.slice(0, 30).map((cls, i) => {
+            const pct = (cls.count / maxA * 100).toFixed(0);
+            return `<div style="display:flex;align-items:center;gap:10px">
+              <div style="width:180px;font-size:11px;text-align:right;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cls.displayName)}</div>
+              <div style="flex:1;height:18px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pal[i%pal.length]};border-radius:3px;min-width:2px"></div></div>
+              <div style="width:36px;font-size:11px;font-weight:600;text-align:right">${cls.count}</div></div>`;
+          }).join('')}${bd.length > 30 ? `<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:4px">+${bd.length - 30} more types</div>` : ''}</div>`;
+      }
+
+      // Composition pie (text version)
+      const devicePct = ((d.deviceCount / d.totalActorFiles) * 100).toFixed(1);
+      const staticPct = ((d.staticActorCount / d.totalActorFiles) * 100).toFixed(1);
+      html += `<h3 style="margin-bottom:10px">Level Composition</h3>
+        <div class="card-grid">
+          <div class="card"><div class="card-label">Devices</div><div class="card-value accent">${d.deviceCount}</div><div style="font-size:11px;color:var(--text-muted)">${devicePct}%</div></div>
+          <div class="card"><div class="card-label">Static Props</div><div class="card-value">${d.staticActorCount}</div><div style="font-size:11px;color:var(--text-muted)">${staticPct}%</div></div>
+          <div class="card"><div class="card-label">Parse Errors</div><div class="card-value ${d.parseErrors > 0 ? 'red' : ''}">${d.parseErrors}</div></div>
+        </div>`;
+
+    } catch (err) {
+      html += `<div class="empty">Could not load level data: ${esc(err.message)}</div>`;
+    }
+  }
+
+  sc.innerHTML = html;
 }
 
 // ========= Audit =========
