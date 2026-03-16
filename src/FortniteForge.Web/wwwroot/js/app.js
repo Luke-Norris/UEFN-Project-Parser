@@ -1056,11 +1056,20 @@ async function renderMaterialsPage() {
   const mats = await api('/library/materials');
   let viewMode = 'grid';
 
+  // Build project filter
+  const projects = [...new Set(mats.map(m => m.projectName))].sort();
+
   content().innerHTML = `
     ${breadcrumb([{ label: 'Library', href: '#/library' }, { label: 'Materials' }])}
-    <div class="page-header"><h2>Materials</h2><div class="subtitle">${mats.length} materials</div></div>
+    <div class="page-header"><h2>Materials</h2><div class="subtitle">${mats.length} materials across ${projects.length} projects</div></div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-      <div class="search-bar" style="flex:1;margin-bottom:0"><input type="text" id="mat-search" placeholder="Search materials..."></div>
+      <div class="search-bar" style="flex:1;margin-bottom:0">
+        <input type="text" id="mat-search" placeholder="Search materials...">
+        <select id="mat-project" style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text-primary);font-size:12px">
+          <option value="">All Projects (${projects.length})</option>
+          ${projects.map(p => `<option value="${esc(p)}">${esc(p)} (${mats.filter(m=>m.projectName===p).length})</option>`).join('')}
+        </select>
+      </div>
       <div style="display:flex;gap:4px">
         <button class="btn view-btn active" data-view="grid" style="font-size:11px;padding:3px 8px">Grid</button>
         <button class="btn view-btn" data-view="list" style="font-size:11px;padding:3px 8px">List</button>
@@ -1095,8 +1104,21 @@ async function renderMaterialsPage() {
     </tbody></table></div>`;
   };
 
-  const render = (f) => { if (viewMode === 'grid') renderGrid(f); else renderList(f); };
-  const filter = () => { const q = $('#mat-search').value.toLowerCase(); render(mats.filter(m => !q || m.name.toLowerCase().includes(q) || m.assetClass.toLowerCase().includes(q))); };
+  let showCount = 100;
+  const render = (f) => {
+    const shown = f.slice(0, showCount);
+    if (viewMode === 'grid') renderGrid(shown); else renderList(shown);
+    if (f.length > showCount) {
+      $('#mat-list').insertAdjacentHTML('beforeend',
+        `<div style="text-align:center;padding:12px"><button class="btn" onclick="window._matShowMore()">Show more (${f.length - showCount} remaining)</button></div>`);
+    }
+    window._matShowMore = () => { showCount += 200; filter(); };
+  };
+  const filter = () => {
+    const q = $('#mat-search').value.toLowerCase();
+    const proj = $('#mat-project')?.value || '';
+    render(mats.filter(m => (!q || m.name.toLowerCase().includes(q) || m.assetClass.toLowerCase().includes(q)) && (!proj || m.projectName === proj)));
+  };
 
   $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
     $$('.view-btn').forEach(b => b.classList.remove('active'));
@@ -1105,6 +1127,7 @@ async function renderMaterialsPage() {
     filter();
   }));
   $('#mat-search').addEventListener('input', filter);
+  $('#mat-project')?.addEventListener('change', () => { showCount = 100; filter(); });
   filter();
 }
 

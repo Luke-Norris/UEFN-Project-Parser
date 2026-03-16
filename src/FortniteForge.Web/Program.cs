@@ -611,14 +611,32 @@ public class Program
             return Results.Ok(new { source = File.ReadAllText(path), name = Path.GetFileName(path) });
         });
 
-        api.MapGet("/library/materials", (LibraryIndexer indexer) =>
+        api.MapGet("/library/materials", (LibraryIndexer indexer, string? project) =>
         {
             if (indexer.Index == null)
             {
                 var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
                 indexer.LoadIndex(savePath);
             }
-            return Results.Ok(indexer.GetMaterials());
+            var mats = indexer.GetMaterials();
+
+            // Group by project for the response
+            var idx = indexer.Index;
+            var result = new List<object>();
+            if (idx != null)
+            {
+                foreach (var p in idx.Projects)
+                {
+                    var projectMats = p.Assets.Where(a =>
+                        mats.Any(m => m.FilePath == a.FilePath)).ToList();
+                    if (projectMats.Count > 0 && (project == null || p.Name.Contains(project, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        foreach (var m in projectMats)
+                            result.Add(new { m.Name, m.FilePath, m.RelativePath, m.AssetClass, m.FileSize, m.HasThumbnail, ProjectName = p.Name });
+                    }
+                }
+            }
+            return Results.Ok(result);
         });
 
         // ========= Open in Explorer =========

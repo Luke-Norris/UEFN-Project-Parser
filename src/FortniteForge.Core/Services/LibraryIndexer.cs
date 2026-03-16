@@ -162,11 +162,19 @@ public class LibraryIndexer
     /// <summary>
     /// Gets all materials across the library.
     /// </summary>
+    /// <summary>
+    /// Gets actual materials (not material graph expressions/nodes).
+    /// </summary>
     public List<AssetEntry> GetMaterials()
     {
         if (_index == null) return new();
+        var materialClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Material", "MaterialInstanceConstant", "MaterialInstanceDynamic",
+            "MaterialFunction", "MaterialParameterCollection"
+        };
         return _index.Projects.SelectMany(p => p.Assets)
-            .Where(a => a.AssetClass.Contains("Material", StringComparison.OrdinalIgnoreCase))
+            .Where(a => materialClasses.Contains(a.AssetClass))
             .ToList();
     }
 
