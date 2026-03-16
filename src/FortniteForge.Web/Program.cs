@@ -339,10 +339,13 @@ public class Program
             {
                 var fi = new FileInfo(file);
                 string assetClass = "Unknown";
+                bool hasThumbnail = false;
                 try
                 {
                     var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
                     assetClass = asset.Exports.FirstOrDefault()?.GetExportClassType()?.ToString() ?? "Unknown";
+                    hasThumbnail = asset.Thumbnails?.Values.Any(t =>
+                        (t.CompressedImageData?.Length ?? 0) > 0 || (t.ImageData?.Length ?? 0) > 0) ?? false;
                 }
                 catch { }
 
@@ -354,6 +357,7 @@ public class Program
                     AssetClass = assetClass,
                     FileSize = fi.Length,
                     LastModified = fi.LastWriteTime,
+                    HasThumbnail = hasThumbnail,
                     Source = "User"
                 });
             }

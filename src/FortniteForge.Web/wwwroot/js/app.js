@@ -587,22 +587,56 @@ async function renderUserAssets() {
         ${classes.map(c => `<option value="${esc(c)}">${esc(c)} (${_assetCache.filter(a=>a.assetClass===c).length})</option>`).join('')}
       </select></div><div id="asset-list"></div>`;
 
-  const render = (f) => {
+  let viewMode = 'grid';
+
+  const renderGrid = (f) => {
+    if (!f.length) { $('#asset-list').innerHTML = '<div class="empty">No matches</div>'; return; }
+    $('#asset-list').innerHTML = `<div class="asset-grid">${f.slice(0, 200).map(a =>
+      `<a href="#/asset?path=${encodeURIComponent(a.filePath)}" class="asset-tile" title="${esc(a.name)}\n${esc(a.assetClass)}">
+        <div class="asset-tile-thumb">${a.hasThumbnail
+          ? `<img src="/api/assets/thumbnail?path=${encodeURIComponent(a.filePath)}" loading="lazy">`
+          : `<span class="thumb-placeholder">${esc(a.assetClass.substring(0, 3))}</span>`}</div>
+        <div class="asset-tile-name">${esc(a.name)}</div>
+        <div class="asset-tile-class">${esc(a.assetClass)}</div>
+      </a>`).join('')}</div>
+    ${f.length > 200 ? `<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:11px">Showing 200 of ${f.length}</div>` : ''}`;
+  };
+
+  const renderList = (f) => {
     if (!f.length) { $('#asset-list').innerHTML = '<div class="empty">No matches</div>'; return; }
     const groups = {}; f.forEach(a => (groups[a.assetClass] = groups[a.assetClass] || []).push(a));
     const sorted = Object.entries(groups).sort((a,b) => b[1].length - a[1].length);
-    let html = `<div style="margin-bottom:6px;font-size:11px;color:var(--text-muted)">${f.length} asset(s)</div>`;
+    let html = '';
     sorted.forEach(([cls, assets]) => {
       html += `<div class="device-group" style="margin-bottom:6px"><div class="device-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <span class="tree-toggle">&#9662;</span><span class="badge badge-purple">${esc(cls)}</span><span class="tree-count">${assets.length}</span></div>
         <div class="device-group-items"><div class="table-wrapper" style="margin:0"><table><tbody>
-          ${assets.slice(0,50).map(a => `<tr><td><a href="#/asset?path=${encodeURIComponent(a.filePath)}">${esc(a.name)}</a></td><td style="font-size:11px;color:var(--text-muted);width:80px">${fileSize(a.fileSize)}</td></tr>`).join('')}
+          ${assets.slice(0,50).map(a => `<tr>
+            <td style="width:32px;padding:4px">${a.hasThumbnail ? `<img src="/api/assets/thumbnail?path=${encodeURIComponent(a.filePath)}" style="width:28px;height:28px;border-radius:3px;object-fit:cover" loading="lazy">` : ''}</td>
+            <td><a href="#/asset?path=${encodeURIComponent(a.filePath)}">${esc(a.name)}</a></td>
+            <td style="font-size:11px;color:var(--text-muted);width:80px">${fileSize(a.fileSize)}</td></tr>`).join('')}
         </tbody></table></div></div></div>`;
     });
     $('#asset-list').innerHTML = html;
   };
-  const filter = () => { const q = $('#asset-search').value.toLowerCase(), cls = $('#asset-class-filter')?.value || '';
-    render(_assetCache.filter(a => (!q || a.name.toLowerCase().includes(q)) && (!cls || a.assetClass === cls))); };
+
+  const render = (f) => { if (viewMode === 'grid') renderGrid(f); else renderList(f); };
+  const filter = () => {
+    const q = $('#asset-search').value.toLowerCase(), cls = $('#asset-class-filter')?.value || '';
+    render(_assetCache.filter(a => (!q || a.name.toLowerCase().includes(q) || a.assetClass.toLowerCase().includes(q)) && (!cls || a.assetClass === cls)));
+  };
+
+  // Add view toggle buttons
+  ac.querySelector('.search-bar').insertAdjacentHTML('afterend',
+    `<div style="display:flex;gap:4px;margin-bottom:12px"><button class="btn view-btn active" data-view="grid" style="font-size:11px;padding:3px 8px">Grid</button><button class="btn view-btn" data-view="list" style="font-size:11px;padding:3px 8px">List</button></div>`);
+
+  $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
+    $$('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.view;
+    filter();
+  }));
+
   $('#asset-search').addEventListener('input', filter);
   $('#asset-class-filter')?.addEventListener('change', filter);
   filter();
