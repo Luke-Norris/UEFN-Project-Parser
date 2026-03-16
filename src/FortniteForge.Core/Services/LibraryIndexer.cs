@@ -390,7 +390,7 @@ public class VerseFileEntry
     public List<string> DeviceReferences { get; set; } = new();
     public List<string> Imports { get; set; } = new();
     public string Summary { get; set; } = "";
-    [JsonIgnore] public string SearchText { get; set; } = "";
+    public string SearchText { get; set; } = "";
 }
 
 public class AssetEntry
@@ -401,7 +401,7 @@ public class AssetEntry
     public string AssetClass { get; set; } = "";
     public long FileSize { get; set; }
     public bool HasThumbnail { get; set; }
-    [JsonIgnore] public string SearchText { get; set; } = "";
+    public string SearchText { get; set; } = "";
 }
 
 public class DeviceTypeEntry
@@ -409,7 +409,7 @@ public class DeviceTypeEntry
     public string ClassName { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public int Count { get; set; }
-    [JsonIgnore] public string SearchText { get; set; } = "";
+    public string SearchText { get; set; } = "";
 }
 
 public class LibrarySearchResult
