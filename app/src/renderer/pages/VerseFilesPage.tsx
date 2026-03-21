@@ -122,8 +122,14 @@ export function VerseFilesPage() {
     setSelectedFile(node.path)
     setFileLoading(true)
     try {
-      const result = await window.electronAPI.forgeReadVerse(node.path)
-      setFileContent(result)
+      const result = await window.electronAPI.forgeReadVerse(node.path) as any
+      // Normalize — sidecar may return content or Content
+      setFileContent({
+        filePath: result?.filePath ?? node.path,
+        name: result?.name ?? node.name,
+        content: result?.content ?? result?.Content ?? '',
+        lineCount: result?.lineCount ?? result?.LineCount ?? 0,
+      })
     } catch {
       setFileContent(null)
     } finally {
@@ -269,7 +275,7 @@ export function VerseFilesPage() {
             </div>
             <div className="flex-1 overflow-auto min-h-0">
               <VerseHighlighter
-                code={fileContent.content}
+                code={fileContent.content || '// Empty file'}
                 fontSize={verseEditorFontSize}
               />
             </div>

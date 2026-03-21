@@ -623,7 +623,7 @@ public class Program
                 levelCount = 0
             });
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.None));
         var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
         var status = detector.GetStatus();
@@ -679,6 +679,18 @@ public class Program
 
         var pm = _sidecarProjects!;
         var entry = pm.AddProject(path, type);
+
+        // Create .wellversed/ directory structure at project root
+        try
+        {
+            var wsRoot = Path.Combine(path, ".wellversed");
+            Directory.CreateDirectory(Path.Combine(wsRoot, "staged"));
+            Directory.CreateDirectory(Path.Combine(wsRoot, "workspace", "unpacked"));
+            Directory.CreateDirectory(Path.Combine(wsRoot, "workspace", "cache"));
+            Directory.CreateDirectory(Path.Combine(wsRoot, "recipes"));
+        }
+        catch { /* non-fatal — directory creation may fail on read-only volumes */ }
+
         return new SidecarResponse(req.Id, entry);
     }
 
@@ -748,7 +760,7 @@ public class Program
         // Build services for the active project if we don't have them or they're for a different project
         if (services == null)
         {
-            var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+            var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
             var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
             var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
             var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
@@ -802,7 +814,7 @@ public class Program
             return null;
         }
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
         var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
@@ -1372,7 +1384,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
         var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
