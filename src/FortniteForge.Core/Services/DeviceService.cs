@@ -290,6 +290,15 @@ public class DeviceService
         var vec = new Vector3Info();
         foreach (var prop in structProp.Value)
         {
+            // UE5.4 may use VectorPropertyData with X/Y/Z packed directly
+            if (prop is UAssetAPI.PropertyTypes.Structs.VectorPropertyData vecProp)
+            {
+                vec.X = (float)vecProp.Value.X;
+                vec.Y = (float)vecProp.Value.Y;
+                vec.Z = (float)vecProp.Value.Z;
+                return vec;
+            }
+
             var name = prop.Name?.ToString() ?? "";
             if (prop is FloatPropertyData floatProp)
             {
@@ -298,7 +307,6 @@ public class DeviceService
                     case "X": vec.X = floatProp.Value; break;
                     case "Y": vec.Y = floatProp.Value; break;
                     case "Z": vec.Z = floatProp.Value; break;
-                    // Rotation uses Pitch/Yaw/Roll
                     case "Pitch": vec.X = floatProp.Value; break;
                     case "Yaw": vec.Y = floatProp.Value; break;
                     case "Roll": vec.Z = floatProp.Value; break;

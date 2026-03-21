@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Font loading: Place your Burbank Big Condensed font files in the fonts/ directory.
+  The app will dynamically load them at startup via the FontFace API.
+  Supported files: .ttf, .otf, .woff, .woff2
+  Expected names: BurbankBigCondensed-Black, BurbankBigCondensed-Bold, BurbankBigCondensed-Medium
+*/
+
+/* ─── App shell — fill viewport accounting for zoom ─── */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Theme CSS Custom Properties (defaults = midnight theme) ─── */
+:root {
+  --fn-darker: #0a0a1a;
+  --fn-dark: #0f0f23;
+  --fn-panel: #16162e;
+  --fn-border: #1e1e3a;
+  --fn-accent: #3d85e0;
+  --fn-accent-hover: #5a9de6;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+}
+
+/* ─── Font size tiers ─── */
+:root.text-size-small { font-size: 13px; }
+:root.text-size-medium { font-size: 14px; }
+:root.text-size-large { font-size: 16px; }
+
+/* ─── Reduced motion ─── */
+:root.reduce-motion,
+:root.reduce-motion * {
+  animation-duration: 0ms !important;
+  transition-duration: 0ms !important;
+}
+
+/* ─── High contrast ─── */
+:root.high-contrast {
+  --fn-border: #444466;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--fn-darker, #0f0f1a);
+  color: var(--text-primary, #e0e0e0);
+  overflow: hidden;
+  height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3a6a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a5a8a;
+}
+
+/* Canvas container */
+.canvas-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Asset thumbnail grid */
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 4px;
+}
+
+.asset-thumb {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  overflow: hidden;
+  background: #1a1a2e;
+  transition: all 0.15s ease;
+}
+
+.asset-thumb:hover {
+  border-color: #3d85e0;
+  transform: scale(1.04);
+}
+
+.asset-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 2px;
+}
+
+/* Shared input field style */
+.input-field {
+  @apply w-full bg-fn-darker border border-fn-border rounded px-2 py-1 text-xs text-white outline-none transition-colors;
+  &:focus { border-color: var(--fn-accent); }
+}
+
+select.input-field {
+  @apply cursor-pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 4px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 24px;
+  -webkit-appearance: none;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #2a2a4a;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3d85e0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #5a9ef0;
+}
+
+/* Animate spin for loader */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}

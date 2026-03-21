@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FortniteForge.Core.Config;
+using FortniteForge.Core.Models;
 using FortniteForge.Core.Safety;
 using FortniteForge.Core.Services;
 using FortniteForge.Core.Services.MapGeneration;
@@ -28,6 +30,14 @@ namespace FortniteForge.CLI;
 /// </summary>
 public class Program
 {
+    // Compact JSON for NDJSON sidecar protocol (one response per line)
+    private static readonly JsonSerializerOptions SidecarJsonOpts = new()
+    {
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         WriteIndented = true,
@@ -53,7 +63,8 @@ public class Program
             BuildBuildLogCommand(),
             BuildBackupsCommand(),
             BuildSchemaCommand(),
-            BuildInitCommand()
+            BuildInitCommand(),
+            BuildSidecarCommand()
         };
         rootCommand.AddGlobalOption(ConfigOption);
 
@@ -465,6 +476,1345 @@ public class Program
         return cmd;
     }
 
+    // ========= Sidecar Command (Electron bridge) =========
+
+    // Sidecar-scoped project manager for persistent project list
+    private static SidecarProjectManager? _sidecarProjects;
+    // Sidecar-scoped library manager for persistent library list (separate from projects)
+    private static SidecarLibraryManager? _sidecarLibraries;
+
+    private static Command BuildSidecarCommand()
+    {
+        var cmd = new Command("sidecar", "Run as Electron sidecar — reads JSON requests from stdin, writes responses to stdout");
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var configPath = ctx.ParseResult.GetValueForOption(ConfigOption);
+            ForgeConfig? config = null;
+            ServiceBundle? services = null;
+
+            _sidecarProjects = new SidecarProjectManager();
+            _sidecarLibraries = new SidecarLibraryManager();
+
+            try
+            {
+                // Try loading from active project if one exists
+                var active = _sidecarProjects.GetActiveProject();
+                if (active != null)
+                {
+                    config = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+                    // Don't call LoadServices(null) — it would overwrite config with an empty one.
+                    // Services are built on-demand by BuildActiveProjectServices() for each request.
+                }
+                else if (configPath != null)
+                {
+                    var loaded = LoadServices(configPath);
+                    config = loaded.Config;
+                    services = loaded.Services;
+                }
+                else
+                {
+                    config = new ForgeConfig();
+                }
+            }
+            catch
+            {
+                config = new ForgeConfig();
+            }
+
+            // Signal ready
+            Console.Out.WriteLine(JsonSerializer.Serialize(new SidecarResponse("ready", new { status = "ok" }), SidecarJsonOpts));
+            Console.Out.Flush();
+
+            // NDJSON request loop
+            string? line;
+            while ((line = await Console.In.ReadLineAsync()) != null)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                try
+                {
+                    var request = JsonSerializer.Deserialize<SidecarRequest>(line, JsonOpts);
+                    if (request == null) continue;
+
+                    var response = HandleSidecarRequest(request, config, services);
+                    Console.Out.WriteLine(JsonSerializer.Serialize(response, SidecarJsonOpts));
+                    Console.Out.Flush();
+                }
+                catch (Exception ex)
+                {
+                    var errResponse = new SidecarResponse("unknown", Error: new SidecarError("INTERNAL", ex.Message));
+                    Console.Out.WriteLine(JsonSerializer.Serialize(errResponse, SidecarJsonOpts));
+                    Console.Out.Flush();
+                }
+            }
+
+            services?.Dispose();
+        });
+        return cmd;
+    }
+
+    private static SidecarResponse HandleSidecarRequest(SidecarRequest req, ForgeConfig config, ServiceBundle? services)
+    {
+        try
+        {
+            return req.Method switch
+            {
+                "validate-spec" => HandleValidateSpec(req),
+                "build-uasset" => HandleBuildUasset(req, config),
+                "generate-verse" => HandleGenerateVerse(req),
+                "ping" => new SidecarResponse(req.Id, new { pong = true }),
+                "status" => HandleStatus(req),
+                "list-projects" => HandleListProjects(req),
+                "add-project" => HandleAddProject(req),
+                "remove-project" => HandleRemoveProject(req),
+                "activate-project" => HandleActivateProject(req),
+                "scan-projects" => HandleScanProjects(req),
+                "list-levels" => HandleListLevels(req),
+                "audit" => HandleAudit(req, services),
+                "browse-content" => HandleBrowseContent(req),
+                "inspect-asset" => HandleInspectAsset(req),
+                "list-devices" => HandleListDevices(req),
+                "inspect-device" => HandleInspectDevice(req),
+                "list-user-assets" => HandleListUserAssets(req),
+                "list-epic-assets" => HandleListEpicAssets(req),
+                "read-verse" => HandleReadVerse(req),
+                "list-staged" => HandleListStaged(req),
+                // Library management (separate from projects)
+                "list-libraries" => HandleListLibraries(req),
+                "add-library" => HandleAddLibrary(req),
+                "remove-library" => HandleRemoveLibrary(req),
+                "activate-library" => HandleActivateLibrary(req),
+                "index-library" => HandleIndexLibrary(req),
+                "get-library-verse-files" => HandleGetLibraryVerseFiles(req),
+                "get-library-assets-by-type" => HandleGetLibraryAssetsByType(req),
+                "browse-library-dir" => HandleBrowseLibraryDir(req),
+                "search-library-index" => HandleSearchLibraryIndex(req),
+                _ => new SidecarResponse(req.Id, Error: new SidecarError("UNKNOWN_METHOD", $"Unknown method: {req.Method}"))
+            };
+        }
+        catch (Exception ex)
+        {
+            return new SidecarResponse(req.Id, Error: new SidecarError("HANDLER_ERROR", ex.Message));
+        }
+    }
+
+    // ========= Sidecar Project Management Handlers =========
+
+    private static SidecarResponse HandleStatus(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+
+        if (active == null)
+            return new SidecarResponse(req.Id, new
+            {
+                projectName = "No Project",
+                mode = "None",
+                isConfigured = false,
+                assetCount = 0,
+                verseCount = 0,
+                levelCount = 0
+            });
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.None));
+        var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+        var status = detector.GetStatus();
+
+        int assetCount = 0, verseCount = 0, levelCount = 0, defCount = 0;
+        if (Directory.Exists(cfg.ContentPath))
+        {
+            try { assetCount = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories).Count()
+                              + Directory.EnumerateFiles(cfg.ContentPath, "*.umap", SearchOption.AllDirectories).Count(); } catch { }
+            try { defCount = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories).Count(f => !f.Contains("__External")); } catch { }
+            try { verseCount = Directory.EnumerateFiles(cfg.ContentPath, "*.verse", SearchOption.AllDirectories).Count(); } catch { }
+            try { levelCount = Directory.EnumerateFiles(cfg.ContentPath, "*.umap", SearchOption.AllDirectories).Count(); } catch { }
+        }
+
+        return new SidecarResponse(req.Id, new
+        {
+            isConfigured = true,
+            projectName = active.Name,
+            projectPath = active.ProjectPath,
+            projectType = active.Type,
+            isUefnProject = active.IsUefnProject,
+            contentPath = cfg.ContentPath,
+            isUefnRunning = status.IsUefnRunning,
+            uefnPid = status.UefnPid,
+            hasUrc = status.HasUrc,
+            urcActive = status.UrcActive,
+            mode = status.Mode.ToString(),
+            modeReason = status.ModeReason,
+            stagedFileCount = status.StagedFileCount,
+            assetCount,
+            definitionCount = defCount,
+            verseCount,
+            levelCount,
+            readOnly = cfg.ReadOnly
+        });
+    }
+
+    private static SidecarResponse HandleListProjects(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        return new SidecarResponse(req.Id, new
+        {
+            activeProjectId = pm.GetActiveProject()?.Id,
+            projects = pm.ListProjects()
+        });
+    }
+
+    private static SidecarResponse HandleAddProject(SidecarRequest req)
+    {
+        var path = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+        var type = req.Params?.GetProperty("type").GetString() ?? "MyProject";
+
+        var pm = _sidecarProjects!;
+        var entry = pm.AddProject(path, type);
+        return new SidecarResponse(req.Id, entry);
+    }
+
+    private static SidecarResponse HandleRemoveProject(SidecarRequest req)
+    {
+        var id = req.Params?.GetProperty("id").GetString()
+            ?? throw new ArgumentException("Missing 'id' parameter");
+        var pm = _sidecarProjects!;
+        var removed = pm.RemoveProject(id);
+        return new SidecarResponse(req.Id, new { removed });
+    }
+
+    private static SidecarResponse HandleActivateProject(SidecarRequest req)
+    {
+        var id = req.Params?.GetProperty("id").GetString()
+            ?? throw new ArgumentException("Missing 'id' parameter");
+        var pm = _sidecarProjects!;
+        var project = pm.SetActive(id);
+        return project != null
+            ? new SidecarResponse(req.Id, project)
+            : new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Project '{id}' not found"));
+    }
+
+    private static SidecarResponse HandleScanProjects(SidecarRequest req)
+    {
+        var path = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+
+        if (!Directory.Exists(path))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", "Directory not found"));
+
+        var pm = _sidecarProjects!;
+        var discovered = pm.ScanDirectory(path);
+        return new SidecarResponse(req.Id, discovered);
+    }
+
+    private static SidecarResponse HandleListLevels(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        if (!Directory.Exists(cfg.ContentPath))
+            return new SidecarResponse(req.Id, Array.Empty<object>());
+
+        var levels = Directory.EnumerateFiles(cfg.ContentPath, "*.umap", SearchOption.AllDirectories)
+            .Select(l => new
+            {
+                filePath = l,
+                relativePath = Path.GetRelativePath(cfg.ContentPath, l),
+                name = Path.GetFileNameWithoutExtension(l)
+            })
+            .ToList();
+
+        return new SidecarResponse(req.Id, levels);
+    }
+
+    private static SidecarResponse HandleAudit(SidecarRequest req, ServiceBundle? services)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        // Build services for the active project if we don't have them or they're for a different project
+        if (services == null)
+        {
+            var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+            var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+            var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+            var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+            var guard = new AssetGuard(cfg, detector, loggerFactory.CreateLogger<AssetGuard>());
+            var assetService = new AssetService(cfg, guard, fileAccess, loggerFactory.CreateLogger<AssetService>());
+            var digestService = new DigestService(cfg, loggerFactory.CreateLogger<DigestService>());
+            var deviceService = new DeviceService(cfg, assetService, digestService, loggerFactory.CreateLogger<DeviceService>());
+            var auditService = new AuditService(cfg, deviceService, assetService, digestService, guard, loggerFactory.CreateLogger<AuditService>());
+
+            string? levelPath = null;
+            if (req.Params?.TryGetProperty("level", out var levelEl) == true)
+                levelPath = levelEl.GetString();
+
+            var result = levelPath != null
+                ? auditService.AuditLevel(levelPath)
+                : auditService.AuditProject();
+
+            fileAccess.Dispose();
+            return new SidecarResponse(req.Id, result);
+        }
+        else
+        {
+            string? levelPath = null;
+            if (req.Params?.TryGetProperty("level", out var levelEl) == true)
+                levelPath = levelEl.GetString();
+
+            var result = levelPath != null
+                ? services.Audit.AuditLevel(levelPath)
+                : services.Audit.AuditProject();
+
+            return new SidecarResponse(req.Id, result);
+        }
+    }
+
+    // ========= Sidecar Content Browsing Handlers =========
+
+    /// <summary>
+    /// Builds lightweight services for the active project on demand.
+    /// Returns (config, assetService, deviceService, fileAccess) or an error response.
+    /// The caller must dispose fileAccess when done.
+    /// </summary>
+    private static (ForgeConfig Cfg, AssetService Asset, DeviceService Device, SafeFileAccess FileAccess)?
+        BuildActiveProjectServices(out SidecarResponse? errorResponse, string requestId)
+    {
+        errorResponse = null;
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+        {
+            errorResponse = new SidecarResponse(requestId, Error: new SidecarError("NO_PROJECT", "No active project"));
+            return null;
+        }
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+        var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+        var guard = new AssetGuard(cfg, detector, loggerFactory.CreateLogger<AssetGuard>());
+        var assetService = new AssetService(cfg, guard, fileAccess, loggerFactory.CreateLogger<AssetService>());
+        var digestService = new DigestService(cfg, loggerFactory.CreateLogger<DigestService>());
+        var deviceService = new DeviceService(cfg, assetService, digestService, loggerFactory.CreateLogger<DeviceService>());
+
+        return (cfg, assetService, deviceService, fileAccess);
+    }
+
+    private static SidecarResponse HandleBrowseContent(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        var basePath = cfg.ContentPath;
+
+        // Optional subfolder param
+        string? subPath = null;
+        if (req.Params?.TryGetProperty("path", out var pathEl) == true)
+            subPath = pathEl.GetString();
+
+        var targetPath = string.IsNullOrEmpty(subPath)
+            ? basePath
+            : Path.Combine(basePath, subPath);
+
+        if (!Directory.Exists(targetPath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Directory not found: {targetPath}"));
+
+        // Ensure the target is within the content path (prevent directory traversal)
+        var fullTarget = Path.GetFullPath(targetPath);
+        var fullBase = Path.GetFullPath(basePath);
+        if (!fullTarget.StartsWith(fullBase, StringComparison.OrdinalIgnoreCase))
+            return new SidecarResponse(req.Id, Error: new SidecarError("INVALID_PATH", "Path must be within project content directory"));
+
+        var entries = new List<object>();
+
+        // Folders first
+        foreach (var dir in Directory.EnumerateDirectories(targetPath).OrderBy(d => d))
+        {
+            var di = new DirectoryInfo(dir);
+            entries.Add(new
+            {
+                name = di.Name,
+                path = Path.GetRelativePath(basePath, dir),
+                type = "folder",
+                size = 0L,
+                lastModified = di.LastWriteTimeUtc.ToString("o")
+            });
+        }
+
+        // Then files
+        foreach (var file in Directory.EnumerateFiles(targetPath).OrderBy(f => f))
+        {
+            var fi = new FileInfo(file);
+            var ext = fi.Extension.ToLowerInvariant();
+            var fileType = ext switch
+            {
+                ".uasset" => "uasset",
+                ".umap" => "umap",
+                ".verse" => "verse",
+                ".uexp" => "uexp",
+                _ => "other"
+            };
+
+            entries.Add(new
+            {
+                name = fi.Name,
+                path = Path.GetRelativePath(basePath, file),
+                type = fileType,
+                size = fi.Length,
+                lastModified = fi.LastWriteTimeUtc.ToString("o")
+            });
+        }
+
+        return new SidecarResponse(req.Id, new { entries });
+    }
+
+    private static SidecarResponse HandleInspectAsset(SidecarRequest req)
+    {
+        var assetPath = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+
+        // Resolve relative paths against active project's content directory
+        if (!Path.IsPathRooted(assetPath))
+        {
+            var active2 = _sidecarProjects!.GetActiveProject();
+            if (active2 != null)
+            {
+                var projCfg = new ForgeConfig { ProjectPath = active2.ProjectPath };
+                var resolved = Path.Combine(projCfg.ContentPath, assetPath);
+                if (File.Exists(resolved))
+                    assetPath = resolved;
+            }
+        }
+
+        if (!File.Exists(assetPath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"File not found: {assetPath}"));
+
+        var result = BuildActiveProjectServices(out var errorResponse, req.Id);
+        if (result == null) return errorResponse!;
+
+        var (cfg, assetService, _, fileAccess) = result.Value;
+        try
+        {
+            var detail = assetService.InspectAsset(assetPath);
+
+            // Build response with property cap of 50 per export
+            var exports = detail.Exports.Select(e => new
+            {
+                className = e.ClassName,
+                objectName = e.ObjectName,
+                propertyCount = e.Properties.Count,
+                properties = e.Properties.Take(50).Select(p => new
+                {
+                    name = p.Name,
+                    value = p.Value,
+                    type = p.Type
+                })
+            });
+
+            return new SidecarResponse(req.Id, new
+            {
+                name = detail.Name,
+                assetClass = detail.AssetClass,
+                fileSize = detail.FileSize,
+                exportCount = detail.ExportCount,
+                importCount = detail.ImportCount,
+                exports
+            });
+        }
+        finally
+        {
+            fileAccess.Dispose();
+        }
+    }
+
+    private static SidecarResponse HandleListDevices(SidecarRequest req)
+    {
+        var levelPath = req.Params?.GetProperty("levelPath").GetString()
+            ?? throw new ArgumentException("Missing 'levelPath' parameter");
+
+        if (!File.Exists(levelPath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Level not found: {levelPath}"));
+
+        var result = BuildActiveProjectServices(out var errorResponse, req.Id);
+        if (result == null) return errorResponse!;
+
+        var (cfg, assetService, deviceService, fileAccess) = result.Value;
+        try
+        {
+            // First try DeviceService (scans .umap exports)
+            var devices = deviceService.ListDevicesInLevel(levelPath);
+
+            // If empty, scan __ExternalActors__ directory (UEFN stores actors as separate files)
+            if (devices.Count == 0)
+            {
+                var levelName = Path.GetFileNameWithoutExtension(levelPath);
+                var contentDir = Path.GetDirectoryName(levelPath) ?? "";
+                var externalActorsDir = Path.Combine(
+                    Path.GetDirectoryName(contentDir) ?? contentDir,
+                    "__ExternalActors__",
+                    Path.GetRelativePath(Path.GetDirectoryName(contentDir) ?? contentDir, contentDir),
+                    levelName);
+
+                // Also try directly under Content/__ExternalActors__/<levelName>
+                if (!Directory.Exists(externalActorsDir))
+                {
+                    var pluginContentDir = cfg.ContentPath;
+                    if (!string.IsNullOrEmpty(pluginContentDir))
+                    {
+                        // Search for __ExternalActors__ containing the level name
+                        var candidates = Directory.EnumerateDirectories(pluginContentDir, "__ExternalActors__", SearchOption.AllDirectories);
+                        foreach (var candidate in candidates)
+                        {
+                            var sub = Directory.EnumerateDirectories(candidate, levelName, SearchOption.AllDirectories).FirstOrDefault();
+                            if (sub != null) { externalActorsDir = sub; break; }
+                        }
+                    }
+                }
+
+                if (Directory.Exists(externalActorsDir))
+                {
+                    var actorFiles = Directory.EnumerateFiles(externalActorsDir, "*.uasset", SearchOption.AllDirectories).ToList();
+                    foreach (var actorFile in actorFiles)
+                    {
+                        try
+                        {
+                            var asset = assetService.OpenAsset(actorFile);
+                            // Only look at root-level exports (OuterIndex == 0 means top-level actor)
+                            var rootExport = asset.Exports.FirstOrDefault(e =>
+                                e.OuterIndex.Index == 0 || !asset.Exports.Any(parent =>
+                                    asset.Exports.IndexOf(e) != asset.Exports.IndexOf(parent) &&
+                                    e.OuterIndex.Index == asset.Exports.IndexOf(parent) + 1));
+
+                            if (rootExport == null) rootExport = asset.Exports.FirstOrDefault();
+                            if (rootExport == null) continue;
+
+                            var className = rootExport.GetExportClassType()?.ToString() ?? "";
+                            if (string.IsNullOrEmpty(className)) continue;
+
+                            // Extract transform — search ALL exports for RelativeLocation (usually on a component)
+                            float x = 0, y = 0, z = 0;
+                            string label = "";
+
+                            foreach (var export in asset.Exports)
+                            {
+                                if (export is not UAssetAPI.ExportTypes.NormalExport ne) continue;
+                                foreach (var prop in ne.Data)
+                                {
+                                    var propName = prop.Name.ToString();
+                                    if (propName == "RelativeLocation" && prop is UAssetAPI.PropertyTypes.Structs.StructPropertyData locStruct)
+                                    {
+                                        foreach (var sub in locStruct.Value)
+                                        {
+                                            var sn = sub.Name.ToString();
+                                            var subType = sub.GetType().Name;
+                                            // UE5.4 may use VectorPropertyData which has X/Y/Z directly
+                                            if (sub is UAssetAPI.PropertyTypes.Structs.VectorPropertyData vecProp)
+                                            {
+                                                x = (float)vecProp.Value.X;
+                                                y = (float)vecProp.Value.Y;
+                                                z = (float)vecProp.Value.Z;
+                                            }
+                                            else if (sn == "X") { if (sub is UAssetAPI.PropertyTypes.Objects.FloatPropertyData f) x = f.Value; else if (sub is UAssetAPI.PropertyTypes.Objects.DoublePropertyData d) x = (float)d.Value; }
+                                            else if (sn == "Y") { if (sub is UAssetAPI.PropertyTypes.Objects.FloatPropertyData f) y = f.Value; else if (sub is UAssetAPI.PropertyTypes.Objects.DoublePropertyData d) y = (float)d.Value; }
+                                            else if (sn == "Z") { if (sub is UAssetAPI.PropertyTypes.Objects.FloatPropertyData f) z = f.Value; else if (sub is UAssetAPI.PropertyTypes.Objects.DoublePropertyData d) z = (float)d.Value; }
+                                        }
+                                        // empty — debug removed
+                                    }
+                                    else if (propName == "ActorLabel" && prop is UAssetAPI.PropertyTypes.Objects.StrPropertyData strProp)
+                                    {
+                                        label = strProp.Value?.ToString() ?? "";
+                                    }
+                                }
+                                // Stop once we found a position
+                                if (x != 0 || y != 0 || z != 0) break;
+                            }
+
+                            var prettyType = className
+                                .Replace("BP_", "").Replace("PBWA_", "").Replace("_C", "")
+                                .Replace("B_", "");
+
+                            var actorName = !string.IsNullOrEmpty(label) ? label
+                                : rootExport.ObjectName?.ToString()
+                                ?? Path.GetFileNameWithoutExtension(actorFile);
+
+                            devices.Add(new DeviceInfo
+                            {
+                                ActorName = actorName,
+                                DeviceClass = className,
+                                DeviceType = prettyType,
+                                Label = label,
+                                Location = new Vector3Info(x, y, z),
+                                LevelPath = actorFile,
+                            });
+                        }
+                        catch { /* skip unparseable actors */ }
+                    }
+                }
+            }
+
+            var deviceList = devices.Select(d => new
+            {
+                name = !string.IsNullOrEmpty(d.Label) ? d.Label : d.ActorName,
+                filePath = d.LevelPath ?? levelPath,
+                deviceType = !string.IsNullOrEmpty(d.DeviceType) ? d.DeviceType : d.DeviceClass,
+                deviceClass = d.DeviceClass,
+                position = new { x = (double)d.Location.X, y = (double)d.Location.Y, z = (double)d.Location.Z },
+            }).ToList();
+
+            return new SidecarResponse(req.Id, new { levelPath, devices = deviceList });
+        }
+        finally
+        {
+            fileAccess.Dispose();
+        }
+    }
+
+    private static SidecarResponse HandleInspectDevice(SidecarRequest req)
+    {
+        var devicePath = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+
+        if (!File.Exists(devicePath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"File not found: {devicePath}"));
+
+        var result = BuildActiveProjectServices(out var errorResponse, req.Id);
+        if (result == null) return errorResponse!;
+
+        var (cfg, assetService, _, fileAccess) = result.Value;
+        try
+        {
+            // Use SafeFileAccess (via AssetService) to parse the external actor
+            var asset = assetService.OpenAsset(devicePath);
+            string? actorClass = null;
+            string? displayName = null;
+            var properties = new List<object>();
+            double x = 0, y = 0, z = 0;
+            double rotYaw = 0;
+
+            foreach (var export in asset.Exports)
+            {
+                if (export is not UAssetAPI.ExportTypes.NormalExport ne) continue;
+
+                var className = ne.GetExportClassType()?.ToString() ?? "";
+                var objName = ne.ObjectName?.ToString() ?? "";
+
+                // Identify the primary actor
+                if (!className.Contains("Component") && !className.Contains("Model")
+                    && !className.Contains("HLODLayer") && !className.Contains("MetaData")
+                    && !className.Contains("Level") && !className.Contains("Brush")
+                    && actorClass == null)
+                {
+                    actorClass = className;
+                    displayName = CleanActorNameSimple(objName, className);
+                }
+
+                // Extract properties from each export
+                foreach (var prop in ne.Data)
+                {
+                    var name = prop.Name?.ToString();
+                    if (string.IsNullOrEmpty(name) || name == "None") continue;
+
+                    // Extract position
+                    if (name == "RelativeLocation" && prop is UAssetAPI.PropertyTypes.Structs.StructPropertyData locStruct)
+                    {
+                        foreach (var c in locStruct.Value)
+                        {
+                            var cn = c.Name?.ToString() ?? "";
+                            if (c is UAssetAPI.PropertyTypes.Objects.DoublePropertyData d)
+                            {
+                                switch (cn) { case "X": x = d.Value; break; case "Y": y = d.Value; break; case "Z": z = d.Value; break; }
+                            }
+                            else if (c is UAssetAPI.PropertyTypes.Objects.FloatPropertyData f)
+                            {
+                                switch (cn) { case "X": x = f.Value; break; case "Y": y = f.Value; break; case "Z": z = f.Value; break; }
+                            }
+                        }
+                    }
+
+                    // Extract rotation yaw
+                    if (name == "RelativeRotation" && prop is UAssetAPI.PropertyTypes.Structs.StructPropertyData rotStruct)
+                    {
+                        foreach (var c in rotStruct.Value)
+                        {
+                            if (c.Name?.ToString() == "Y" || c.Name?.ToString() == "Yaw")
+                            {
+                                if (c is UAssetAPI.PropertyTypes.Objects.DoublePropertyData d) rotYaw = d.Value;
+                                else if (c is UAssetAPI.PropertyTypes.Objects.FloatPropertyData f) rotYaw = f.Value;
+                            }
+                        }
+                    }
+
+                    // Convert property to a simple representation
+                    var value = SafePropertyValue(prop);
+                    var isEditable = prop is UAssetAPI.PropertyTypes.Objects.BoolPropertyData
+                        or UAssetAPI.PropertyTypes.Objects.IntPropertyData
+                        or UAssetAPI.PropertyTypes.Objects.FloatPropertyData
+                        or UAssetAPI.PropertyTypes.Objects.DoublePropertyData
+                        or UAssetAPI.PropertyTypes.Objects.StrPropertyData
+                        or UAssetAPI.PropertyTypes.Objects.NamePropertyData
+                        or UAssetAPI.PropertyTypes.Objects.EnumPropertyData
+                        or UAssetAPI.PropertyTypes.Objects.BytePropertyData;
+
+                    properties.Add(new
+                    {
+                        name,
+                        value,
+                        type = prop.PropertyType?.ToString() ?? prop.GetType().Name,
+                        componentClass = className,
+                        isEditable
+                    });
+                }
+            }
+
+            return new SidecarResponse(req.Id, new
+            {
+                className = actorClass ?? "Unknown",
+                displayName = displayName ?? Path.GetFileNameWithoutExtension(devicePath),
+                properties,
+                position = new { x, y, z },
+                rotationYaw = rotYaw
+            });
+        }
+        finally
+        {
+            fileAccess.Dispose();
+        }
+    }
+
+    private static SidecarResponse HandleListUserAssets(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        if (!Directory.Exists(cfg.ContentPath))
+            return new SidecarResponse(req.Id, new { assets = Array.Empty<object>() });
+
+        var files = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
+            .Where(f => !f.Contains("__External"))
+            .ToList();
+
+        var assets = new List<object>();
+        foreach (var file in files)
+        {
+            var fi = new FileInfo(file);
+            string assetClass = "Unknown";
+            try
+            {
+                // Lightweight parse for class name only — using UAssetAPI directly here is
+                // acceptable because user-created assets in the Plugins/Content folder are
+                // small definition files. We do NOT use SafeFileAccess for the listing scan
+                // to avoid copying potentially hundreds of files to temp.
+                // For actual inspection, always use inspect-asset which goes through SafeFileAccess.
+                var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                assetClass = asset.Exports.FirstOrDefault()?.GetExportClassType()?.ToString() ?? "Unknown";
+            }
+            catch { }
+
+            assets.Add(new
+            {
+                name = Path.GetFileNameWithoutExtension(file),
+                path = fi.FullName,
+                relativePath = Path.GetRelativePath(cfg.ContentPath, file),
+                assetClass,
+                fileSize = fi.Length
+            });
+        }
+
+        return new SidecarResponse(req.Id, new { assets });
+    }
+
+    private static SidecarResponse HandleListEpicAssets(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        if (!Directory.Exists(cfg.ContentPath))
+            return new SidecarResponse(req.Id, new { types = Array.Empty<object>() });
+
+        // Optional level filter
+        string? levelFilter = null;
+        if (req.Params?.TryGetProperty("levelPath", out var levelEl) == true)
+            levelFilter = levelEl.GetString();
+
+        // Find external actor directories
+        var extDirs = Directory.EnumerateDirectories(cfg.ContentPath, "__ExternalActors__", SearchOption.AllDirectories).ToList();
+        var classCounts = new Dictionary<string, (int Count, List<string> SamplePaths)>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var extDir in extDirs)
+        {
+            // If level filter specified, only look at that level's external actors
+            if (!string.IsNullOrEmpty(levelFilter))
+            {
+                var levelName = Path.GetFileNameWithoutExtension(levelFilter);
+                var levelExtDir = Path.Combine(Path.GetDirectoryName(levelFilter) ?? "",
+                    "__ExternalActors__", levelName);
+                // Only process if this extDir matches
+                if (!extDir.EndsWith(levelName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+            }
+
+            var actorFiles = Directory.EnumerateFiles(extDir, "*.uasset", SearchOption.AllDirectories);
+            foreach (var file in actorFiles)
+            {
+                try
+                {
+                    var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                    foreach (var export in asset.Exports)
+                    {
+                        var cls = export.GetExportClassType()?.ToString() ?? "";
+                        if (string.IsNullOrEmpty(cls) || cls.Contains("Component") || cls.Contains("Model")
+                            || cls == "Level" || cls == "MetaData" || cls == "Brush") continue;
+
+                        if (!classCounts.ContainsKey(cls))
+                            classCounts[cls] = (0, new List<string>());
+
+                        var entry = classCounts[cls];
+                        classCounts[cls] = (entry.Count + 1, entry.SamplePaths);
+                        if (entry.SamplePaths.Count < 5) // Keep a few sample file paths for inspection
+                            entry.SamplePaths.Add(file);
+                        break; // Only count primary export per file
+                    }
+                }
+                catch { }
+            }
+        }
+
+        var types = classCounts
+            .Select(kv => new Dictionary<string, object>
+            {
+                ["className"] = kv.Key,
+                ["displayName"] = CleanActorNameSimple(kv.Key, kv.Key),
+                ["count"] = kv.Value.Count,
+                ["isDevice"] = IsDeviceSimple(kv.Key),
+                ["samplePaths"] = kv.Value.SamplePaths.ToArray()
+            })
+            .OrderByDescending(t => (int)t["count"])
+            .ToList();
+
+        return new SidecarResponse(req.Id, new { types });
+    }
+
+    private static SidecarResponse HandleReadVerse(SidecarRequest req)
+    {
+        var versePath = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+
+        // Resolve relative paths against active project's content directory
+        if (!Path.IsPathRooted(versePath))
+        {
+            var pm = _sidecarProjects!;
+            var active = pm.GetActiveProject();
+            if (active != null)
+            {
+                var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+                var resolved = Path.Combine(cfg.ContentPath, versePath);
+                if (File.Exists(resolved))
+                    versePath = resolved;
+            }
+        }
+
+        if (!File.Exists(versePath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"File not found: {versePath}"));
+
+        if (!versePath.EndsWith(".verse", StringComparison.OrdinalIgnoreCase))
+            return new SidecarResponse(req.Id, Error: new SidecarError("INVALID_TYPE", "File must be a .verse file"));
+
+        var source = File.ReadAllText(versePath);
+        var lineCount = source.Split('\n').Length;
+
+        return new SidecarResponse(req.Id, new
+        {
+            name = Path.GetFileNameWithoutExtension(versePath),
+            source,
+            lineCount
+        });
+    }
+
+    private static SidecarResponse HandleListStaged(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+        var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+
+        try
+        {
+            var staged = fileAccess.ListStagedFiles();
+            var files = staged.Select(s => new
+            {
+                path = s.StagedPath,
+                relativePath = s.RelativePath,
+                size = s.Size
+            }).ToList();
+
+            return new SidecarResponse(req.Id, new { files });
+        }
+        finally
+        {
+            fileAccess.Dispose();
+        }
+    }
+
+    // ========= Simple Helpers for Sidecar Handlers (avoid Web dependency) =========
+
+    /// <summary>
+    /// Simplified actor name cleaning — mirrors DeviceClassifier.CleanActorName
+    /// without taking a dependency on FortniteForge.Web.
+    /// </summary>
+    private static string CleanActorNameSimple(string rawName, string className)
+    {
+        var name = className;
+        name = name.Replace("Device_", "").Replace("_C", "");
+
+        var uaidIdx = rawName.IndexOf("_UAID_", StringComparison.OrdinalIgnoreCase);
+        if (uaidIdx > 0)
+            name = rawName[..uaidIdx].Replace("Device_", "").TrimEnd('_');
+
+        name = name.Replace("_V2", " V2").Replace("_V3", " V3")
+                    .Replace("_", " ")
+                    .Replace("  ", " ")
+                    .Trim();
+
+        if (name.EndsWith(" C")) name = name[..^2].Trim();
+        return name;
+    }
+
+    /// <summary>
+    /// Simplified device detection — mirrors DeviceClassifier.IsDevice
+    /// without taking a dependency on FortniteForge.Web.
+    /// </summary>
+    private static bool IsDeviceSimple(string className)
+    {
+        var notPrefixes = new[] { "Prop_", "Athena_Prop_", "CP_Prop_", "CP_Apollo_", "CP_Asteria_",
+            "StaticMesh", "Material", "Texture", "Landscape", "Foliage", "HLOD", "LayerInfo" };
+        if (notPrefixes.Any(p => className.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        var devicePrefixes = new[] { "Device_", "BP_Device_", "BP_Creative_" };
+        if (devicePrefixes.Any(p => className.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        var keywords = new[] { "Spawner", "Timer", "Trigger", "Button", "Barrier",
+            "Checkpoint", "VendingMachine", "ClassSelector", "ClassDesigner",
+            "ItemSpawner", "ScoreManager", "Mutator", "Teleporter",
+            "Sequencer", "Tracker", "Elimination", "StormController",
+            "Transmitter", "Receiver", "creative_device" };
+        return keywords.Any(kw => className.Contains(kw, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Safe property value extraction — handles common types with try-catch fallback.
+    /// </summary>
+    private static string SafePropertyValue(UAssetAPI.PropertyTypes.Objects.PropertyData prop)
+    {
+        try
+        {
+            return prop switch
+            {
+                UAssetAPI.PropertyTypes.Objects.BoolPropertyData b => b.Value.ToString(),
+                UAssetAPI.PropertyTypes.Objects.IntPropertyData i => i.Value.ToString(),
+                UAssetAPI.PropertyTypes.Objects.FloatPropertyData f => f.Value.ToString("G"),
+                UAssetAPI.PropertyTypes.Objects.DoublePropertyData d => d.Value.ToString("G"),
+                UAssetAPI.PropertyTypes.Objects.StrPropertyData s => s.Value?.ToString() ?? "",
+                UAssetAPI.PropertyTypes.Objects.NamePropertyData n => n.Value?.ToString() ?? "",
+                UAssetAPI.PropertyTypes.Objects.TextPropertyData t => t.Value?.ToString() ?? "",
+                UAssetAPI.PropertyTypes.Objects.EnumPropertyData e => e.Value?.ToString() ?? "",
+                UAssetAPI.PropertyTypes.Objects.BytePropertyData bp => bp.EnumValue?.ToString() ?? bp.Value.ToString(),
+                UAssetAPI.PropertyTypes.Objects.ObjectPropertyData o => o.Value?.ToString() ?? "",
+                UAssetAPI.PropertyTypes.Objects.SoftObjectPropertyData so => so.Value.AssetPath.PackageName?.ToString() ?? "",
+                UAssetAPI.PropertyTypes.Structs.StructPropertyData sp => $"{{{sp.Value?.Count ?? 0} fields}}",
+                UAssetAPI.PropertyTypes.Objects.SetPropertyData set => $"[{set.Value?.Length ?? 0} items]",
+                UAssetAPI.PropertyTypes.Objects.ArrayPropertyData arr => $"[{arr.Value?.Length ?? 0} items]",
+                UAssetAPI.PropertyTypes.Objects.MapPropertyData map => $"[{map.Value?.Count ?? 0} entries]",
+                _ => prop.ToString() ?? prop.GetType().Name
+            };
+        }
+        catch
+        {
+            return $"[{prop.GetType().Name}]";
+        }
+    }
+
+    private static SidecarResponse HandleValidateSpec(SidecarRequest req)
+    {
+        var specJson = req.Params?.GetProperty("spec").GetRawText()
+            ?? throw new ArgumentException("Missing 'spec' parameter");
+
+        var spec = WidgetSpecSerializer.FromJson(specJson);
+        var errors = spec.Validate();
+
+        return new SidecarResponse(req.Id, new
+        {
+            valid = !errors.Any(e => e.Severity == WidgetValidationSeverity.Error),
+            errors = errors.Select(e => new { path = e.Path, severity = e.Severity.ToString(), message = e.Message })
+        });
+    }
+
+    private static SidecarResponse HandleBuildUasset(SidecarRequest req, ForgeConfig config)
+    {
+        var specJson = req.Params?.GetProperty("spec").GetRawText()
+            ?? throw new ArgumentException("Missing 'spec' parameter");
+        var outputDir = req.Params?.GetProperty("outputDir").GetString()
+            ?? throw new ArgumentException("Missing 'outputDir' parameter");
+
+        var spec = WidgetSpecSerializer.FromJson(specJson);
+
+        // Apply variable overrides if provided
+        if (req.Params?.TryGetProperty("variables", out var varsEl) == true)
+        {
+            var vars = JsonSerializer.Deserialize<Dictionary<string, string>>(varsEl.GetRawText()) ?? new();
+            WidgetSpecSerializer.ApplyVariables(spec, vars);
+        }
+
+        // Find template
+        var templateDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..",
+            "umg_widget_library", "original_UMG_uassets", "minimal");
+        var templatePath = Directory.GetFiles(templateDir, "*.uasset").FirstOrDefault()
+            ?? throw new FileNotFoundException("No minimal widget template found");
+
+        Directory.CreateDirectory(outputDir);
+        var outputPath = Path.Combine(outputDir, spec.Name + ".uasset");
+
+        var builder = new WidgetBlueprintBuilder();
+        builder.Build(spec, templatePath, outputPath);
+
+        // Also generate Verse controller
+        var verseCode = WidgetSpecVerseGenerator.Generate(spec);
+        var versePath = Path.Combine(outputDir, spec.Name + "_controller.verse");
+        File.WriteAllText(versePath, verseCode);
+
+        return new SidecarResponse(req.Id, new
+        {
+            success = true,
+            uassetPath = outputPath,
+            versePath = versePath
+        });
+    }
+
+    private static SidecarResponse HandleGenerateVerse(SidecarRequest req)
+    {
+        var specJson = req.Params?.GetProperty("spec").GetRawText()
+            ?? throw new ArgumentException("Missing 'spec' parameter");
+
+        var spec = WidgetSpecSerializer.FromJson(specJson);
+        var verseCode = WidgetSpecVerseGenerator.Generate(spec);
+
+        return new SidecarResponse(req.Id, new { code = verseCode });
+    }
+
+    // ========= Sidecar Library Management Handlers =========
+
+    private static SidecarResponse HandleListLibraries(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+        return new SidecarResponse(req.Id, new
+        {
+            activeLibraryId = lm.GetActiveLibrary()?.Id,
+            libraries = lm.ListLibraries()
+        });
+    }
+
+    private static SidecarResponse HandleAddLibrary(SidecarRequest req)
+    {
+        var path = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+
+        var lm = _sidecarLibraries!;
+        var entry = lm.AddLibrary(path);
+        return new SidecarResponse(req.Id, entry);
+    }
+
+    private static SidecarResponse HandleRemoveLibrary(SidecarRequest req)
+    {
+        var id = req.Params?.GetProperty("id").GetString()
+            ?? throw new ArgumentException("Missing 'id' parameter");
+
+        var lm = _sidecarLibraries!;
+        var removed = lm.RemoveLibrary(id);
+        return new SidecarResponse(req.Id, new { removed });
+    }
+
+    private static SidecarResponse HandleActivateLibrary(SidecarRequest req)
+    {
+        var id = req.Params?.GetProperty("id").GetString()
+            ?? throw new ArgumentException("Missing 'id' parameter");
+
+        var lm = _sidecarLibraries!;
+        var entry = lm.SetActive(id);
+        if (entry == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Library not found: {id}"));
+        return new SidecarResponse(req.Id, entry);
+    }
+
+    private static SidecarResponse HandleIndexLibrary(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+
+        // Use explicit id or fall back to active library
+        string? id = null;
+        if (req.Params?.TryGetProperty("id", out var idEl) == true)
+            id = idEl.GetString();
+
+        var lib = id != null ? lm.ListLibraries().FirstOrDefault(l => l.Id == id) : lm.GetActiveLibrary();
+        if (lib == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_LIBRARY", "No active library"));
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
+
+        var index = indexer.BuildIndex(lib.Path);
+
+        // Save index to ~/.fortniteforge/library-index-{id}.json
+        var indexPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".fortniteforge", $"library-index-{lib.Id}.json");
+        indexer.SaveIndex(indexPath);
+
+        // Update library entry stats
+        lm.UpdateStats(lib.Id, index.TotalVerseFiles, index.TotalAssets, DateTime.UtcNow);
+
+        return new SidecarResponse(req.Id, new
+        {
+            libraryId = lib.Id,
+            libraryName = lib.Name,
+            indexPath,
+            totalProjects = index.Projects.Count,
+            totalVerseFiles = index.TotalVerseFiles,
+            totalAssets = index.TotalAssets,
+            totalDeviceTypes = index.TotalDeviceTypes,
+            indexedAt = index.IndexedAt.ToString("o")
+        });
+    }
+
+    private static SidecarResponse HandleGetLibraryVerseFiles(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+        var lib = lm.GetActiveLibrary();
+        if (lib == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_LIBRARY", "No active library"));
+
+        var indexPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".fortniteforge", $"library-index-{lib.Id}.json");
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
+        var index = indexer.LoadIndex(indexPath);
+        if (index == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INDEXED", "Library not indexed yet. Call index-library first."));
+
+        string? filter = null;
+        if (req.Params?.TryGetProperty("filter", out var filterEl) == true)
+            filter = filterEl.GetString();
+
+        var verseFiles = indexer.GetVerseFiles(filter);
+
+        return new SidecarResponse(req.Id, new
+        {
+            verseFiles = verseFiles.Select(vf => new
+            {
+                name = vf.File.Name,
+                filePath = vf.File.FilePath,
+                lineCount = vf.File.LineCount,
+                classes = vf.File.Classes,
+                functions = vf.File.Functions,
+                deviceReferences = vf.File.DeviceReferences,
+                imports = vf.File.Imports,
+                summary = vf.File.Summary,
+                projectName = vf.ProjectName
+            }).ToList()
+        });
+    }
+
+    private static SidecarResponse HandleGetLibraryAssetsByType(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+        var lib = lm.GetActiveLibrary();
+        if (lib == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_LIBRARY", "No active library"));
+
+        var indexPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".fortniteforge", $"library-index-{lib.Id}.json");
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
+        var index = indexer.LoadIndex(indexPath);
+        if (index == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INDEXED", "Library not indexed yet. Call index-library first."));
+
+        // Group all assets by class across all projects
+        var allAssets = index.Projects.SelectMany(p =>
+            p.Assets.Select(a => new { asset = a, projectName = p.Name }));
+
+        var grouped = allAssets
+            .GroupBy(a => a.asset.AssetClass)
+            .Select(g => new
+            {
+                assetClass = g.Key,
+                count = g.Count(),
+                assets = g.Select(a => new
+                {
+                    name = a.asset.Name,
+                    filePath = a.asset.FilePath,
+                    assetClass = a.asset.AssetClass,
+                    fileSize = a.asset.FileSize,
+                    projectName = a.projectName
+                }).ToList()
+            })
+            .OrderByDescending(g => g.count)
+            .ToList();
+
+        return new SidecarResponse(req.Id, new { groups = grouped });
+    }
+
+    private static SidecarResponse HandleBrowseLibraryDir(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+        var lib = lm.GetActiveLibrary();
+        if (lib == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_LIBRARY", "No active library"));
+
+        var basePath = lib.Path;
+
+        string? subPath = null;
+        if (req.Params?.TryGetProperty("path", out var pathEl) == true)
+            subPath = pathEl.GetString();
+
+        var targetPath = string.IsNullOrEmpty(subPath)
+            ? basePath
+            : Path.Combine(basePath, subPath);
+
+        if (!Directory.Exists(targetPath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Directory not found: {targetPath}"));
+
+        // Ensure the target is within the library path (prevent directory traversal)
+        var fullTarget = Path.GetFullPath(targetPath);
+        var fullBase = Path.GetFullPath(basePath);
+        if (!fullTarget.StartsWith(fullBase, StringComparison.OrdinalIgnoreCase))
+            return new SidecarResponse(req.Id, Error: new SidecarError("INVALID_PATH", "Path must be within library directory"));
+
+        var entries = new List<object>();
+
+        // Folders first
+        foreach (var dir in Directory.EnumerateDirectories(targetPath).OrderBy(d => d))
+        {
+            var di = new DirectoryInfo(dir);
+            entries.Add(new
+            {
+                name = di.Name,
+                path = Path.GetRelativePath(basePath, dir),
+                type = "folder",
+                size = 0L,
+                lastModified = di.LastWriteTimeUtc.ToString("o")
+            });
+        }
+
+        // Then files
+        foreach (var file in Directory.EnumerateFiles(targetPath).OrderBy(f => f))
+        {
+            var fi = new FileInfo(file);
+            var ext = fi.Extension.ToLowerInvariant();
+            var fileType = ext switch
+            {
+                ".uasset" => "uasset",
+                ".umap" => "umap",
+                ".verse" => "verse",
+                ".uexp" => "uexp",
+                _ => "other"
+            };
+
+            entries.Add(new
+            {
+                name = fi.Name,
+                path = Path.GetRelativePath(basePath, file),
+                type = fileType,
+                size = fi.Length,
+                lastModified = fi.LastWriteTimeUtc.ToString("o")
+            });
+        }
+
+        return new SidecarResponse(req.Id, new { entries });
+    }
+
+    private static SidecarResponse HandleSearchLibraryIndex(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+        var lib = lm.GetActiveLibrary();
+        if (lib == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_LIBRARY", "No active library"));
+
+        var query = req.Params?.GetProperty("query").GetString()
+            ?? throw new ArgumentException("Missing 'query' parameter");
+
+        var indexPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".fortniteforge", $"library-index-{lib.Id}.json");
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
+        var index = indexer.LoadIndex(indexPath);
+        if (index == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INDEXED", "Library not indexed yet. Call index-library first."));
+
+        var result = indexer.Search(query);
+
+        return new SidecarResponse(req.Id, new
+        {
+            query = result.Query,
+            verseFiles = result.VerseFiles.Select(h => new
+            {
+                name = h.Item.Name,
+                filePath = h.Item.FilePath,
+                lineCount = h.Item.LineCount,
+                classes = h.Item.Classes,
+                functions = h.Item.Functions,
+                deviceReferences = h.Item.DeviceReferences,
+                imports = h.Item.Imports,
+                summary = h.Item.Summary,
+                projectName = h.ProjectName,
+                score = h.Score
+            }).ToList(),
+            assets = result.Assets.Select(h => new
+            {
+                name = h.Item.Name,
+                filePath = h.Item.FilePath,
+                assetClass = h.Item.AssetClass,
+                fileSize = h.Item.FileSize,
+                projectName = h.ProjectName,
+                score = h.Score
+            }).ToList(),
+            deviceTypes = result.DeviceTypes.Select(h => new
+            {
+                className = h.Item.ClassName,
+                displayName = h.Item.DisplayName,
+                count = h.Item.Count,
+                projectName = h.ProjectName,
+                score = h.Score
+            }).ToList()
+        });
+    }
+
     private static string? FindConfigFile()
     {
         var dir = Directory.GetCurrentDirectory();
@@ -493,4 +1843,343 @@ internal record ServiceBundle(
     MapGenerator MapGen) : IDisposable
 {
     public void Dispose() => FileAccess.Dispose();
+}
+
+// ========= Sidecar Protocol Types =========
+
+internal record SidecarRequest(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("method")] string Method,
+    [property: JsonPropertyName("params")] JsonElement? Params);
+
+internal record SidecarResponse(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("result")] object? Result = null,
+    [property: JsonPropertyName("error")] SidecarError? Error = null);
+
+internal record SidecarError(
+    [property: JsonPropertyName("code")] string Code,
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("details")] object? Details = null);
+
+// ========= Sidecar Project Manager (simple file-backed project list) =========
+
+internal class SidecarProjectManager
+{
+    private readonly string _storagePath;
+    private SidecarProjectStore _store;
+    private static readonly JsonSerializerOptions StoreJsonOpts = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    public SidecarProjectManager()
+    {
+        _storagePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".fortniteforge", "projects.json");
+        _store = Load();
+    }
+
+    public List<SidecarProjectEntry> ListProjects() => _store.Projects;
+
+    public SidecarProjectEntry? GetActiveProject()
+        => _store.Projects.FirstOrDefault(p => p.Id == _store.ActiveProjectId);
+
+    public SidecarProjectEntry AddProject(string projectPath, string type)
+    {
+        var fullPath = Path.GetFullPath(projectPath);
+
+        // Check if already added
+        var existing = _store.Projects.FirstOrDefault(p =>
+            string.Equals(Path.GetFullPath(p.ProjectPath), fullPath, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+            return existing;
+
+        var config = new ForgeConfig { ProjectPath = fullPath };
+        var entry = new SidecarProjectEntry
+        {
+            Id = Guid.NewGuid().ToString("N")[..8],
+            ProjectPath = fullPath,
+            Name = config.ProjectName,
+            Type = type,
+            IsUefnProject = config.IsUefnProject,
+            HasUrc = config.HasUrc,
+            ContentPath = config.ContentPath,
+            AddedAt = DateTime.UtcNow
+        };
+
+        // Count assets
+        if (Directory.Exists(entry.ContentPath))
+        {
+            try
+            {
+                entry.AssetCount = Directory.EnumerateFiles(entry.ContentPath, "*.uasset", SearchOption.AllDirectories)
+                    .Count(f => !f.Contains("__External"));
+                entry.ExternalActorCount = Directory.EnumerateFiles(entry.ContentPath, "*.uasset", SearchOption.AllDirectories)
+                    .Count(f => f.Contains("__ExternalActors__"));
+                entry.VerseFileCount = Directory.EnumerateFiles(entry.ContentPath, "*.verse", SearchOption.AllDirectories).Count();
+                entry.LevelCount = Directory.EnumerateFiles(entry.ContentPath, "*.umap", SearchOption.AllDirectories).Count();
+            }
+            catch { }
+        }
+
+        _store.Projects.Add(entry);
+
+        if (_store.Projects.Count == 1)
+            _store.ActiveProjectId = entry.Id;
+
+        Save();
+        return entry;
+    }
+
+    public bool RemoveProject(string id)
+    {
+        var removed = _store.Projects.RemoveAll(p => p.Id == id) > 0;
+        if (removed && _store.ActiveProjectId == id)
+            _store.ActiveProjectId = _store.Projects.FirstOrDefault()?.Id;
+        if (removed) Save();
+        return removed;
+    }
+
+    public SidecarProjectEntry? SetActive(string id)
+    {
+        var project = _store.Projects.FirstOrDefault(p => p.Id == id);
+        if (project != null)
+        {
+            _store.ActiveProjectId = project.Id;
+            Save();
+        }
+        return project;
+    }
+
+    public List<SidecarDiscoveredProject> ScanDirectory(string searchPath)
+    {
+        var projectPaths = ForgeConfig.DiscoverProjects(searchPath);
+        return projectPaths.Select(p =>
+        {
+            var cfg = new ForgeConfig { ProjectPath = p };
+            var alreadyAdded = _store.Projects.Any(ex =>
+                string.Equals(Path.GetFullPath(ex.ProjectPath), Path.GetFullPath(p), StringComparison.OrdinalIgnoreCase));
+
+            int assets = 0, extActors = 0, verse = 0, levels = 0;
+            if (Directory.Exists(cfg.ContentPath))
+            {
+                try
+                {
+                    assets = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
+                        .Count(f => !f.Contains("__External"));
+                    extActors = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
+                        .Count(f => f.Contains("__ExternalActors__"));
+                    verse = Directory.EnumerateFiles(cfg.ContentPath, "*.verse", SearchOption.AllDirectories).Count();
+                    levels = Directory.EnumerateFiles(cfg.ContentPath, "*.umap", SearchOption.AllDirectories).Count();
+                }
+                catch { }
+            }
+
+            return new SidecarDiscoveredProject
+            {
+                ProjectPath = p,
+                ProjectName = cfg.ProjectName,
+                IsUefnProject = cfg.IsUefnProject,
+                HasUrc = cfg.HasUrc,
+                AssetCount = assets,
+                ExternalActorCount = extActors,
+                VerseFileCount = verse,
+                LevelCount = levels,
+                AlreadyAdded = alreadyAdded
+            };
+        }).ToList();
+    }
+
+    private SidecarProjectStore Load()
+    {
+        if (File.Exists(_storagePath))
+        {
+            try
+            {
+                var json = File.ReadAllText(_storagePath);
+                return JsonSerializer.Deserialize<SidecarProjectStore>(json, StoreJsonOpts) ?? new SidecarProjectStore();
+            }
+            catch { }
+        }
+        return new SidecarProjectStore();
+    }
+
+    private void Save()
+    {
+        var dir = Path.GetDirectoryName(_storagePath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllText(_storagePath, JsonSerializer.Serialize(_store, StoreJsonOpts));
+    }
+}
+
+internal class SidecarProjectStore
+{
+    public string? ActiveProjectId { get; set; }
+    public List<SidecarProjectEntry> Projects { get; set; } = new();
+}
+
+internal class SidecarProjectEntry
+{
+    public string Id { get; set; } = "";
+    public string ProjectPath { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Type { get; set; } = "MyProject";
+    public bool IsUefnProject { get; set; }
+    public bool HasUrc { get; set; }
+    public string ContentPath { get; set; } = "";
+    public int AssetCount { get; set; }
+    public int ExternalActorCount { get; set; }
+    public int VerseFileCount { get; set; }
+    public int LevelCount { get; set; }
+    public DateTime AddedAt { get; set; }
+}
+
+internal class SidecarDiscoveredProject
+{
+    public string ProjectPath { get; set; } = "";
+    public string ProjectName { get; set; } = "";
+    public bool IsUefnProject { get; set; }
+    public bool HasUrc { get; set; }
+    public int AssetCount { get; set; }
+    public int ExternalActorCount { get; set; }
+    public int VerseFileCount { get; set; }
+    public int LevelCount { get; set; }
+    public bool AlreadyAdded { get; set; }
+}
+
+// ========= Sidecar Library Manager (separate from projects — read-only reference collections) =========
+
+internal class SidecarLibraryManager
+{
+    private readonly string _storagePath;
+    private SidecarLibraryStore _store;
+    private static readonly JsonSerializerOptions StoreJsonOpts = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    public SidecarLibraryManager()
+    {
+        _storagePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".fortniteforge", "libraries.json");
+        _store = Load();
+    }
+
+    public List<SidecarLibraryEntry> ListLibraries() => _store.Libraries;
+
+    public SidecarLibraryEntry? GetActiveLibrary()
+        => _store.Libraries.FirstOrDefault(l => l.Id == _store.ActiveLibraryId);
+
+    public SidecarLibraryEntry AddLibrary(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+
+        // Check if already added
+        var existing = _store.Libraries.FirstOrDefault(l =>
+            string.Equals(Path.GetFullPath(l.Path), fullPath, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+            return existing;
+
+        var entry = new SidecarLibraryEntry
+        {
+            Id = Guid.NewGuid().ToString("N")[..8],
+            Path = fullPath,
+            Name = Path.GetFileName(fullPath),
+            AddedAt = DateTime.UtcNow
+        };
+
+        // Count .verse and .uasset files for stats
+        if (Directory.Exists(fullPath))
+        {
+            try
+            {
+                entry.VerseFileCount = Directory.EnumerateFiles(fullPath, "*.verse", SearchOption.AllDirectories).Count();
+                entry.AssetCount = Directory.EnumerateFiles(fullPath, "*.uasset", SearchOption.AllDirectories).Count();
+            }
+            catch { }
+        }
+
+        _store.Libraries.Add(entry);
+
+        if (_store.Libraries.Count == 1)
+            _store.ActiveLibraryId = entry.Id;
+
+        Save();
+        return entry;
+    }
+
+    public bool RemoveLibrary(string id)
+    {
+        var removed = _store.Libraries.RemoveAll(l => l.Id == id) > 0;
+        if (removed && _store.ActiveLibraryId == id)
+            _store.ActiveLibraryId = _store.Libraries.FirstOrDefault()?.Id;
+        if (removed) Save();
+        return removed;
+    }
+
+    public SidecarLibraryEntry? SetActive(string id)
+    {
+        var library = _store.Libraries.FirstOrDefault(l => l.Id == id);
+        if (library != null)
+        {
+            _store.ActiveLibraryId = library.Id;
+            Save();
+        }
+        return library;
+    }
+
+    public void UpdateStats(string id, int verseFileCount, int assetCount, DateTime indexedAt)
+    {
+        var library = _store.Libraries.FirstOrDefault(l => l.Id == id);
+        if (library != null)
+        {
+            library.VerseFileCount = verseFileCount;
+            library.AssetCount = assetCount;
+            library.IndexedAt = indexedAt;
+            Save();
+        }
+    }
+
+    private SidecarLibraryStore Load()
+    {
+        if (File.Exists(_storagePath))
+        {
+            try
+            {
+                var json = File.ReadAllText(_storagePath);
+                return JsonSerializer.Deserialize<SidecarLibraryStore>(json, StoreJsonOpts) ?? new SidecarLibraryStore();
+            }
+            catch { }
+        }
+        return new SidecarLibraryStore();
+    }
+
+    private void Save()
+    {
+        var dir = Path.GetDirectoryName(_storagePath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllText(_storagePath, JsonSerializer.Serialize(_store, StoreJsonOpts));
+    }
+}
+
+internal class SidecarLibraryStore
+{
+    public string? ActiveLibraryId { get; set; }
+    public List<SidecarLibraryEntry> Libraries { get; set; } = new();
+}
+
+internal class SidecarLibraryEntry
+{
+    public string Id { get; set; } = "";
+    public string Path { get; set; } = "";
+    public string Name { get; set; } = "";
+    public int VerseFileCount { get; set; }
+    public int AssetCount { get; set; }
+    public DateTime? IndexedAt { get; set; }
+    public DateTime AddedAt { get; set; }
 }
