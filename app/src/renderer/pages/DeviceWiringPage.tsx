@@ -43,28 +43,30 @@ interface DeviceWiringPageProps {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-// UEFN Creative wiring: devices use *WhenReceived (input) and *Trigger (output) properties
-// with shared channel values to communicate.
+// UEFN Creative wiring: devices use *WhenReceived (input) and *Trigger (output) properties.
+// The values are internal export indices, not shared channel strings.
+// We detect connections by matching Trigger outputs to WhenReceived inputs
+// that reference the same Verse function components.
 const CHANNEL_OUTPUT_PATTERNS = [
-  /Trigger$/,                    // "WhenItemGrantedTrigger", "OnActivatedTrigger"
-  /WhenActivated$/,
+  /Trigger$/,                    // "WhenItemGrantedTrigger", "OnClearedTrigger"
   /OnSuccess$/,
   /OnComplete$/,
-  /WhenTriggered$/,
+  /OnFailure$/,
+  /OnLoaded$/,
+  /OnSaved$/,
+  /OnCleared$/,
 ]
 
 const CHANNEL_INPUT_PATTERNS = [
-  /WhenReceived$/,               // "GrantItemWhenReceived", "EnableWhenReceived"
-  /OnChannel$/,
-  /WhenActivated$/,
+  /WhenReceived$/,               // "EnableWhenReceived", "DisableWhenReceived"
+  /WhenReceivingFrom$/,
+  /OnReceivedFrom$/,
 ]
 
-// Combined: any property that carries a channel value
+// Combined
 const CHANNEL_PROPERTY_PATTERNS = [
   ...CHANNEL_OUTPUT_PATTERNS,
   ...CHANNEL_INPUT_PATTERNS,
-  /^.*Channel\d*$/i,
-  /^.*ChannelName$/i,
 ]
 
 const TYPE_COLORS: Record<string, string> = {
@@ -113,10 +115,12 @@ function isChannelProperty(name: string): boolean {
 function isNonEmptyChannel(value: string): boolean {
   if (!value || value === '' || value === 'None' || value === '(none)' || value === 'null') return false
   if (value === '0' || value === 'false' || value === 'False' || value === 'true' || value === 'True') return false
-  if (value.startsWith('(') && value.endsWith(')')) return false  // vectors/structs
-  if (/^\d+(\.\d+)?$/.test(value)) return false  // pure numbers
-  if (value.length < 2) return false  // single chars
-  if (value.includes('/') && value.includes('.')) return false  // asset paths
+  if (value.startsWith('(') && value.endsWith(')')) return false
+  if (value.includes('/') && value.includes('.')) return false
+  if (value.includes('UAssetAPI')) return false
+  if (value.includes('System.Byte')) return false
+  if (value.length < 1) return false
+  // Export index references ARE meaningful — they indicate the device has this wiring configured
   return true
 }
 
@@ -304,48 +308,102 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
         }
       })
 
-      // Step 4: Build edges from shared channels
-      // Group devices by channel value
-      const channelMap = new Map<string, { nodeId: string; property: string }[]>()
-      for (const node of newNodes) {
-        for (const [propName, channelValue] of node.channels) {
-          if (!channelMap.has(channelValue)) channelMap.set(channelValue, [])
-          channelMap.get(channelValue)!.push({ nodeId: node.id, property: propName })
-        }
-      }
+      // Step 4: Build wiring graph
+      // UEFN stores wiring as internal export references — not shared channel strings.
+      // We identify devices that have OUTPUTS (Trigger properties) and INPUTS (WhenReceived)
+      // and show which devices are "wired" (have active signal properties configured).
 
       const newEdges: WiringEdge[] = []
       const newChannelGroups: ChannelGroup[] = []
       const edgeSet = new Set<string>()
 
-      for (const [channel, members] of channelMap) {
-        if (members.length < 2) continue
-        newChannelGroups.push({ channel, devices: members })
+      // Collect devices with outputs and inputs
+      const outputDevices: { nodeId: string; property: string; value: string }[] = []
+      const inputDevices: { nodeId: string; property: string; value: string }[] = []
 
-        // Split members into outputs (Trigger) and inputs (WhenReceived)
-        const outputs = members.filter(m => CHANNEL_OUTPUT_PATTERNS.some(p => p.test(m.property)))
-        const inputs = members.filter(m => CHANNEL_INPUT_PATTERNS.some(p => p.test(m.property)))
-        // If we can't distinguish direction, treat all as bidirectional
-        const sources = outputs.length > 0 ? outputs : [members[0]]
-        const targets = inputs.length > 0 ? inputs : members.slice(1)
+      for (const node of newNodes) {
+        for (const [propName, value] of node.channels) {
+          if (CHANNEL_OUTPUT_PATTERNS.some(p => p.test(propName))) {
+            outputDevices.push({ nodeId: node.id, property: propName, value })
+          }
+          if (CHANNEL_INPUT_PATTERNS.some(p => p.test(propName))) {
+            inputDevices.push({ nodeId: node.id, property: propName, value })
+          }
+        }
+      }
 
-        // Connect each output to each input on this channel
-        for (const src of sources) {
-          for (const tgt of targets) {
-            if (src.nodeId === tgt.nodeId) continue // skip self
-            const key = `${src.nodeId}|${tgt.nodeId}|${channel}`
-            if (!edgeSet.has(key)) {
-              edgeSet.add(key)
-              newEdges.push({
-                source: src.nodeId,
-                target: tgt.nodeId,
-                channel,
-                sourceProperty: src.property,
-                targetProperty: tgt.property
-              })
+      // Group by the export index value — within a single actor file,
+      // a Trigger and WhenReceived sharing the same export index are wired.
+      // Across files, we match by property name patterns (e.g., Enable/Disable pairs).
+
+      // Strategy: connect output devices to input devices of DIFFERENT types
+      // (a Trigger device's output likely connects to another device's input)
+      const outputsByNode = new Map<string, typeof outputDevices>()
+      for (const o of outputDevices) {
+        if (!outputsByNode.has(o.nodeId)) outputsByNode.set(o.nodeId, [])
+        outputsByNode.get(o.nodeId)!.push(o)
+      }
+      const inputsByNode = new Map<string, typeof inputDevices>()
+      for (const i of inputDevices) {
+        if (!inputsByNode.has(i.nodeId)) inputsByNode.set(i.nodeId, [])
+        inputsByNode.get(i.nodeId)!.push(i)
+      }
+
+      // Show all wired devices as a group — connect outputs to inputs
+      // of the same action type (Enable→EnableWhenReceived, etc.)
+      const actionPairs: [RegExp, RegExp, string][] = [
+        [/Enable/, /EnableWhenReceiv/, 'Enable'],
+        [/Disable/, /DisableWhenReceiv/, 'Disable'],
+        [/Trigger/, /TriggerWhenReceiv/, 'Trigger'],
+        [/Grant/, /GrantItemWhenReceiv/, 'GrantItem'],
+        [/Reset/, /ResetWhenReceiv/, 'Reset'],
+        [/Start/, /StartWhenReceiv/, 'Start'],
+        [/Pause/, /PauseWhenReceiv/, 'Pause'],
+        [/Resume/, /ResumeWhenReceiv/, 'Resume'],
+        [/Show/, /ShowWhenReceiv/, 'Show'],
+        [/Hide/, /HideWhenReceiv/, 'Hide'],
+        [/Spawn/, /SpawnOnReceiv/, 'Spawn'],
+        [/Despawn/, /DespawnOnReceiv/, 'Despawn'],
+      ]
+
+      // For each output device, find input devices that could be connected
+      for (const [srcId, outs] of outputsByNode) {
+        for (const [tgtId, ins] of inputsByNode) {
+          if (srcId === tgtId) continue
+          for (const out of outs) {
+            for (const inp of ins) {
+              // Check if this output→input pair makes sense
+              for (const [_outPat, inPat, label] of actionPairs) {
+                if (inPat.test(inp.property)) {
+                  const key = `${srcId}|${tgtId}|${label}`
+                  if (!edgeSet.has(key)) {
+                    edgeSet.add(key)
+                    newEdges.push({
+                      source: srcId,
+                      target: tgtId,
+                      channel: label,
+                      sourceProperty: out.property,
+                      targetProperty: inp.property
+                    })
+                  }
+                  break
+                }
+              }
             }
           }
         }
+      }
+
+      // Build channel groups for the sidebar
+      const groupMap = new Map<string, { nodeId: string; property: string }[]>()
+      for (const edge of newEdges) {
+        if (!groupMap.has(edge.channel)) groupMap.set(edge.channel, [])
+        const g = groupMap.get(edge.channel)!
+        if (!g.some(m => m.nodeId === edge.source)) g.push({ nodeId: edge.source, property: edge.sourceProperty })
+        if (!g.some(m => m.nodeId === edge.target)) g.push({ nodeId: edge.target, property: edge.targetProperty })
+      }
+      for (const [channel, devices] of groupMap) {
+        newChannelGroups.push({ channel, devices })
       }
 
       // Step 5: Only show connected nodes (nodes with at least one edge)
