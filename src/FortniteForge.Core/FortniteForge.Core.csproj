@@ -8,6 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CUE4Parse" Version="1.2.2" />
+    <PackageReference Include="CUE4Parse-Conversion" Version="1.2.1" />
+    <PackageReference Include="SkiaSharp" Version="3.119.2" />
     <ProjectReference Include="..\..\lib\UAssetAPI\UAssetAPI\UAssetAPI.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
   </ItemGroup>

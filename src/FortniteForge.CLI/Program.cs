@@ -482,6 +482,8 @@ public class Program
     private static SidecarProjectManager? _sidecarProjects;
     // Sidecar-scoped library manager for persistent library list (separate from projects)
     private static SidecarLibraryManager? _sidecarLibraries;
+    // CUE4Parse asset preview service (optional — only if Fortnite is installed)
+    private static AssetPreviewService? _previewService;
 
     private static Command BuildSidecarCommand()
     {
@@ -588,6 +590,12 @@ public class Program
                 "get-library-assets-by-type" => HandleGetLibraryAssetsByType(req),
                 "browse-library-dir" => HandleBrowseLibraryDir(req),
                 "search-library-index" => HandleSearchLibraryIndex(req),
+                // CUE4Parse asset preview
+                "preview-init" => HandlePreviewInit(req),
+                "preview-search" => HandlePreviewSearch(req),
+                "preview-texture" => HandlePreviewTexture(req),
+                "preview-mesh-info" => HandlePreviewMeshInfo(req),
+                "preview-status" => HandlePreviewStatus(req),
                 _ => new SidecarResponse(req.Id, Error: new SidecarError("UNKNOWN_METHOD", $"Unknown method: {req.Method}"))
             };
         }
@@ -1827,6 +1835,50 @@ public class Program
         }
         return null;
     }
+
+// ========= CUE4Parse Preview Handlers =========
+// (handlers follow, then class closes)
+
+static SidecarResponse HandlePreviewInit(SidecarRequest req)
+{
+    var path = req.Params?.GetProperty("fortnitePath").GetString() ?? throw new ArgumentException("Missing 'fortnitePath' parameter");
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    _previewService?.Dispose();
+    _previewService = new AssetPreviewService(loggerFactory.CreateLogger<AssetPreviewService>());
+    var task = _previewService.InitializeAsync(path); task.Wait();
+    if (task.Result) return new SidecarResponse(req.Id, new { initialized = true, fileCount = _previewService.GetFileCount(), gamePath = _previewService.GamePath });
+    return new SidecarResponse(req.Id, Error: new SidecarError("INIT_FAILED", $"Could not find Fortnite PAK files at: {path}"));
+}
+
+static SidecarResponse HandlePreviewStatus(SidecarRequest req) =>
+    new(req.Id, new { initialized = _previewService?.IsInitialized ?? false, fileCount = _previewService?.GetFileCount() ?? 0, gamePath = _previewService?.GamePath });
+
+static SidecarResponse HandlePreviewSearch(SidecarRequest req)
+{
+    if (_previewService == null || !_previewService.IsInitialized) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INITIALIZED", "Preview service not initialized."));
+    var query = req.Params?.GetProperty("query").GetString() ?? throw new ArgumentException("Missing 'query'");
+    var limit = 50; if (req.Params?.TryGetProperty("limit", out var lEl) == true) limit = lEl.GetInt32();
+    var results = _previewService.SearchAssets(query, limit);
+    return new SidecarResponse(req.Id, new { query, results, count = results.Count });
+}
+
+static SidecarResponse HandlePreviewTexture(SidecarRequest req)
+{
+    if (_previewService == null || !_previewService.IsInitialized) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INITIALIZED", "Preview service not initialized."));
+    var assetPath = req.Params?.GetProperty("assetPath").GetString() ?? throw new ArgumentException("Missing 'assetPath'");
+    var pngBytes = _previewService.ExtractTexture(assetPath);
+    if (pngBytes == null) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Could not extract texture: {assetPath}"));
+    return new SidecarResponse(req.Id, new { assetPath, dataUrl = $"data:image/png;base64,{Convert.ToBase64String(pngBytes)}", size = pngBytes.Length });
+}
+
+static SidecarResponse HandlePreviewMeshInfo(SidecarRequest req)
+{
+    if (_previewService == null || !_previewService.IsInitialized) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INITIALIZED", "Preview service not initialized."));
+    var assetPath = req.Params?.GetProperty("assetPath").GetString() ?? throw new ArgumentException("Missing 'assetPath'");
+    var info = _previewService.GetMeshInfo(assetPath);
+    if (info == null) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Could not read mesh: {assetPath}"));
+    return new SidecarResponse(req.Id, new { assetPath, vertexCount = info.VertexCount, triangleCount = info.TriangleCount, lodCount = info.LODCount, materialCount = info.MaterialCount });
+}
 }
 
 internal record ServiceBundle(
