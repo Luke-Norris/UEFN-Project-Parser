@@ -23,9 +23,13 @@ export function VerseFilesPage() {
       async function scanDir(path?: string) {
         const result = await window.electronAPI.forgeBrowseContent(path)
         for (const entry of result?.entries ?? []) {
-          if (entry.isDirectory) {
+          // Sidecar returns type: "folder" for dirs, not isDirectory
+          const isDir = entry.isDirectory || (entry as any).type === 'folder'
+          if (isDir) {
+            // Skip __External* directories (huge, no verse)
+            if (entry.name?.startsWith('__')) continue
             await scanDir(entry.path)
-          } else if (entry.name?.endsWith('.verse') || entry.extension?.toLowerCase() === '.verse') {
+          } else if (entry.name?.endsWith('.verse') || (entry as any).type === 'verse') {
             allVerseFiles.push(entry)
           }
         }
