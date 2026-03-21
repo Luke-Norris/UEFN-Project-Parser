@@ -1,3 +1,4 @@
+import { applyZoom } from '../../lib/zoom'
 import { useCanvasStore } from '../../stores/canvasStore'
 import { useTemplateStore } from '../../stores/templateStore'
 import { useSettingsStore } from '../../stores/settingsStore'
@@ -275,12 +276,12 @@ function UiZoomControls() {
   const setZoom = (z: number) => {
     const clamped = Math.round(Math.max(0.5, Math.min(3, z)) * 100) / 100
     setSetting('uiZoom', clamped)
-    document.body.style.zoom = String(clamped)
+    applyZoom(clamped)
   }
 
   // Apply saved zoom on mount
   if (document.body.style.zoom !== String(uiZoom)) {
-    document.body.style.zoom = String(uiZoom)
+    applyZoom(uiZoom)
   }
 
   return (

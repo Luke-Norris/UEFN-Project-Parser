@@ -33,14 +33,15 @@ import { ProjectHealthPage } from './pages/ProjectHealthPage'
 import { useTheme } from './hooks/useTheme'
 import { useSettingsStore } from './stores/settingsStore'
 
+import { applyZoom } from './lib/zoom'
+
 export default function App() {
   useTheme()
 
-  // Restore UI zoom from saved settings — apply to document element
+  // Restore UI zoom via transform (not body.zoom which breaks layout)
   const savedZoom = useSettingsStore((s) => s.uiZoom)
   useEffect(() => {
-    document.documentElement.style.fontSize = `${savedZoom * 16}px`
-    document.body.style.zoom = String(savedZoom)
+    applyZoom(savedZoom)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- only on mount
 
   const [activePage, setActivePage] = useState<PageId>('home')
@@ -160,8 +161,7 @@ export default function App() {
   return (
     <ContextMenuProvider>
       <div
-        className="flex bg-fn-darker text-gray-200 select-none overflow-hidden"
-        style={{ height: '100vh' }}
+        className="h-full flex bg-fn-darker text-gray-200 select-none overflow-hidden"
         onContextMenu={(e) => {
           e.preventDefault()
         }}

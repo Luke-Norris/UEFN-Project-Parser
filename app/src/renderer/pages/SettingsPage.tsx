@@ -1,3 +1,4 @@
+import { applyZoom } from '../lib/zoom'
 import { useSettingsStore, settingsDefaults } from '../stores/settingsStore'
 import type { SettingsState } from '../stores/settingsStore'
 import { themes, accentColors } from '../styles/themes'
@@ -261,7 +262,7 @@ export function SettingsPage() {
                 onChange={(e) => {
                   const val = Number(e.target.value) / 100
                   setSetting('uiZoom', val)
-                  document.body.style.zoom = String(val)
+                  applyZoom(val)
                 }}
                 className="flex-1 accent-blue-500"
               />
@@ -269,7 +270,7 @@ export function SettingsPage() {
                 className="text-sm font-mono min-w-[48px] text-center px-2 py-1 rounded bg-fn-panel border border-fn-border hover:bg-white/5 transition-colors"
                 onClick={() => {
                   setSetting('uiZoom', 1)
-                  document.body.style.zoom = '1'
+                  applyZoom(1)
                 }}
                 title="Reset to 100%"
               >

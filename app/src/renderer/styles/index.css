@@ -10,29 +10,20 @@
 */
 
 /* ─── App shell — fixed to viewport ─── */
-html {
+html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  height: 100vh;
-  height: 100dvh; /* dynamic viewport height — accounts for mobile bars */
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
+  width: 100%;
+  height: 100%;
 }
 
 #root {
   overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
-  /* When zoom is applied, scale content but keep the container viewport-sized */
-  max-height: 100vh;
-  max-height: 100dvh;
+  width: 100%;
+  height: 100%;
+  /* Zoom is applied via transform + adjusted dimensions so layout isn't broken */
+  transform-origin: top left;
 }
 
 /* ─── Theme CSS Custom Properties (defaults = midnight theme) ─── */
