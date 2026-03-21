@@ -5,10 +5,53 @@ import type { VerseFileContent } from '../../shared/types'
 
 interface TreeNode {
   name: string
-  path: string // relative path from content root
+  path: string
   isDir: boolean
   children: TreeNode[]
   size?: number
+}
+
+interface ParsedClass { name: string; parent?: string; startLine: number }
+interface ParsedFunction { name: string; signature: string; startLine: number }
+interface ParsedDevice { name: string; type: string; line: number }
+interface ParsedImport { module: string; line: number }
+
+function parseVerseSource(content: string) {
+  if (!content) return { classes: [], functions: [], devices: [], imports: [] }
+  const lines = content.split('\n')
+  const classes: ParsedClass[] = []
+  const functions: ParsedFunction[] = []
+  const devices: ParsedDevice[] = []
+  const imports: ParsedImport[] = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+    const usingMatch = trimmed.match(/^using\s*\{\s*(.+?)\s*\}/) || trimmed.match(/^using\s+(.+)/)
+    if (usingMatch) { imports.push({ module: usingMatch[1], line: i + 1 }); continue }
+    const classMatch = trimmed.match(/^(\w+)\s*(?:<[^>]*>\s*)?:=\s*class(?:\((\w+)\))?\s*:?\s*$/)
+    if (classMatch) { classes.push({ name: classMatch[1], parent: classMatch[2], startLine: i + 1 }); continue }
+    const funcMatch = trimmed.match(/^(\w+)\s*(?:<[^>]*>\s*)?\(([^)]*)\)(?:\s*<[^>]+>)*\s*(?::\s*(\w+))?\s*=\s*$/)
+    if (funcMatch) { functions.push({ name: funcMatch[1], signature: trimmed.replace(/\s*=\s*$/, ''), startLine: i + 1 }); continue }
+    const deviceMatch = trimmed.match(/^@editable\s+(\w+)\s*:\s*(\w+)/)
+    if (deviceMatch) { devices.push({ name: deviceMatch[1], type: deviceMatch[2], line: i + 1 }) }
+  }
+  return { classes, functions, devices, imports }
+}
+
+function CollapsibleSection({ title, count, color, children }: { title: string; count: number; color: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div className="border-b border-fn-border/30 last:border-b-0">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-white/[0.03] transition-colors">
+        <svg className={`w-3 h-3 text-gray-500 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{title}</span>
+        {count > 0 && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${color}`}>{count}</span>}
+      </button>
+      {open && <div className="px-2 pb-2">{children}</div>}
+    </div>
+  )
 }
 
 export function VerseFilesPage() {
@@ -123,11 +166,11 @@ export function VerseFilesPage() {
     setFileLoading(true)
     try {
       const result = await window.electronAPI.forgeReadVerse(node.path) as any
-      // Normalize — sidecar may return content or Content
+      // Normalize — sidecar returns 'source' not 'content'
       setFileContent({
         filePath: result?.filePath ?? node.path,
         name: result?.name ?? node.name,
-        content: result?.content ?? result?.Content ?? '',
+        content: result?.content ?? result?.source ?? result?.Content ?? '',
         lineCount: result?.lineCount ?? result?.LineCount ?? 0,
       })
     } catch {
@@ -136,6 +179,14 @@ export function VerseFilesPage() {
       setFileLoading(false)
     }
   }, [])
+
+  // Parse analysis from current file
+  const parsed = useMemo(() => {
+    if (!fileContent?.content) return null
+    return parseVerseSource(fileContent.content)
+  }, [fileContent])
+
+  const [scrollToLine, setScrollToLine] = useState<number | undefined>(undefined)
 
   // Render a tree node recursively
   function renderNode(node: TreeNode, depth: number = 0): React.ReactNode {
@@ -260,7 +311,7 @@ export function VerseFilesPage() {
         </div>
       </div>
 
-      {/* Right: File Content */}
+      {/* Center: File Content */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {fileLoading ? (
           <div className="flex-1 flex items-center justify-center">
@@ -275,8 +326,9 @@ export function VerseFilesPage() {
             </div>
             <div className="flex-1 overflow-auto min-h-0">
               <VerseHighlighter
-                code={fileContent.content || '// Empty file'}
+                source={fileContent.content || '// Empty file'}
                 fontSize={verseEditorFontSize}
+                scrollToLine={scrollToLine}
               />
             </div>
           </>
@@ -291,6 +343,62 @@ export function VerseFilesPage() {
           </div>
         )}
       </div>
+
+      {/* Right: Analysis Panel */}
+      {fileContent && parsed && (
+        <div className="w-[260px] border-l border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden min-h-0">
+          <div className="px-2 py-1.5 border-b border-fn-border shrink-0">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Analysis</span>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <CollapsibleSection title="Classes" count={parsed.classes.length} color="text-blue-400 bg-blue-400/10">
+              {parsed.classes.length === 0 ? (
+                <div className="py-2 text-center text-[10px] text-gray-600">No classes found</div>
+              ) : parsed.classes.map((cls, i) => (
+                <button key={i} onClick={() => setScrollToLine(cls.startLine)} className="w-full flex items-center gap-1.5 px-2 py-1 text-left hover:bg-white/[0.03] transition-colors">
+                  <span className="text-[10px] font-semibold text-blue-400 truncate">{cls.name}</span>
+                  {cls.parent && <span className="text-[9px] text-gray-600">: {cls.parent}</span>}
+                  <span className="ml-auto text-[8px] text-gray-700 tabular-nums shrink-0">L{cls.startLine}</span>
+                </button>
+              ))}
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Functions" count={parsed.functions.length} color="text-cyan-400 bg-cyan-400/10">
+              {parsed.functions.length === 0 ? (
+                <div className="py-2 text-center text-[10px] text-gray-600">No functions found</div>
+              ) : parsed.functions.map((fn, i) => (
+                <button key={i} onClick={() => setScrollToLine(fn.startLine)} className="w-full flex items-center gap-1.5 px-2 py-1 text-left hover:bg-white/[0.03] transition-colors">
+                  <span className="text-[10px] font-semibold text-cyan-400 truncate flex-1 min-w-0">{fn.name}</span>
+                  <span className="text-[8px] text-gray-700 tabular-nums shrink-0">L{fn.startLine}</span>
+                </button>
+              ))}
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Devices" count={parsed.devices.length} color="text-purple-400 bg-purple-400/10">
+              {parsed.devices.length === 0 ? (
+                <div className="py-2 text-center text-[10px] text-gray-600">No @editable devices</div>
+              ) : parsed.devices.map((dev, i) => (
+                <button key={i} onClick={() => setScrollToLine(dev.line)} className="w-full flex items-center gap-1.5 px-2 py-1 text-left hover:bg-white/[0.03] transition-colors">
+                  <span className="text-[9px] text-purple-400/70">@</span>
+                  <span className="text-[10px] font-semibold text-white truncate">{dev.name}</span>
+                  <span className="text-[9px] text-gray-600 truncate">{dev.type}</span>
+                  <span className="ml-auto text-[8px] text-gray-700 tabular-nums shrink-0">L{dev.line}</span>
+                </button>
+              ))}
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Imports" count={parsed.imports.length} color="text-orange-400 bg-orange-400/10">
+              {parsed.imports.length === 0 ? (
+                <div className="py-2 text-center text-[10px] text-gray-600">No imports</div>
+              ) : parsed.imports.map((imp, i) => (
+                <button key={i} onClick={() => setScrollToLine(imp.line)} className="w-full flex items-center gap-1.5 px-2 py-1 text-left hover:bg-white/[0.03] transition-colors">
+                  <span className="text-[10px] font-semibold text-orange-400 truncate font-mono flex-1 min-w-0">{imp.module}</span>
+                </button>
+              ))}
+            </CollapsibleSection>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

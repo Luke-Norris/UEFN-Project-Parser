@@ -350,6 +350,7 @@ interface TokenizedLine {
 }
 
 function tokenizeSource(source: string): TokenizedLine[] {
+  if (!source) return [{ tokens: [{ type: 'comment', text: '// Empty file' }] }]
   const lines = source.split('\n')
   const result: TokenizedLine[] = []
   let inBlockComment = false
@@ -499,7 +500,7 @@ export function VerseHighlighter({
 
   const tokenizedLines = useMemo(() => tokenizeSource(source), [source])
 
-  const sourceLines = useMemo(() => source.split('\n'), [source])
+  const sourceLines = useMemo(() => (source || '').split('\n'), [source])
 
   // Compute per-line match counts and total
   const { matchesPerLine, totalMatches, matchLineMap } = useMemo(() => {
