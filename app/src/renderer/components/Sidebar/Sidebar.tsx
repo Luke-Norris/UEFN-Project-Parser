@@ -349,15 +349,19 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
     >
       {/* Logo + collapse toggle */}
       <div className="h-10 flex items-center gap-2 px-3 border-b border-fn-border shrink-0 overflow-hidden">
-        <img
-          src={new URL('../../assets/logo.png', import.meta.url).href}
-          alt="WellVersed"
-          className={`w-6 h-6 shrink-0 ${collapsed ? 'cursor-pointer' : ''}`}
-          onClick={collapsed ? onToggleCollapse : undefined}
-          title={collapsed ? 'Expand sidebar' : undefined}
-        />
-        {!collapsed && (
+        {collapsed ? (
+          <button
+            onClick={onToggleCollapse}
+            className="w-6 h-6 flex items-center justify-center rounded text-gray-500 hover:text-white hover:bg-white/[0.05] transition-colors"
+            title="Expand sidebar"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M13 5l7 7-7 7M6 5l7 7-7 7" />
+            </svg>
+          </button>
+        ) : (
           <>
+            <img src={new URL('../../assets/logo.png', import.meta.url).href} alt="WellVersed" className="w-6 h-6 shrink-0" />
             <span className="text-[11px] font-semibold text-white tracking-wide whitespace-nowrap flex-1">
               WellVersed
             </span>

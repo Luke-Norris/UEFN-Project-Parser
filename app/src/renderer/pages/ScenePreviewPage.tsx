@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { ErrorMessage } from '../components/ErrorMessage'
@@ -112,6 +112,8 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [inspectorWidth, setInspectorWidth] = useState(340)
   const [showGrid, setShowGrid] = useState(true)
   const [showFog, setShowFog] = useState(true)
+  const [showHierarchy, setShowHierarchy] = useState(true)
+  const [hierarchySearch, setHierarchySearch] = useState('')
   const [flySpeed, setFlySpeed] = useState(2)
   const [fov, setFov] = useState(60)
 
@@ -232,22 +234,30 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     controls.mouseButtons = { LEFT: THREE.MOUSE.LEFT, MIDDLE: THREE.MOUSE.MIDDLE, RIGHT: THREE.MOUSE.RIGHT }
     controlsRef.current = controls
 
-    // Right-click fly mode
+    // Right-click fly mode with pointer lock
     const onContextMenu = (e: Event) => e.preventDefault()
     renderer.domElement.addEventListener('contextmenu', onContextMenu)
 
     const onMouseDown = (e: MouseEvent) => {
-      if (e.button === 2) { flyingRef.current = true; controls.enabled = false }
+      if (e.button === 2) {
+        flyingRef.current = true
+        controls.enabled = false
+        renderer.domElement.requestPointerLock()
+      }
     }
     const onMouseUp = (e: MouseEvent) => {
-      if (e.button === 2) { flyingRef.current = false; controls.enabled = true }
+      if (e.button === 2) {
+        flyingRef.current = false
+        controls.enabled = true
+        if (document.pointerLockElement) document.exitPointerLock()
+      }
     }
     const onMouseMoveFly = (e: MouseEvent) => {
       if (!flyingRef.current) return
       const euler = new THREE.Euler(0, 0, 0, 'YXZ')
       euler.setFromQuaternion(camera.quaternion)
-      euler.y -= e.movementX * 0.003
-      euler.x -= e.movementY * 0.003
+      euler.y -= e.movementX * 0.002
+      euler.x -= e.movementY * 0.002
       euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x))
       camera.quaternion.setFromEuler(euler)
     }
@@ -255,16 +265,44 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     renderer.domElement.addEventListener('mouseup', onMouseUp)
     document.addEventListener('mousemove', onMouseMoveFly)
 
-    const onKeyDown = (e: KeyboardEvent) => keysRef.current.add(e.key.toLowerCase())
+    // Release pointer lock if lost focus
+    const onPointerLockChange = () => {
+      if (!document.pointerLockElement && flyingRef.current) {
+        flyingRef.current = false
+        controls.enabled = true
+      }
+    }
+    document.addEventListener('pointerlockchange', onPointerLockChange)
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      keysRef.current.add(e.key.toLowerCase())
+      // F key — focus selected device
+      if (e.key.toLowerCase() === 'f') {
+        const selected = deviceMeshesRef.current.find((m) => {
+          const mat = m.material as THREE.MeshLambertMaterial
+          return mat.color.getHex() === SELECTED_COLOR
+        })
+        if (selected) {
+          const pos = selected.position.clone()
+          const dist = 20
+          const dir = new THREE.Vector3()
+          camera.getWorldDirection(dir)
+          controls.target.copy(pos)
+          camera.position.copy(pos).addScaledVector(dir, -dist)
+          controls.update()
+        }
+      }
+    }
     const onKeyUp = (e: KeyboardEvent) => keysRef.current.delete(e.key.toLowerCase())
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
 
-    // Scroll to adjust fly speed
+    // Right-click + scroll = adjust fly speed
     const onWheel = (e: WheelEvent) => {
       if (flyingRef.current) {
         e.preventDefault()
-        flySpeedRef.current = Math.max(0.5, Math.min(20, flySpeedRef.current + (e.deltaY > 0 ? -0.5 : 0.5)))
+        const delta = e.deltaY > 0 ? -0.5 : 0.5
+        flySpeedRef.current = Math.max(0.5, Math.min(20, flySpeedRef.current + delta))
       }
     }
     renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
@@ -341,6 +379,8 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       document.removeEventListener('mousemove', onMouseMoveFly)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
+      document.removeEventListener('pointerlockchange', onPointerLockChange)
+      if (document.pointerLockElement) document.exitPointerLock()
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement)
       }
@@ -483,10 +523,114 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     }
   }, [])
 
+  // Focus on a device
+  const focusDevice = useCallback((device: DeviceEntry) => {
+    const mesh = deviceMeshesRef.current.find((m) => m.userData.device === device)
+    if (!mesh) return
+    const cam = cameraRef.current
+    const ctrl = controlsRef.current
+    if (!cam || !ctrl) return
+    const pos = mesh.position.clone()
+    ctrl.target.copy(pos)
+    cam.position.set(pos.x + 15, pos.y + 10, pos.z + 15)
+    ctrl.update()
+  }, [])
+
+  // Select device from hierarchy
+  const selectDeviceFromHierarchy = useCallback((device: DeviceEntry) => {
+    // Deselect all
+    for (const mesh of deviceMeshesRef.current) {
+      const mat = mesh.material as THREE.MeshLambertMaterial
+      const dev = mesh.userData.device as DeviceEntry
+      mat.color.setHex(getDeviceColor(dev.deviceType))
+      mat.emissive.setHex(0x000000)
+      mesh.scale.set(1, 1, 1)
+    }
+    // Select this one
+    const mesh = deviceMeshesRef.current.find((m) => m.userData.device === device)
+    if (mesh) {
+      const mat = mesh.material as THREE.MeshLambertMaterial
+      mat.color.setHex(SELECTED_COLOR)
+      mat.emissive.setHex(0x003322)
+      mesh.scale.set(1.3, 1.3, 1.3)
+    }
+    setSelectedDevice(device)
+  }, [])
+
+  // Filtered hierarchy list
+  const hierarchyDevices = useMemo(() => {
+    if (!hierarchySearch.trim()) return devices
+    const q = hierarchySearch.toLowerCase()
+    return devices.filter((d) =>
+      d.name.toLowerCase().includes(q) || d.deviceType.toLowerCase().includes(q)
+    )
+  }, [devices, hierarchySearch])
+
+  // Group hierarchy by type
+  const hierarchyGroups = useMemo(() => {
+    const groups = new Map<string, DeviceEntry[]>()
+    for (const d of hierarchyDevices) {
+      const type = d.deviceType || 'Unknown'
+      if (!groups.has(type)) groups.set(type, [])
+      groups.get(type)!.push(d)
+    }
+    return Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length)
+  }, [hierarchyDevices])
+
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
     <div className="flex-1 flex bg-fn-darker overflow-hidden">
+      {/* Hierarchy Panel */}
+      {showHierarchy && devices.length > 0 && (
+        <>
+          <div className="w-[220px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 overflow-hidden">
+            <div className="px-2 py-2 border-b border-fn-border shrink-0">
+              <input
+                type="text"
+                value={hierarchySearch}
+                onChange={(e) => setHierarchySearch(e.target.value)}
+                placeholder="Filter objects..."
+                className="w-full bg-fn-darker border border-fn-border rounded px-2 py-1 text-[10px] text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {hierarchyGroups.map(([type, devs]) => (
+                <div key={type}>
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 text-[9px] font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-fn-dark">
+                    <span
+                      className="w-2 h-2 rounded-sm shrink-0"
+                      style={{ backgroundColor: '#' + getDeviceColor(type).toString(16).padStart(6, '0') }}
+                    />
+                    <span className="truncate">{type}</span>
+                    <span className="ml-auto text-gray-600">{devs.length}</span>
+                  </div>
+                  {devs.map((dev) => (
+                    <button
+                      key={dev.filePath || dev.name}
+                      onClick={() => selectDeviceFromHierarchy(dev)}
+                      onDoubleClick={() => { selectDeviceFromHierarchy(dev); focusDevice(dev) }}
+                      className={`w-full text-left px-3 py-1 text-[10px] truncate transition-colors ${
+                        selectedDevice === dev
+                          ? 'text-white bg-blue-500/20'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
+                      }`}
+                      title={`${dev.name} — double-click to focus`}
+                    >
+                      {dev.name}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="px-2 py-1.5 border-t border-fn-border text-[9px] text-gray-600 shrink-0">
+              {hierarchyDevices.length} / {devices.length} objects
+            </div>
+          </div>
+          <ResizeHandle direction="horizontal" onResize={() => {}} />
+        </>
+      )}
+
       {/* 3D Viewport */}
       <div className="flex-1 flex flex-col relative">
         {/* Toolbar */}
@@ -541,6 +685,14 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
           </div>
 
           <div className="w-px h-4 bg-fn-border" />
+
+          {/* Hierarchy toggle */}
+          <button
+            onClick={() => setShowHierarchy(!showHierarchy)}
+            className={`px-1.5 py-0.5 rounded transition-colors ${showHierarchy ? 'text-white bg-white/10' : 'text-gray-600 hover:text-gray-400'}`}
+          >
+            Hierarchy
+          </button>
 
           {/* Grid toggle */}
           <button
