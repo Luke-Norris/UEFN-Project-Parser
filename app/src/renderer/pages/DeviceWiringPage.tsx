@@ -43,14 +43,28 @@ interface DeviceWiringPageProps {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-// Only match properties that are ACTUAL channel identifiers — not boolean flags or event names
+// UEFN Creative wiring: devices use *WhenReceived (input) and *Trigger (output) properties
+// with shared channel values to communicate.
+const CHANNEL_OUTPUT_PATTERNS = [
+  /Trigger$/,                    // "WhenItemGrantedTrigger", "OnActivatedTrigger"
+  /WhenActivated$/,
+  /OnSuccess$/,
+  /OnComplete$/,
+  /WhenTriggered$/,
+]
+
+const CHANNEL_INPUT_PATTERNS = [
+  /WhenReceived$/,               // "GrantItemWhenReceived", "EnableWhenReceived"
+  /OnChannel$/,
+  /WhenActivated$/,
+]
+
+// Combined: any property that carries a channel value
 const CHANNEL_PROPERTY_PATTERNS = [
-  /^.*Channel\d*$/i,           // "Channel", "Channel1", "TriggerChannel"
-  /^.*ChannelName$/i,          // "ChannelName"
-  /^TransmitOn$/i,
-  /^ReceiveFrom$/i,
-  /^BroadcastChannel$/i,
-  /^ListenChannel$/i,
+  ...CHANNEL_OUTPUT_PATTERNS,
+  ...CHANNEL_INPUT_PATTERNS,
+  /^.*Channel\d*$/i,
+  /^.*ChannelName$/i,
 ]
 
 const TYPE_COLORS: Record<string, string> = {
@@ -308,20 +322,28 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
         if (members.length < 2) continue
         newChannelGroups.push({ channel, devices: members })
 
-        // Connect members in a star from the first device (not all-pairs)
-        // This reduces C(n,2) edges to just (n-1) edges per channel
-        const hub = members[0]
-        for (let i = 1; i < members.length; i++) {
-          const key = `${hub.nodeId}|${members[i].nodeId}|${channel}`
-          if (!edgeSet.has(key)) {
-            edgeSet.add(key)
-            newEdges.push({
-              source: hub.nodeId,
-              target: members[i].nodeId,
-              channel,
-              sourceProperty: hub.property,
-              targetProperty: members[i].property
-            })
+        // Split members into outputs (Trigger) and inputs (WhenReceived)
+        const outputs = members.filter(m => CHANNEL_OUTPUT_PATTERNS.some(p => p.test(m.property)))
+        const inputs = members.filter(m => CHANNEL_INPUT_PATTERNS.some(p => p.test(m.property)))
+        // If we can't distinguish direction, treat all as bidirectional
+        const sources = outputs.length > 0 ? outputs : [members[0]]
+        const targets = inputs.length > 0 ? inputs : members.slice(1)
+
+        // Connect each output to each input on this channel
+        for (const src of sources) {
+          for (const tgt of targets) {
+            if (src.nodeId === tgt.nodeId) continue // skip self
+            const key = `${src.nodeId}|${tgt.nodeId}|${channel}`
+            if (!edgeSet.has(key)) {
+              edgeSet.add(key)
+              newEdges.push({
+                source: src.nodeId,
+                target: tgt.nodeId,
+                channel,
+                sourceProperty: src.property,
+                targetProperty: tgt.property
+              })
+            }
           }
         }
       }
