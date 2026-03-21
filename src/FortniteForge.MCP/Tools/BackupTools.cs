@@ -49,7 +49,8 @@ public class BackupTools
 
     [McpServerTool, Description(
         "Restores an asset from a backup file. " +
-        "Creates a safety backup of the current file before restoring.")]
+        "Creates a safety backup of the current file before restoring. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string restore_asset(
         BackupService backupService,
         [Description("Path to the backup file to restore from")] string backupPath,

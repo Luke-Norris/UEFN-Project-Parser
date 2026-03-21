@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { ResizeHandle } from '../components/ResizeHandle'
 import type { DeviceEntry, DeviceInspectResult } from '../../shared/types'
 
 // ─── Device type → color mapping ─────────────────────────────────────────────
@@ -29,8 +30,11 @@ const TYPE_COLORS: Record<string, number> = {
 const DEFAULT_COLOR = 0x888899
 const HOVER_COLOR = 0xffffff
 const SELECTED_COLOR = 0x00ffaa
-const GROUND_COLOR = 0x1a1a2e
-const GRID_COLOR = 0x2a2a4a
+/** Read a CSS variable as a THREE.Color hex number */
+function cssColorToHex(varName: string, fallback: string): number {
+  const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
+  return parseInt(val.replace('#', ''), 16)
+}
 
 function getDeviceColor(deviceType: string): number {
   // Check exact match first
@@ -73,6 +77,10 @@ function createDeviceMesh(device: DeviceEntry, geometry: THREE.BufferGeometry, c
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
+// Frontend cache for device scan results
+const deviceCache = new Map<string, { devices: DeviceEntry[]; fetchedAt: number }>()
+const DEVICE_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 interface ScenePreviewPageProps {
   selectedLevel?: string | null
 }
@@ -88,6 +96,9 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const deviceMeshesRef = useRef<THREE.Mesh[]>([])
   const labelRef = useRef<HTMLDivElement>(null)
   const animFrameRef = useRef<number>(0)
+  const keysRef = useRef<Set<string>>(new Set())
+  const flyingRef = useRef(false)
+  const flySpeedRef = useRef(2)
 
   const [devices, setDevices] = useState<DeviceEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -98,6 +109,11 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [inspectLoading, setInspectLoading] = useState(false)
   const [stats, setStats] = useState({ total: 0, withPos: 0, types: 0 })
   const [levelPath, setLevelPath] = useState<string | null>(selectedLevel ?? null)
+  const [inspectorWidth, setInspectorWidth] = useState(340)
+  const [showGrid, setShowGrid] = useState(true)
+  const [showFog, setShowFog] = useState(true)
+  const [flySpeed, setFlySpeed] = useState(2)
+  const [fov, setFov] = useState(60)
 
   // Fetch levels directly (bypass cache to get fresh data for active project)
   const [localLevels, setLocalLevels] = useState<Array<{ filePath: string; name: string }>>([])
@@ -113,12 +129,22 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch devices when level changes
+  // Fetch devices when level changes — with frontend cache
   useEffect(() => {
     if (!levelPath) return
+
+    // Check frontend cache first
+    const cached = deviceCache.get(levelPath)
+    if (cached && Date.now() - cached.fetchedAt < DEVICE_CACHE_TTL) {
+      setDevices(cached.devices)
+      const withPos = cached.devices.filter((d) => d.position)
+      const types = new Set(cached.devices.map((d) => d.deviceType))
+      setStats({ total: cached.devices.length, withPos: withPos.length, types: types.size })
+      return
+    }
+
     setLoading(true)
     setError(null)
-    setDevices([])
     setSelectedDevice(null)
     setInspectResult(null)
 
@@ -126,6 +152,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       .then((result) => {
         const devs = result?.devices ?? []
         setDevices(devs)
+        deviceCache.set(levelPath, { devices: devs, fetchedAt: Date.now() })
         const withPos = devs.filter((d: any) => d.position)
         const types = new Set(devs.map((d: any) => d.deviceType))
         setStats({ total: devs.length, withPos: withPos.length, types: types.size })
@@ -135,6 +162,30 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       })
       .finally(() => setLoading(false))
   }, [levelPath])
+
+  // Sync camera settings
+  useEffect(() => { flySpeedRef.current = flySpeed }, [flySpeed])
+  useEffect(() => {
+    const cam = cameraRef.current
+    if (cam) { cam.fov = fov; cam.updateProjectionMatrix() }
+  }, [fov])
+  useEffect(() => {
+    const scene = sceneRef.current
+    if (!scene) return
+    scene.children.forEach((child) => {
+      if (child instanceof THREE.GridHelper) child.visible = showGrid
+    })
+  }, [showGrid])
+  useEffect(() => {
+    const scene = sceneRef.current
+    if (!scene) return
+    if (showFog) {
+      const bgColor = cssColorToHex('--fn-viewport', '#08081a')
+      scene.fog = new THREE.Fog(bgColor, 500, 2000)
+    } else {
+      scene.fog = null
+    }
+  }, [showFog])
 
   // Inspect selected device
   useEffect(() => {
@@ -152,10 +203,12 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     const container = containerRef.current
     if (!container) return
 
-    // Scene
+    // Scene — use theme colors
+    const bgColor = cssColorToHex('--fn-viewport', '#08081a')
+    const gridColor = cssColorToHex('--fn-grid', '#1a1a3a')
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x0a0a1a)
-    scene.fog = new THREE.Fog(0x0a0a1a, 500, 2000)
+    scene.background = new THREE.Color(bgColor)
+    scene.fog = new THREE.Fog(bgColor, 500, 2000)
     sceneRef.current = scene
 
     // Camera
@@ -170,13 +223,51 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     container.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
-    // Controls
+    // Controls — orbit by default, fly with right-click + WASD
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = 0.1
     controls.maxDistance = 2000
     controls.minDistance = 5
+    controls.mouseButtons = { LEFT: THREE.MOUSE.LEFT, MIDDLE: THREE.MOUSE.MIDDLE, RIGHT: THREE.MOUSE.RIGHT }
     controlsRef.current = controls
+
+    // Right-click fly mode
+    const onContextMenu = (e: Event) => e.preventDefault()
+    renderer.domElement.addEventListener('contextmenu', onContextMenu)
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 2) { flyingRef.current = true; controls.enabled = false }
+    }
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 2) { flyingRef.current = false; controls.enabled = true }
+    }
+    const onMouseMoveFly = (e: MouseEvent) => {
+      if (!flyingRef.current) return
+      const euler = new THREE.Euler(0, 0, 0, 'YXZ')
+      euler.setFromQuaternion(camera.quaternion)
+      euler.y -= e.movementX * 0.003
+      euler.x -= e.movementY * 0.003
+      euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x))
+      camera.quaternion.setFromEuler(euler)
+    }
+    renderer.domElement.addEventListener('mousedown', onMouseDown)
+    renderer.domElement.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('mousemove', onMouseMoveFly)
+
+    const onKeyDown = (e: KeyboardEvent) => keysRef.current.add(e.key.toLowerCase())
+    const onKeyUp = (e: KeyboardEvent) => keysRef.current.delete(e.key.toLowerCase())
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keyup', onKeyUp)
+
+    // Scroll to adjust fly speed
+    const onWheel = (e: WheelEvent) => {
+      if (flyingRef.current) {
+        e.preventDefault()
+        flySpeedRef.current = Math.max(0.5, Math.min(20, flySpeedRef.current + (e.deltaY > 0 ? -0.5 : 0.5)))
+      }
+    }
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
 
     // Lights
     const ambient = new THREE.AmbientLight(0x404060, 1.5)
@@ -189,22 +280,41 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     scene.add(directional2)
 
     // Ground grid
-    const gridHelper = new THREE.GridHelper(1000, 100, GRID_COLOR, GRID_COLOR)
+    const gridHelper = new THREE.GridHelper(1000, 100, gridColor, gridColor)
     gridHelper.material.opacity = 0.3
     gridHelper.material.transparent = true
     scene.add(gridHelper)
 
     // Ground plane (subtle)
     const groundGeo = new THREE.PlaneGeometry(2000, 2000)
-    const groundMat = new THREE.MeshLambertMaterial({ color: GROUND_COLOR, transparent: true, opacity: 0.5 })
+    const groundMat = new THREE.MeshLambertMaterial({ color: bgColor, transparent: true, opacity: 0.5 })
     const ground = new THREE.Mesh(groundGeo, groundMat)
     ground.rotation.x = -Math.PI / 2
     ground.position.y = -0.1
     scene.add(ground)
 
-    // Animation loop
+    // Animation loop with WASD fly
     function animate() {
       animFrameRef.current = requestAnimationFrame(animate)
+
+      // WASD fly movement when right-click held
+      if (flyingRef.current) {
+        const speed = flySpeedRef.current
+        const keys = keysRef.current
+        const forward = new THREE.Vector3()
+        camera.getWorldDirection(forward)
+        const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize()
+
+        if (keys.has('w')) camera.position.addScaledVector(forward, speed)
+        if (keys.has('s')) camera.position.addScaledVector(forward, -speed)
+        if (keys.has('a')) camera.position.addScaledVector(right, -speed)
+        if (keys.has('d')) camera.position.addScaledVector(right, speed)
+        if (keys.has(' ') || keys.has('e')) camera.position.y += speed
+        if (keys.has('shift') || keys.has('q')) camera.position.y -= speed
+
+        controls.target.copy(camera.position).addScaledVector(forward, 10)
+      }
+
       controls.update()
       renderer.render(scene, camera)
     }
@@ -225,6 +335,12 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       observer.disconnect()
       controls.dispose()
       renderer.dispose()
+      renderer.domElement.removeEventListener('contextmenu', onContextMenu)
+      renderer.domElement.removeEventListener('mousedown', onMouseDown)
+      renderer.domElement.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('mousemove', onMouseMoveFly)
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keyup', onKeyUp)
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement)
       }
@@ -400,6 +516,73 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
           </div>
         </div>
 
+        {/* Camera settings bar */}
+        <div className="h-8 flex items-center gap-4 px-4 border-b border-fn-border/50 bg-fn-darker/80 shrink-0 text-[10px]">
+          {/* FOV */}
+          <div className="flex items-center gap-1.5 text-gray-500">
+            <span>FOV</span>
+            <input
+              type="range" min={30} max={120} step={5} value={fov}
+              onChange={(e) => setFov(Number(e.target.value))}
+              className="w-16 accent-blue-500"
+            />
+            <span className="w-6 text-center text-gray-400 font-mono">{fov}</span>
+          </div>
+
+          {/* Fly Speed */}
+          <div className="flex items-center gap-1.5 text-gray-500">
+            <span>Speed</span>
+            <input
+              type="range" min={0.5} max={20} step={0.5} value={flySpeed}
+              onChange={(e) => setFlySpeed(Number(e.target.value))}
+              className="w-16 accent-blue-500"
+            />
+            <span className="w-6 text-center text-gray-400 font-mono">{flySpeed}</span>
+          </div>
+
+          <div className="w-px h-4 bg-fn-border" />
+
+          {/* Grid toggle */}
+          <button
+            onClick={() => setShowGrid(!showGrid)}
+            className={`px-1.5 py-0.5 rounded transition-colors ${showGrid ? 'text-white bg-white/10' : 'text-gray-600 hover:text-gray-400'}`}
+          >
+            Grid
+          </button>
+
+          {/* Fog toggle */}
+          <button
+            onClick={() => setShowFog(!showFog)}
+            className={`px-1.5 py-0.5 rounded transition-colors ${showFog ? 'text-white bg-white/10' : 'text-gray-600 hover:text-gray-400'}`}
+          >
+            Fog
+          </button>
+
+          <div className="w-px h-4 bg-fn-border" />
+
+          {/* Reset camera */}
+          <button
+            onClick={() => {
+              const cam = cameraRef.current
+              const ctrl = controlsRef.current
+              if (cam && ctrl && deviceMeshesRef.current.length > 0) {
+                const box = new THREE.Box3()
+                for (const m of deviceMeshesRef.current) box.expandByObject(m)
+                const center = box.getCenter(new THREE.Vector3())
+                const size = box.getSize(new THREE.Vector3())
+                const dist = Math.max(Math.max(size.x, size.y, size.z) * 1.5, 50)
+                ctrl.target.copy(center)
+                cam.position.set(center.x + dist * 0.5, center.y + dist * 0.7, center.z + dist * 0.5)
+                cam.quaternion.identity()
+                ctrl.update()
+              }
+            }}
+            className="px-1.5 py-0.5 rounded text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            Reset View
+          </button>
+        </div>
+
         {/* Viewport */}
         <div
           ref={containerRef}
@@ -452,8 +635,14 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
         </div>
       </div>
 
+      {/* Resize handle */}
+      <ResizeHandle
+        direction="horizontal"
+        onResize={(delta) => setInspectorWidth((w) => Math.max(200, Math.min(800, w - delta)))}
+      />
+
       {/* Right Panel — Device Inspector */}
-      <div className="w-[280px] border-l border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden">
+      <div className="border-l border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden" style={{ width: inspectorWidth }}>
         <div className="px-3 py-2 border-b border-fn-border">
           <div className="text-[11px] font-semibold text-white">Device Inspector</div>
         </div>
@@ -535,7 +724,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
                   <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                 </svg>
                 <div className="text-[11px] text-gray-600">Click a device to inspect</div>
-                <div className="text-[9px] text-gray-700 mt-1">Scroll to zoom, drag to orbit</div>
+                <div className="text-[9px] text-gray-700 mt-1">Left-drag: orbit | Right-click + WASD: fly | Scroll: zoom</div>
               </div>
             </div>
           )}

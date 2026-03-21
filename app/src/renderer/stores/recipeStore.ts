@@ -8,6 +8,8 @@ interface RecipeState {
   recipes: DeviceRecipe[]
   /** Currently viewed/editing recipe */
   activeRecipe: DeviceRecipe | null
+  /** Whether built-ins have been injected this session */
+  _builtinsInjected: boolean
 
   // Actions
   addRecipe: (recipe: DeviceRecipe) => void
@@ -15,6 +17,7 @@ interface RecipeState {
   updateRecipe: (id: string, updates: Partial<DeviceRecipe>) => void
   setActiveRecipe: (recipe: DeviceRecipe | null) => void
   importRecipes: (recipes: DeviceRecipe[]) => void
+  ensureBuiltins: () => void
 }
 
 export const useRecipeStore = create<RecipeState>()(
@@ -22,6 +25,7 @@ export const useRecipeStore = create<RecipeState>()(
     (set, get) => ({
       recipes: [],
       activeRecipe: null,
+      _builtinsInjected: false,
 
       addRecipe: (recipe) => {
         set((state) => ({
@@ -59,21 +63,27 @@ export const useRecipeStore = create<RecipeState>()(
           return { recipes: [...state.recipes, ...newRecipes] }
         })
       },
+
+      ensureBuiltins: () => {
+        const state = get()
+        if (state._builtinsInjected) return
+        const existingIds = new Set(state.recipes.map((r) => r.id))
+        const missing = BUILTIN_RECIPES.filter((r) => !existingIds.has(r.id))
+        set({
+          recipes: [...missing, ...state.recipes],
+          _builtinsInjected: true,
+        })
+      },
     }),
     {
       name: 'wellversed-recipes',
-      onRehydrate: (_state, options) => {
-        // After rehydrating, ensure built-in recipes are present
-        return (rehydrated) => {
-          if (rehydrated) {
-            const existingIds = new Set(rehydrated.recipes.map((r) => r.id))
-            const missing = BUILTIN_RECIPES.filter((r) => !existingIds.has(r.id))
-            if (missing.length > 0) {
-              rehydrated.recipes = [...missing, ...rehydrated.recipes]
-            }
-          }
-        }
-      },
+      partialize: (state) => ({
+        recipes: state.recipes,
+        activeRecipe: state.activeRecipe,
+      }),
     }
   )
 )
+
+// Inject built-ins on store creation
+setTimeout(() => useRecipeStore.getState().ensureBuiltins(), 0)

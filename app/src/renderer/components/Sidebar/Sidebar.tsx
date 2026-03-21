@@ -45,6 +45,7 @@ interface SidebarProps {
   selectedLevel: string | null
   collapsed: boolean
   onToggleCollapse: () => void
+  width?: number
 }
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
@@ -161,7 +162,7 @@ const projectDot = (
   <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
 )
 
-export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, collapsed, onToggleCollapse }: SidebarProps) {
+export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, collapsed, onToggleCollapse, width = 220 }: SidebarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [dropdownSearch, setDropdownSearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -344,19 +345,32 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
   return (
     <div
       className="h-full bg-fn-dark border-r border-fn-border flex flex-col shrink-0 transition-[width] duration-200 ease-in-out min-h-0"
-      style={{ width: collapsed ? 48 : 220 }}
+      style={{ width: collapsed ? 48 : width }}
     >
-      {/* Logo — click to expand when collapsed */}
-      <div
-        className={`h-10 flex items-center gap-2 px-3 border-b border-fn-border shrink-0 overflow-hidden ${collapsed ? 'cursor-pointer hover:bg-white/[0.03]' : ''}`}
-        onClick={collapsed ? onToggleCollapse : undefined}
-        title={collapsed ? 'Expand sidebar' : undefined}
-      >
-        <img src={new URL('../../assets/logo.png', import.meta.url).href} alt="WellVersed" className="w-6 h-6 shrink-0" />
+      {/* Logo + collapse toggle */}
+      <div className="h-10 flex items-center gap-2 px-3 border-b border-fn-border shrink-0 overflow-hidden">
+        <img
+          src={new URL('../../assets/logo.png', import.meta.url).href}
+          alt="WellVersed"
+          className={`w-6 h-6 shrink-0 ${collapsed ? 'cursor-pointer' : ''}`}
+          onClick={collapsed ? onToggleCollapse : undefined}
+          title={collapsed ? 'Expand sidebar' : undefined}
+        />
         {!collapsed && (
-          <span className="text-[11px] font-semibold text-white tracking-wide whitespace-nowrap">
-            WellVersed
-          </span>
+          <>
+            <span className="text-[11px] font-semibold text-white tracking-wide whitespace-nowrap flex-1">
+              WellVersed
+            </span>
+            <button
+              onClick={onToggleCollapse}
+              className="shrink-0 p-1 rounded text-gray-600 hover:text-gray-300 hover:bg-white/[0.05] transition-colors"
+              title="Collapse sidebar"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M11 19l-7-7 7-7" />
+              </svg>
+            </button>
+          </>
         )}
       </div>
 
@@ -683,8 +697,8 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
         )}
       </div>
 
-      {/* Footer: Settings + Collapse */}
-      <div className="border-t border-fn-border p-2 shrink-0 space-y-1">
+      {/* Footer: Settings */}
+      <div className="border-t border-fn-border p-2 shrink-0">
         <button
           className={`w-full flex items-center gap-2.5 transition-colors rounded ${
             collapsed ? 'justify-center px-0 py-1.5' : 'px-3 py-1.5'
@@ -703,18 +717,6 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
           {activePage === 'settings' && !collapsed && (
             <div className="ml-auto w-1 h-4 rounded-full bg-fn-rare shrink-0" />
           )}
-        </button>
-        <button
-          className="w-full flex items-center justify-center py-1.5 text-gray-500 hover:text-gray-300 transition-colors rounded hover:bg-white/[0.03]"
-          onClick={onToggleCollapse}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <svg
-            className={`w-4 h-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
-          >
-            <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
-          </svg>
         </button>
       </div>
     </div>

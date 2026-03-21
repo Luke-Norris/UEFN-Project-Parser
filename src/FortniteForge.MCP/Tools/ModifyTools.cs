@@ -173,7 +173,8 @@ public class ModifyTools
     [McpServerTool, Description(
         "STEP 2: Applies a previously previewed modification. " +
         "Requires a valid requestId from a preview call. " +
-        "Creates a backup before making changes.")]
+        "Creates a backup before making changes. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string apply_modification(
         ModificationService modService,
         [Description("The requestId returned from a preview call")] string requestId)

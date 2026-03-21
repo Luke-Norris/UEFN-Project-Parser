@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ContextMenuProvider } from './components/ContextMenu/ContextMenu'
 import { Sidebar, type PageId } from './components/Sidebar/Sidebar'
+import { ResizeHandle } from './components/ResizeHandle'
 import { useForgeStore } from './stores/forgeStore'
 import { HomePage } from './pages/HomePage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -46,6 +47,7 @@ export default function App() {
   const [fontsError, setFontsError] = useState<string | null>(null)
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(220)
 
   const status = useForgeStore((s) => s.status)
   const fetchStatus = useForgeStore((s) => s.fetchStatus)
@@ -167,7 +169,14 @@ export default function App() {
           selectedLevel={selectedLevel}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+          width={sidebarWidth}
         />
+        {!sidebarCollapsed && (
+          <ResizeHandle
+            direction="horizontal"
+            onResize={(delta) => setSidebarWidth((w) => Math.max(160, Math.min(400, w + delta)))}
+          />
+        )}
         <div className="flex-1 min-h-0 min-w-0 flex">
           {renderPage()}
         </div>

@@ -146,7 +146,8 @@ public class MapGenTools
     [McpServerTool, Description(
         "STEP 3 for map generation: Applies a generated layout to a target level file. " +
         "Clones all planned actors from the seed level into the target level. " +
-        "Creates a backup before any changes. This is the step that actually modifies files.")]
+        "Creates a backup before any changes. This is the step that actually modifies files. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string apply_map_layout(
         MapGenerator generator,
         AssetCatalog catalog,

@@ -124,7 +124,8 @@ public class PowerTools
         "modify device settings. Finds the device by searching external actor files, sets properties, " +
         "and writes via the staged/direct safety system.\n\n" +
         "Example: configure_device(levelPath, \"VendingMachine\", '{\"CostOfFirstItem\": \"50\", \"First Item Resource Type\": \"GoldCurrency\"}')\n\n" +
-        "Returns a diff of what changed. For Library projects, this will be blocked.")]
+        "Returns a diff of what changed. For Library projects, this will be blocked. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string configure_device(
         ForgeConfig config,
         AssetGuard guard,
@@ -238,18 +239,23 @@ public class PowerTools
         uasset.Write(writePath);
 
         var modeLabel = writePath == matchedFile ? "DIRECT (with backup)" : "STAGED";
+        var approvalNote = writePath != matchedFile
+            ? "\n\nChanges are staged for review. Approve in WellVersed app to apply."
+            : "";
         return $"Device: {matchedClassName} ({matchedExportName})\n" +
                $"Mode: {modeLabel}\n" +
                $"Write path: {writePath}\n" +
-               $"Changes:\n{string.Join("\n", results)}";
+               $"Changes:\n{string.Join("\n", results)}" +
+               approvalNote;
     }
 
     [McpServerTool, Description(
         "Copy a verse file from the library to the active project. " +
         "Use after finding a relevant file with search_library or list_verse_files. " +
-        "The file is copied to the active project's Content directory.")]
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string copy_verse_to_project(
         ForgeConfig config,
+        SafeFileAccess fileAccess,
         [Description("Full path to the source .verse file in the library")] string sourceVersePath,
         [Description("Optional: custom filename for the copied file (without .verse extension)")] string? newName = null)
     {
@@ -273,24 +279,32 @@ public class PowerTools
         if (File.Exists(targetPath))
             return $"File already exists at {targetPath}. Choose a different name with the newName parameter.";
 
-        File.Copy(sourceVersePath, targetPath);
+        // Stage the copy instead of writing directly
+        var stagedPath = fileAccess.GetStagedPath(targetPath);
+        var stagedDir = Path.GetDirectoryName(stagedPath);
+        if (!string.IsNullOrEmpty(stagedDir))
+            Directory.CreateDirectory(stagedDir);
+        File.Copy(sourceVersePath, stagedPath);
 
-        // Read and return summary
-        var source = File.ReadAllText(targetPath);
+        // Read source for summary
+        var source = File.ReadAllText(sourceVersePath);
         var lineCount = source.Split('\n').Length;
 
-        return $"Copied: {Path.GetFileName(sourceVersePath)} → {Path.GetRelativePath(config.ProjectPath, targetPath)}\n" +
+        return $"Verse file staged for review. Approve in WellVersed app to apply.\n\n" +
+               $"File: {Path.GetFileName(sourceVersePath)} → {Path.GetRelativePath(config.ProjectPath, targetPath)}\n" +
                $"Lines: {lineCount}\n" +
-               $"Full path: {targetPath}\n\n" +
+               $"Staged at: {stagedPath}\n\n" +
                $"You may need to update module paths and imports to match your project structure.";
     }
 
     [McpServerTool, Description(
         "Copy a device configuration (external actor .uasset) from a library project to the active project's level. " +
         "This copies a placed device instance with all its property overrides. " +
-        "Use after finding relevant device configurations via search_library.")]
+        "Use after finding relevant device configurations via search_library. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string copy_device_to_project(
         ForgeConfig config,
+        SafeFileAccess fileAccess,
         [Description("Full path to the source external actor .uasset file")] string sourceActorPath,
         [Description("Path to the target level's __ExternalActors__ directory")] string targetExternalActorsDir)
     {
@@ -307,33 +321,42 @@ public class PowerTools
         var newFileName = $"{Guid.NewGuid():N}.uasset";
         var targetPath = Path.Combine(targetExternalActorsDir, newFileName);
 
-        File.Copy(sourceActorPath, targetPath);
+        // Stage the copy instead of writing directly
+        var stagedPath = fileAccess.GetStagedPath(targetPath);
+        var stagedDir = Path.GetDirectoryName(stagedPath);
+        if (!string.IsNullOrEmpty(stagedDir))
+            Directory.CreateDirectory(stagedDir);
+        File.Copy(sourceActorPath, stagedPath);
 
         // Also copy .uexp if it exists
         var sourceUexp = Path.ChangeExtension(sourceActorPath, ".uexp");
         if (File.Exists(sourceUexp))
         {
-            var targetUexp = Path.ChangeExtension(targetPath, ".uexp");
-            File.Copy(sourceUexp, targetUexp);
+            var stagedUexp = Path.ChangeExtension(stagedPath, ".uexp");
+            File.Copy(sourceUexp, stagedUexp);
         }
 
-        // Read the device info
+        // Read the device info from the source
         try
         {
-            var asset = new UAsset(targetPath, EngineVersion.VER_UE5_4);
+            var asset = new UAsset(sourceActorPath, EngineVersion.VER_UE5_4);
             var primaryClass = asset.Exports
                 .FirstOrDefault(e => !e.GetExportClassType()?.ToString()?.Contains("Component") == true)
                 ?.GetExportClassType()?.ToString() ?? "Unknown";
 
-            return $"Copied device: {primaryClass}\n" +
+            return $"Device copy staged for review. Approve in WellVersed app to apply.\n\n" +
+                   $"Device: {primaryClass}\n" +
                    $"Source: {sourceActorPath}\n" +
-                   $"Target: {targetPath}\n\n" +
-                   $"NOTE: The device is placed but may need its transform (position) adjusted in UEFN. " +
+                   $"Target: {targetPath}\n" +
+                   $"Staged at: {stagedPath}\n\n" +
+                   $"NOTE: The device may need its transform (position) adjusted in UEFN after applying. " +
                    $"If it references user-created assets from the source project, those dependencies may need to be copied separately.";
         }
         catch
         {
-            return $"Copied file to {targetPath} but could not parse device info.";
+            return $"Device copy staged for review. Approve in WellVersed app to apply.\n\n" +
+                   $"Staged at: {stagedPath}\n" +
+                   $"Could not parse device info from source file.";
         }
     }
 
@@ -425,9 +448,11 @@ public class PowerTools
 
     [McpServerTool, Description(
         "Write or update a verse file in the active project. Creates the file if it doesn't exist, " +
-        "or overwrites if it does. Use get_verse_context first to understand existing code.")]
+        "or overwrites if it does. Use get_verse_context first to understand existing code. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string write_project_verse(
         ForgeConfig config,
+        SafeFileAccess fileAccess,
         [Description("Filename (with or without .verse extension)")] string fileName,
         [Description("Full verse source code to write")] string sourceCode)
     {
@@ -441,21 +466,21 @@ public class PowerTools
         if (!fileName.EndsWith(".verse")) fileName += ".verse";
 
         var targetPath = Path.Combine(contentPath, fileName);
-
-        // Backup if exists
         var existed = File.Exists(targetPath);
-        if (existed)
-        {
-            var backupPath = targetPath + ".bak";
-            File.Copy(targetPath, backupPath, overwrite: true);
-        }
 
-        File.WriteAllText(targetPath, sourceCode);
+        // Stage the write instead of writing directly
+        var stagedPath = fileAccess.GetStagedPath(targetPath);
+        var stagedDir = Path.GetDirectoryName(stagedPath);
+        if (!string.IsNullOrEmpty(stagedDir))
+            Directory.CreateDirectory(stagedDir);
+        File.WriteAllText(stagedPath, sourceCode);
+
         var lineCount = sourceCode.Split('\n').Length;
 
-        return $"{(existed ? "Updated" : "Created")}: {fileName}\n" +
+        return $"Verse file staged for review. Approve in WellVersed app to apply.\n\n" +
+               $"{(existed ? "Update" : "New file")}: {fileName}\n" +
                $"Lines: {lineCount}\n" +
-               $"Path: {targetPath}" +
-               (existed ? $"\nBackup: {targetPath}.bak" : "");
+               $"Target: {targetPath}\n" +
+               $"Staged at: {stagedPath}";
     }
 }

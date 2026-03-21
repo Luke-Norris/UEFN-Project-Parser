@@ -144,9 +144,11 @@ BackgroundBlur, Throbber, RetainerBox — NONE of these exist in any UEFN projec
     [McpServerTool, Description(
         "Clone a Widget Blueprint from the library to the active project. " +
         "Copies the .uasset file and generates paired Verse controller code. " +
-        "The user can then tweak the visual layout in UEFN's Widget Designer.")]
+        "The user can then tweak the visual layout in UEFN's Widget Designer. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string clone_widget_blueprint(
         ForgeConfig config,
+        SafeFileAccess fileAccess,
         [Description("Full path to the source Widget Blueprint .uasset")] string sourcePath,
         [Description("Name for the new widget (without extension)")] string newName)
     {
@@ -164,29 +166,38 @@ BackgroundBlur, Throbber, RetainerBox — NONE of these exist in any UEFN projec
         if (File.Exists(targetPath))
             return $"File already exists: {targetPath}. Choose a different name.";
 
-        // Copy the widget blueprint
-        File.Copy(sourcePath, targetPath);
+        // Stage the copy instead of writing directly
+        var stagedPath = fileAccess.GetStagedPath(targetPath);
+        var stagedDir = Path.GetDirectoryName(stagedPath);
+        if (!string.IsNullOrEmpty(stagedDir))
+            Directory.CreateDirectory(stagedDir);
+        File.Copy(sourcePath, stagedPath);
 
         // Also copy .uexp if it exists
         var sourceUexp = Path.ChangeExtension(sourcePath, ".uexp");
         if (File.Exists(sourceUexp))
-            File.Copy(sourceUexp, Path.ChangeExtension(targetPath, ".uexp"));
+        {
+            var stagedUexp = Path.ChangeExtension(stagedPath, ".uexp");
+            File.Copy(sourceUexp, stagedUexp);
+        }
 
-        // Inspect the widget to understand its structure
-        var widgetInfo = InspectWidgetBlueprint(targetPath);
+        // Inspect the source widget to understand its structure
+        var widgetInfo = InspectWidgetBlueprint(sourcePath);
 
         // Generate paired Verse controller code
         var verseCode = GenerateWidgetController(newName, widgetInfo);
 
-        return $"Widget Blueprint cloned successfully!\n\n" +
+        return $"Widget blueprint staged for review. Approve in WellVersed app to apply.\n\n" +
                $"Asset: {targetPath}\n" +
+               $"Staged at: {stagedPath}\n" +
                $"Structure: {widgetInfo}\n\n" +
                $"=== Generated Verse Controller ===\n{verseCode}\n\n" +
                $"Next steps:\n" +
-               $"1. Open {newName} in UEFN's Widget Designer to customize the layout\n" +
-               $"2. Save the Verse controller with write_project_verse\n" +
-               $"3. Place the Verse device in your level\n" +
-               $"4. Wire the device's widget reference to {newName}";
+               $"1. Approve the staged file in WellVersed app\n" +
+               $"2. Open {newName} in UEFN's Widget Designer to customize the layout\n" +
+               $"3. Save the Verse controller with write_project_verse\n" +
+               $"4. Place the Verse device in your level\n" +
+               $"5. Wire the device's widget reference to {newName}";
     }
 
     [McpServerTool, Description(

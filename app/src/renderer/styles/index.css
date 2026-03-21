@@ -30,6 +30,8 @@ html, body {
   --fn-border: #1e1e3a;
   --fn-accent: #3d85e0;
   --fn-accent-hover: #5a9de6;
+  --fn-viewport: #08081a;
+  --fn-grid: #1a1a3a;
   --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
 }

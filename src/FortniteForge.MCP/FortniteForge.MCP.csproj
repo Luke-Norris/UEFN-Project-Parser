@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>FortniteForge.MCP</RootNamespace>
-    <AssemblyName>fortniteforge-mcp</AssemblyName>
+    <AssemblyName>wellversed-mcp</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

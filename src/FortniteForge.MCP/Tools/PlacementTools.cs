@@ -42,7 +42,8 @@ public class PlacementTools
 
     [McpServerTool, Description(
         "Clone an existing actor and place the copy at a new location. " +
-        "Creates a backup before modifying. The source actor stays untouched.")]
+        "Creates a backup before modifying. The source actor stays untouched. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string clone_actor(
         ActorPlacementService placementService,
         [Description("Path to the .umap level file")] string levelPath,
@@ -111,7 +112,8 @@ public class PlacementTools
 
     [McpServerTool, Description(
         "Apply a scatter placement — places all instances from a preview. " +
-        "Creates a backup before modifying.")]
+        "Creates a backup before modifying. " +
+        "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string apply_scatter_place(
         ActorPlacementService placementService,
         [Description("Path to the .umap level file")] string levelPath,

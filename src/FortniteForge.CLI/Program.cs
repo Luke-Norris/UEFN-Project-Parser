@@ -944,6 +944,9 @@ public class Program
         }
     }
 
+    // Cache for device scan results — keyed by levelPath
+    private static readonly Dictionary<string, (DateTime scannedAt, object result)> _deviceCache = new();
+
     private static SidecarResponse HandleListDevices(SidecarRequest req)
     {
         var levelPath = req.Params?.GetProperty("levelPath").GetString()
@@ -951,6 +954,13 @@ public class Program
 
         if (!File.Exists(levelPath))
             return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Level not found: {levelPath}"));
+
+        // Return cached result if scanned within the last 5 minutes
+        var noCache = req.Params?.TryGetProperty("noCache", out var nc) == true && nc.GetBoolean();
+        if (!noCache && _deviceCache.TryGetValue(levelPath, out var cached) && (DateTime.UtcNow - cached.scannedAt).TotalMinutes < 5)
+        {
+            return new SidecarResponse(req.Id, cached.result);
+        }
 
         var result = BuildActiveProjectServices(out var errorResponse, req.Id);
         if (result == null) return errorResponse!;
@@ -1078,7 +1088,9 @@ public class Program
                 position = new { x = (double)d.Location.X, y = (double)d.Location.Y, z = (double)d.Location.Z },
             }).ToList();
 
-            return new SidecarResponse(req.Id, new { levelPath, devices = deviceList });
+            var responseData = new { levelPath, devices = deviceList };
+            _deviceCache[levelPath] = (DateTime.UtcNow, responseData);
+            return new SidecarResponse(req.Id, responseData);
         }
         finally
         {

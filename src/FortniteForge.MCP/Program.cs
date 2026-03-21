@@ -10,18 +10,21 @@ using Microsoft.Extensions.Logging;
 namespace FortniteForge.MCP;
 
 /// <summary>
-/// FortniteForge MCP Server — "The Model Context Protocol for Master Control of your Creative Projects"
+/// WellVersed MCP Server — AI-powered UEFN project management
 ///
-/// This server exposes FortniteForge's capabilities as MCP tools that Claude Code
+/// This server exposes WellVersed's capabilities as MCP tools that Claude Code
 /// can call directly. No copy-paste, no manual CLI — Claude talks to your UEFN
 /// project natively.
 ///
+/// All file modifications are staged for review. The user must approve changes
+/// through the WellVersed app before they are applied to project source files.
+///
 /// Setup in Claude Code:
-///   claude mcp add fortniteforge -- dotnet run --project path/to/FortniteForge.MCP
+///   claude mcp add wellversed -- dotnet run --project path/to/FortniteForge.MCP
 ///
 /// Or in .claude/settings.json:
 ///   "mcpServers": {
-///     "fortniteforge": {
+///     "wellversed": {
 ///       "command": "dotnet",
 ///       "args": ["run", "--project", "path/to/FortniteForge.MCP"]
 ///     }
@@ -34,7 +37,8 @@ public class Program
         // Determine config path — first arg, env var, or default
         var configPath = args.Length > 0
             ? args[0]
-            : Environment.GetEnvironmentVariable("FORTNITEFORGE_CONFIG")
+            : Environment.GetEnvironmentVariable("WELLVERSED_CONFIG")
+              ?? Environment.GetEnvironmentVariable("FORTNITEFORGE_CONFIG")
               ?? FindConfigFile();
 
         var builder = Host.CreateApplicationBuilder(args);
@@ -54,7 +58,8 @@ public class Program
         {
             config = new ForgeConfig();
             // Try to find project path from environment
-            var projectPath = Environment.GetEnvironmentVariable("FORTNITEFORGE_PROJECT");
+            var projectPath = Environment.GetEnvironmentVariable("WELLVERSED_PROJECT")
+                ?? Environment.GetEnvironmentVariable("FORTNITEFORGE_PROJECT");
             if (!string.IsNullOrEmpty(projectPath))
                 config.ProjectPath = projectPath;
         }
@@ -82,7 +87,14 @@ public class Program
 
         // Register MCP server with stdio transport
         builder.Services
-            .AddMcpServer()
+            .AddMcpServer(options =>
+            {
+                options.ServerInfo = new()
+                {
+                    Name = "WellVersed",
+                    Version = "1.0.0"
+                };
+            })
             .WithStdioServerTransport()
             .WithToolsFromAssembly();
 
