@@ -26,6 +26,7 @@ import { LibraryDeviceConfigsPage } from './pages/LibraryDeviceConfigsPage'
 import { DeviceWiringPage } from './pages/DeviceWiringPage'
 import { ScenePreviewPage } from './pages/ScenePreviewPage'
 import { RecipesPage } from './pages/RecipesPage'
+import { PersistentDataPage } from './pages/PersistentDataPage'
 import { VerseReferencePage } from './pages/VerseReferencePage'
 import { VerseErrorExplainerPage } from './pages/VerseErrorExplainerPage'
 import { ProjectHealthPage } from './pages/ProjectHealthPage'
@@ -127,6 +128,8 @@ export default function App() {
         return <DevicesPage selectedLevel={selectedLevel} />
       case 'project-verse-files':
         return <VerseFilesPage />
+      case 'persistent-data':
+        return <PersistentDataPage />
       case 'library-manage':
         return <LibraryManagePage onNavigate={handleNavigate} />
       case 'library-browse':

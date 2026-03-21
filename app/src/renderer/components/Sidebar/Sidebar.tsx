@@ -11,6 +11,7 @@ export type PageId =
   | 'audit'
   | 'verse-errors'
   | 'device-wiring'
+  | 'persistent-data'
   | 'scene-preview'
   | 'recipes'
   | 'levels'
@@ -278,6 +279,7 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
     ? [
         { id: 'content-browser', label: 'Content', icon: icons.contentBrowser, indent: true },
         { id: 'project-verse-files', label: 'Verse Files', icon: icons.code, indent: true },
+        { id: 'persistent-data', label: 'Persistent Data', icon: icons.audit, indent: true },
         { id: 'levels', label: 'Levels', icon: icons.levels, indent: true },
         ...(selectedLevel !== null
           ? [{ id: 'devices' as PageId, label: 'Devices', icon: icons.devices, indent: true }]
