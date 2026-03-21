@@ -36,3 +36,14 @@ app/src-tauri/target/
 app/node_modules/
 app/dist/
 .claude/worktrees/
+app/fortnite_assets/
+app/fonts/
+app/node_modules/
+app/dist/
+app/out/
+app/src-tauri/target/
+.claude/worktrees/
+*.stackdump
+*.png
+*.jpg
+umg_widget_library/original_UMG_uassets/
