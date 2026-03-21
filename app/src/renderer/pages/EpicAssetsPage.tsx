@@ -178,7 +178,7 @@ export function EpicAssetsPage() {
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* ======= Left Panel — Type List ======= */}
       <div className="w-[300px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0">
         {/* Search */}
@@ -225,7 +225,7 @@ export function EpicAssetsPage() {
         </div>
 
         {/* Type list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {filteredAndSorted.length === 0 ? (
             <div className="p-4 text-center text-[11px] text-gray-500">
               {search ? 'No matching types' : 'No types found'}
@@ -323,7 +323,7 @@ export function EpicAssetsPage() {
       </div>
 
       {/* ======= Right Panel — Type Detail + Inspector ======= */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {inspectLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">

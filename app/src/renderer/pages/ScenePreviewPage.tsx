@@ -616,7 +616,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Hierarchy Panel */}
       {showHierarchy && devices.length > 0 && (
         <>

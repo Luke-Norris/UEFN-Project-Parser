@@ -343,7 +343,7 @@ export function VerseReferencePage() {
   }, [chapterContent])
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* ─── Left Sidebar: Chapter List ─── */}
       <div className="w-[200px] border-r border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden">
         {/* Header */}
@@ -368,7 +368,7 @@ export function VerseReferencePage() {
         </div>
 
         {/* Search results or chapter list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {search.trim() && searchResults ? (
             <>
               <div className="px-2 py-1.5 text-[9px] text-gray-500 border-b border-fn-border/30">
@@ -449,7 +449,7 @@ export function VerseReferencePage() {
         </div>
 
         {/* Content */}
-        <div ref={contentRef} className="flex-1 overflow-y-auto">
+        <div ref={contentRef} className="flex-1 overflow-y-auto min-h-0">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-[11px] text-gray-400">Loading chapter...</div>

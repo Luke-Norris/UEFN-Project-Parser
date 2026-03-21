@@ -341,7 +341,7 @@ export function CanvasEditor({ fontsLoaded }: Props) {
     <div
       ref={containerRef}
       className="flex-1 overflow-hidden relative"
-      style={{ backgroundColor: workspaceBgColor }}
+      style={{ backgroundColor: workspaceBgColor || 'var(--fn-viewport, #0a0a0a)' }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDownWithSpace}
       onMouseMove={handleMouseMove}
@@ -499,7 +499,7 @@ export function CanvasEditor({ fontsLoaded }: Props) {
           style={{
             width: templateWidth,
             height: templateHeight,
-            backgroundColor: canvasBgColor
+            backgroundColor: canvasBgColor || 'var(--fn-panel, #1a1a1a)'
           }}
         />
         {/* Grid overlay — renders between background and canvas objects */}

@@ -279,7 +279,7 @@ export function ContentBrowserPage() {
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Breadcrumb + search bar + view toggle */}
@@ -352,7 +352,7 @@ export function ContentBrowserPage() {
         </div>
 
         {/* File listing */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {loading ? (
             <div className="p-4 text-center text-[11px] text-gray-400">Loading...</div>
           ) : sortedEntries.length === 0 ? (
@@ -474,7 +474,7 @@ export function ContentBrowserPage() {
           </div>
 
           {/* Side panel body */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {sideLoading ? (
               <div className="p-4 text-center text-[11px] text-gray-400">Loading...</div>
             ) : inspecting ? (

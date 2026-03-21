@@ -405,7 +405,7 @@ export function LibraryVersePage() {
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* ─── Left Panel: File List ─── */}
       <div className="w-[250px] border-r border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden">
         {/* Search + Sort */}
@@ -459,7 +459,7 @@ export function LibraryVersePage() {
         </div>
 
         {/* File list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {totalFilteredCount === 0 ? (
             <div className="p-3 text-center text-[10px] text-gray-600">
               {search ? 'No matching files' : showFavoritesOnly ? 'No favorites yet' : 'No verse files found'}
@@ -565,7 +565,7 @@ export function LibraryVersePage() {
             <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Analysis</span>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {/* Classes */}
             <CollapsibleSection
               title="Classes"

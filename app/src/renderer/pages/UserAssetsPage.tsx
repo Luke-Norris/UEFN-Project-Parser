@@ -217,7 +217,7 @@ export function UserAssetsPage() {
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* ======= Left Panel — Asset List ======= */}
       <div className="w-[300px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0">
         {/* Search */}
@@ -264,7 +264,7 @@ export function UserAssetsPage() {
         </div>
 
         {/* Asset list — grouped by class */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {groupedAndSorted.length === 0 ? (
             <div className="p-4 text-center text-[11px] text-gray-500">
               {search ? 'No matching assets' : 'No assets found'}
@@ -340,7 +340,7 @@ export function UserAssetsPage() {
       </div>
 
       {/* ======= Right Panel — Asset Detail + Inspector ======= */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {inspectLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">

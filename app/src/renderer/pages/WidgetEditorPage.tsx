@@ -110,7 +110,7 @@ export function WidgetEditorPage({
             </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {leftTab === 'layers' && <LayersPanel />}
               {leftTab === 'assets' && <AssetBrowser />}
             </div>
@@ -192,7 +192,7 @@ export function WidgetEditorPage({
             </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {rightTab === 'design' && <TemplatePanel />}
               {rightTab === 'properties' && <PropertyPanel />}
               {rightTab === 'variables' && <VariablesPanel />}

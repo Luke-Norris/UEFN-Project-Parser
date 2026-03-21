@@ -189,7 +189,7 @@ export function LibraryBrowsePage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex flex-col bg-fn-darker overflow-hidden min-h-0">
       {/* Breadcrumb + search bar */}
       <div className="px-4 py-2 border-b border-fn-border bg-fn-dark shrink-0 space-y-2">
         {/* Header + breadcrumb */}
@@ -268,7 +268,7 @@ export function LibraryBrowsePage() {
       </div>
 
       {/* File listing */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {loading ? (
           <div className="p-4 text-center text-[11px] text-gray-400">Loading...</div>
         ) : sortedEntries.length === 0 ? (

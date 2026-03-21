@@ -9,17 +9,30 @@
   Expected names: BurbankBigCondensed-Black, BurbankBigCondensed-Bold, BurbankBigCondensed-Medium
 */
 
-/* ─── App shell — fill viewport accounting for zoom ─── */
-html, body {
+/* ─── App shell — fixed to viewport ─── */
+html {
   margin: 0;
   padding: 0;
-  height: 100%;
   overflow: hidden;
+  height: 100vh;
+  height: 100dvh; /* dynamic viewport height — accounts for mobile bars */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
 }
 
 #root {
-  height: 100%;
   overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  /* When zoom is applied, scale content but keep the container viewport-sized */
+  max-height: 100vh;
+  max-height: 100dvh;
 }
 
 /* ─── Theme CSS Custom Properties (defaults = midnight theme) ─── */

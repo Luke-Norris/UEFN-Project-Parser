@@ -446,7 +446,7 @@ export function VerseErrorExplainerPage() {
   }, [results])
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Left Panel — Input */}
       <div className="w-[420px] shrink-0 flex flex-col border-r border-fn-border">
         <div className="px-4 py-3 border-b border-fn-border">

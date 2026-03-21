@@ -122,7 +122,7 @@ export function LibraryPage() {
   }
 
   return (
-    <div className="flex-1 bg-fn-darker overflow-y-auto">
+    <div className="flex-1 bg-fn-darker overflow-y-auto min-h-0">
       <div className="p-4 space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">

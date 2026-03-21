@@ -358,7 +358,7 @@ export function VerseFilesPage() {
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Left: File Tree */}
       <div className="w-[280px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 min-h-0">
         <div className="px-3 py-2 border-b border-fn-border shrink-0">

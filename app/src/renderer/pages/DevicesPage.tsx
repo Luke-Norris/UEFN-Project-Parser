@@ -125,7 +125,7 @@ export function DevicesPage({ selectedLevel: selectedLevelProp }: DevicesPagePro
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Left Panel — Device List */}
       <div className="w-80 flex flex-col border-r border-fn-border bg-fn-dark shrink-0">
         {/* Level selector */}
@@ -143,7 +143,7 @@ export function DevicesPage({ selectedLevel: selectedLevelProp }: DevicesPagePro
         </div>
 
         {/* Device list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {devicesLoading ? (
             <div className="p-4 text-center text-[11px] text-gray-400">Loading devices...</div>
           ) : groupedDevices.length === 0 ? (
@@ -187,7 +187,7 @@ export function DevicesPage({ selectedLevel: selectedLevelProp }: DevicesPagePro
       </div>
 
       {/* Right Panel — Device Detail */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {inspectLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-[11px] text-gray-400">Loading device properties...</div>

@@ -79,8 +79,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   resizeSnapSize: 8,
   elementSnap: true,
   showGuides: true,
-  canvasBgColor: '#1a1a2e',
-  workspaceBgColor: '#0f0f1a',
+  canvasBgColor: '', // empty = use theme (resolved at render time)
+  workspaceBgColor: '',
   clipboard: null,
   copiedPropSet: null,
 

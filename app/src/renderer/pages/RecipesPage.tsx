@@ -360,7 +360,7 @@ function CreateRecipePanel({ onCreated }: { onCreated: (recipe: DeviceRecipe) =>
       </div>
 
       {/* Device list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {loading && (
           <div className="flex items-center justify-center h-32">
             <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
@@ -473,7 +473,7 @@ export function RecipesPage() {
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Left: Recipe List */}
       <div className="w-[320px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0">
         {/* Header */}
@@ -574,7 +574,7 @@ export function RecipesPage() {
       </div>
 
       {/* Right: Recipe Detail */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {activeRecipe ? (
           <RecipeDetail recipe={activeRecipe} />
         ) : (

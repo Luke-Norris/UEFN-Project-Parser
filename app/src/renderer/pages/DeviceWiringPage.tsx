@@ -646,7 +646,7 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-fn-darker overflow-hidden">
+    <div className="flex-1 flex flex-col bg-fn-darker overflow-hidden min-h-0">
       {/* Top Bar */}
       <div className="px-4 py-3 border-b border-fn-border bg-fn-dark flex items-center gap-4 shrink-0">
         {/* Level selector */}

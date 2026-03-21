@@ -160,7 +160,8 @@ export default function App() {
   return (
     <ContextMenuProvider>
       <div
-        className="h-full flex bg-fn-darker text-gray-200 select-none overflow-hidden"
+        className="flex bg-fn-darker text-gray-200 select-none overflow-hidden"
+        style={{ height: '100vh' }}
         onContextMenu={(e) => {
           e.preventDefault()
         }}
