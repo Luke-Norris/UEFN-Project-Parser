@@ -109,7 +109,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [inspectLoading, setInspectLoading] = useState(false)
   const [stats, setStats] = useState({ total: 0, withPos: 0, types: 0 })
   const [levelPath, setLevelPath] = useState<string | null>(selectedLevel ?? null)
-  const [inspectorWidth, setInspectorWidth] = useState(340)
+  const [inspectorWidth, setInspectorWidth] = useState(400)
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
   const [showGrid, setShowGrid] = useState(true)
   const [showFog, setShowFog] = useState(true)
@@ -567,16 +567,39 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     )
   }, [devices, hierarchySearch])
 
+  // Collapse state for hierarchy groups
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  // Clean device display name
+  const cleanDeviceName = useCallback((dev: DeviceEntry, index: number, showType: boolean) => {
+    // If device has a meaningful label (not a raw class name), use it
+    if (dev.name && !dev.name.includes('_C_') && !dev.name.includes('_C ') && !dev.name.includes('UAI') && !dev.name.includes('Component') && dev.name.length < 35) {
+      return dev.name
+    }
+    // In hierarchy (showType=false), just show index since type is in the group header
+    if (!showType) {
+      return `#${index + 1}`
+    }
+    const typeName = (dev.deviceType || 'Unknown')
+      .replace(/_/g, ' ')
+      .replace(/V\d+$/, '')
+      .replace(/Placed$/, '')
+      .trim()
+    return `${typeName} ${index + 1}`
+  }, [])
+
   // Group hierarchy by type
   const hierarchyGroups = useMemo(() => {
-    const groups = new Map<string, DeviceEntry[]>()
+    const groups = new Map<string, Array<DeviceEntry & { _displayName: string }>>()
     for (const d of hierarchyDevices) {
       const type = d.deviceType || 'Unknown'
       if (!groups.has(type)) groups.set(type, [])
-      groups.get(type)!.push(d)
+      const list = groups.get(type)!
+      const displayName = cleanDeviceName(d, list.length, false)
+      list.push({ ...d, _displayName: displayName })
     }
     return Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length)
-  }, [hierarchyDevices])
+  }, [hierarchyDevices, cleanDeviceName])
 
   // ─── Render ────────────────────────────────────────────────────────────
 
@@ -585,7 +608,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       {/* Hierarchy Panel */}
       {showHierarchy && devices.length > 0 && (
         <>
-          <div className="w-[220px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 overflow-hidden">
+          <div className="w-[260px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 overflow-hidden">
             <div className="px-2 py-2 border-b border-fn-border shrink-0">
               <input
                 type="text"
@@ -596,33 +619,48 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
               />
             </div>
             <div className="flex-1 overflow-y-auto min-h-0">
-              {hierarchyGroups.map(([type, devs]) => (
-                <div key={type}>
-                  <div className="flex items-center gap-1.5 px-2 py-1.5 text-[9px] font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-fn-dark">
-                    <span
-                      className="w-2 h-2 rounded-sm shrink-0"
-                      style={{ backgroundColor: '#' + getDeviceColor(type).toString(16).padStart(6, '0') }}
-                    />
-                    <span className="truncate">{type}</span>
-                    <span className="ml-auto text-gray-600">{devs.length}</span>
-                  </div>
-                  {devs.map((dev) => (
+              {hierarchyGroups.map(([type, devs]) => {
+                const isCollapsed = collapsedGroups.has(type)
+                const prettyType = type.replace(/_/g, ' ').replace(/V\d+$/, '').replace(/Placed$/, '').trim()
+                return (
+                  <div key={type}>
                     <button
-                      key={dev.filePath || dev.name}
-                      onClick={() => selectDeviceFromHierarchy(dev)}
-                      onDoubleClick={() => { selectDeviceFromHierarchy(dev); focusDevice(dev) }}
-                      className={`w-full text-left px-3 py-1 text-[10px] truncate transition-colors ${
-                        selectedDevice === dev
-                          ? 'text-white bg-blue-500/20'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
-                      }`}
-                      title={`${dev.name} — double-click to focus`}
+                      onClick={() => setCollapsedGroups((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(type)) next.delete(type)
+                        else next.add(type)
+                        return next
+                      })}
+                      className="w-full flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.03] transition-colors sticky top-0 bg-fn-dark z-10"
                     >
-                      {dev.name}
+                      <svg className={`w-3 h-3 shrink-0 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span
+                        className="w-2.5 h-2.5 rounded-sm shrink-0"
+                        style={{ backgroundColor: '#' + getDeviceColor(type).toString(16).padStart(6, '0') }}
+                      />
+                      <span className="truncate flex-1 text-left">{prettyType}</span>
+                      <span className="text-gray-600 text-[9px] shrink-0">{devs.length}</span>
                     </button>
-                  ))}
-                </div>
-              ))}
+                    {!isCollapsed && devs.map((dev) => (
+                      <button
+                        key={dev.filePath || dev.name}
+                        onClick={() => selectDeviceFromHierarchy(dev)}
+                        onDoubleClick={() => { selectDeviceFromHierarchy(dev); focusDevice(dev) }}
+                        className={`w-full text-left pl-7 pr-2 py-1 text-[10px] truncate transition-colors ${
+                          selectedDevice?.filePath === dev.filePath
+                            ? 'text-white bg-blue-500/15 border-l-2 border-blue-400'
+                            : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                        }`}
+                        title={`${dev._displayName} — double-click to focus (F)`}
+                      >
+                        {dev._displayName}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })}
             </div>
             <div className="px-2 py-1.5 border-t border-fn-border text-[9px] text-gray-600 shrink-0">
               {hierarchyDevices.length} / {devices.length} objects
@@ -892,7 +930,12 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
                       <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                     </svg>
                     <div className="text-[11px] text-gray-600">Click a device to inspect</div>
-                    <div className="text-[9px] text-gray-700 mt-1">Left-drag: orbit | Right-click + WASD: fly</div>
+                    <div className="text-[9px] text-gray-700 mt-2 leading-relaxed">
+                      Left-drag to orbit<br />
+                      Right-click + WASD to fly<br />
+                      Scroll to zoom<br />
+                      F to focus selected
+                    </div>
                   </div>
                 </div>
               )}
