@@ -129,7 +129,7 @@ export default function App() {
       case 'project-verse-files':
         return <VerseFilesPage />
       case 'persistent-data':
-        return <PersistentDataPage />
+        return <PersistentDataPage onNavigate={handleNavigate} />
       case 'library-manage':
         return <LibraryManagePage onNavigate={handleNavigate} />
       case 'library-browse':

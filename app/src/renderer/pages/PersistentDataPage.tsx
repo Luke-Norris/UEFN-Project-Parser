@@ -1,7 +1,4 @@
 import { useEffect, useState, useMemo } from 'react'
-import { ResizeHandle } from '../components/ResizeHandle'
-import { VerseHighlighter } from '../components/VerseHighlighter'
-import { useSettingsStore } from '../stores/settingsStore'
 
 interface PersistField {
   name: string
@@ -32,20 +29,16 @@ function parseAllPersistentStructs(content: string, filePath: string): PersistSc
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) {
-      // Capture comment for the next field
-      continue
-    }
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) continue
 
     const structMatch = trimmed.match(/^(\w+)(?:<([^>]*)>)?\s*:=\s*(class|struct)(?:<([^>]+)>)?(?:\((\w+)\))?\s*:?\s*$/)
     if (structMatch) {
       if (current && current.fields.length > 0) schemas.push(current)
       const [, name, accessMods, kind, classMods, parent] = structMatch
       const allMods = [accessMods, classMods].filter(Boolean).join(',').split(',').map(s => s.trim()).filter(Boolean)
-      const isPersistable = allMods.includes('persistable')
       current = {
         name,
-        kind: isPersistable ? 'persistable' : kind as 'struct' | 'class',
+        kind: allMods.includes('persistable') ? 'persistable' : kind as 'struct' | 'class',
         parent,
         modifiers: allMods,
         fields: [],
@@ -65,8 +58,6 @@ function parseAllPersistentStructs(content: string, filePath: string): PersistSc
         i--
         continue
       }
-
-      // Field: FieldName<public> : type = default  # comment
       const fieldMatch = trimmed.match(/^(?:@editable\s+)?(\w+)(?:<[^>]*>)?\s*:\s*(\S+)\s*=\s*([^#]+?)(?:\s*#\s*(.*))?$/)
       if (fieldMatch) {
         current.fields.push({
@@ -83,16 +74,6 @@ function parseAllPersistentStructs(content: string, filePath: string): PersistSc
   return schemas
 }
 
-// Type icons
-function typeIcon(type: string): string {
-  if (type === 'int' || type === 'float') return '#'
-  if (type === 'string') return 'T'
-  if (type === 'logic') return '?'
-  if (type.startsWith('[]') || type.startsWith('array')) return '[]'
-  if (type.startsWith('?')) return '?'
-  return '{}'
-}
-
 function typeColor(type: string): string {
   if (type === 'int' || type === 'float') return 'text-cyan-400'
   if (type === 'string') return 'text-yellow-400'
@@ -102,25 +83,32 @@ function typeColor(type: string): string {
   return 'text-gray-400'
 }
 
-export function PersistentDataPage() {
+function typeBadgeColor(type: string): string {
+  if (type === 'int' || type === 'float') return 'bg-cyan-400/10 text-cyan-400 border-cyan-400/20'
+  if (type === 'string') return 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20'
+  if (type === 'logic') return 'bg-pink-400/10 text-pink-400 border-pink-400/20'
+  if (type.startsWith('[]') || type.startsWith('array')) return 'bg-purple-400/10 text-purple-400 border-purple-400/20'
+  return 'bg-gray-400/10 text-gray-400 border-gray-400/20'
+}
+
+interface Props {
+  onNavigate?: (page: string) => void
+}
+
+export function PersistentDataPage({ onNavigate }: Props = {}) {
   const [schemas, setSchemas] = useState<PersistSchema[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSchema, setSelectedSchema] = useState<PersistSchema | null>(null)
-  const [sourceContent, setSourceContent] = useState<string | null>(null)
-  const [sourceLoading, setSourceLoading] = useState(false)
-  const [detailWidth, setDetailWidth] = useState(500)
-  const fontSize = useSettingsStore((s) => s.verseEditorFontSize)
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'fields' | 'file'>('name')
+  const [sortReversed, setSortReversed] = useState(false)
 
-  useEffect(() => {
-    scanForSchemas()
-  }, [])
+  useEffect(() => { scanForSchemas() }, [])
 
   async function scanForSchemas() {
     setLoading(true)
     try {
       const allSchemas: PersistSchema[] = []
-
-      // Recursively find all verse files
       async function scanDir(path?: string) {
         const result = await window.electronAPI.forgeBrowseContent(path)
         for (const entry of result?.entries ?? []) {
@@ -130,36 +118,47 @@ export function PersistentDataPage() {
             await scanDir(entry.path || entry.relativePath)
           } else if (entry.name?.endsWith('.verse') || (entry as any).type === 'verse') {
             try {
-              const result2 = await window.electronAPI.forgeReadVerse(entry.path || entry.relativePath) as any
-              const source = result2?.content ?? result2?.source ?? ''
+              const r = await window.electronAPI.forgeReadVerse(entry.path || entry.relativePath) as any
+              const source = r?.content ?? r?.source ?? ''
               if (source.includes('persistable') || source.includes(':= struct') || source.includes(':= class')) {
                 allSchemas.push(...parseAllPersistentStructs(source, entry.path || entry.relativePath))
               }
-            } catch { /* skip */ }
+            } catch { }
           }
         }
       }
-
       await scanDir()
       setSchemas(allSchemas)
-    } catch { /* */ }
+    } catch { }
     setLoading(false)
   }
 
-  const persistable = useMemo(() => schemas.filter(s => s.kind === 'persistable'), [schemas])
-  const structs = useMemo(() => schemas.filter(s => s.kind === 'struct'), [schemas])
-  const classes = useMemo(() => schemas.filter(s => s.kind === 'class' && s.kind !== 'persistable'), [schemas])
-
-  async function handleSelectSchema(schema: PersistSchema) {
-    setSelectedSchema(schema)
-    setSourceLoading(true)
-    try {
-      const result = await window.electronAPI.forgeReadVerse(schema.sourceFile) as any
-      setSourceContent(result?.content ?? result?.source ?? '')
-    } catch {
-      setSourceContent(null)
+  const filtered = useMemo(() => {
+    let list = schemas
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.fields.some(f => f.name.toLowerCase().includes(q) || f.type.toLowerCase().includes(q)) ||
+        s.relativePath.toLowerCase().includes(q)
+      )
     }
-    setSourceLoading(false)
+    list = [...list].sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name)
+      if (sortBy === 'fields') return b.fields.length - a.fields.length
+      if (sortBy === 'file') return a.relativePath.localeCompare(b.relativePath)
+      return 0
+    })
+    if (sortReversed) list.reverse()
+    return list
+  }, [schemas, search, sortBy, sortReversed])
+
+  const persistable = useMemo(() => filtered.filter(s => s.kind === 'persistable'), [filtered])
+  const structs = useMemo(() => filtered.filter(s => s.kind !== 'persistable'), [filtered])
+
+  function handleSort(field: 'name' | 'fields' | 'file') {
+    if (sortBy === field) setSortReversed(!sortReversed)
+    else { setSortBy(field); setSortReversed(false) }
   }
 
   if (loading) {
@@ -167,187 +166,235 @@ export function PersistentDataPage() {
       <div className="flex-1 flex items-center justify-center bg-fn-darker">
         <div className="text-center">
           <div className="w-6 h-6 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-2" />
-          <div className="text-[11px] text-gray-400">Scanning verse files for data schemas...</div>
+          <div className="text-[11px] text-gray-400">Scanning for data schemas...</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 flex bg-fn-darker overflow-hidden">
-      {/* Left: Schema List */}
-      <div className="w-[300px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 min-h-0">
-        <div className="px-3 py-2 border-b border-fn-border shrink-0">
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 12c0 2.21 3.582 4 8 4s8-1.79 8-4" />
-            </svg>
-            <span className="text-[12px] font-semibold text-white">Persistent Data</span>
+    <div className="flex-1 flex flex-col bg-fn-darker overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-fn-border bg-fn-dark shrink-0">
+        <div className="flex items-center gap-3">
+          <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 12c0 2.21 3.582 4 8 4s8-1.79 8-4" />
+          </svg>
+          <div>
+            <h1 className="text-[14px] font-bold text-white">Persistent Data</h1>
+            <p className="text-[10px] text-gray-500">{persistable.length} persistable classes, {structs.length} structs, {schemas.reduce((a, s) => a + s.fields.length, 0)} total fields</p>
           </div>
-          <div className="text-[10px] text-gray-500">
-            {persistable.length} persistable, {structs.length} structs, {schemas.reduce((a, s) => a + s.fields.length, 0)} total fields
+          <div className="ml-auto flex items-center gap-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search schemas, fields..."
+              className="w-[220px] bg-fn-darker border border-fn-border rounded px-2.5 py-1.5 text-[10px] text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/50"
+            />
           </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {/* Persistable classes — the "databases" */}
-          {persistable.length > 0 && (
-            <div>
-              <div className="px-3 py-1.5 text-[9px] font-semibold text-emerald-400/60 uppercase tracking-wider sticky top-0 bg-fn-dark z-10 border-b border-fn-border/30">
-                Persistable Classes
-              </div>
-              {persistable.map((s) => (
-                <button
-                  key={`${s.sourceFile}:${s.name}`}
-                  onClick={() => handleSelectSchema(s)}
-                  className={`w-full text-left px-3 py-2 border-b border-fn-border/20 transition-colors ${
-                    selectedSchema === s ? 'bg-emerald-500/10 border-l-2 border-l-emerald-400' : 'hover:bg-white/[0.03]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                    </svg>
-                    <span className="text-[11px] font-semibold text-white">{s.name}</span>
-                    <span className="text-[9px] text-gray-600 ml-auto">{s.fields.length} fields</span>
-                  </div>
-                  <div className="text-[9px] text-gray-600 mt-0.5 pl-5.5">{s.relativePath}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Structs */}
-          {structs.length > 0 && (
-            <div>
-              <div className="px-3 py-1.5 text-[9px] font-semibold text-blue-400/60 uppercase tracking-wider sticky top-0 bg-fn-dark z-10 border-b border-fn-border/30">
-                Data Structs
-              </div>
-              {structs.map((s) => (
-                <button
-                  key={`${s.sourceFile}:${s.name}`}
-                  onClick={() => handleSelectSchema(s)}
-                  className={`w-full text-left px-3 py-2 border-b border-fn-border/20 transition-colors ${
-                    selectedSchema === s ? 'bg-blue-500/10 border-l-2 border-l-blue-400' : 'hover:bg-white/[0.03]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-blue-400/50 font-mono shrink-0">{'{}'}</span>
-                    <span className="text-[11px] font-medium text-gray-300">{s.name}</span>
-                    <span className="text-[9px] text-gray-600 ml-auto">{s.fields.length}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {schemas.length === 0 && (
-            <div className="p-6 text-center">
-              <div className="text-[11px] text-gray-600">No persistent data structures found</div>
-              <div className="text-[9px] text-gray-700 mt-1">Add <code className="text-emerald-400/60">class&lt;persistable&gt;</code> or <code className="text-blue-400/60">struct</code> definitions to your verse files</div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Right: Schema Detail */}
-      {selectedSchema ? (
-        <>
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Schema header */}
-            <div className="px-4 py-3 border-b border-fn-border bg-fn-dark shrink-0">
-              <div className="flex items-center gap-2">
-                <span className={`text-[14px] font-bold ${selectedSchema.kind === 'persistable' ? 'text-emerald-400' : 'text-blue-400'}`}>
-                  {selectedSchema.name}
-                </span>
-                {selectedSchema.kind === 'persistable' && (
-                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 font-semibold uppercase">Persistable</span>
-                )}
-                {selectedSchema.parent && (
-                  <span className="text-[10px] text-gray-500">extends <span className="text-gray-400">{selectedSchema.parent}</span></span>
-                )}
+      {/* Sort bar */}
+      <div className="flex items-center gap-1 px-6 py-2 border-b border-fn-border/50 bg-fn-darker shrink-0">
+        {(['name', 'fields', 'file'] as const).map((field) => (
+          <button
+            key={field}
+            onClick={() => handleSort(field)}
+            className={`px-2 py-1 text-[9px] rounded transition-colors ${
+              sortBy === field ? 'text-white bg-white/10' : 'text-gray-600 hover:text-gray-400'
+            }`}
+          >
+            {field === 'name' ? 'Name' : field === 'fields' ? 'Fields' : 'File'}
+            {sortBy === field && (
+              <span className="ml-1">{sortReversed ? '↑' : '↓'}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Schema list + detail */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-6">
+        {/* Persistable section */}
+        {persistable.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Persistable Classes</span>
+              <div className="flex-1 h-px bg-fn-border/50" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+              {persistable.map((s) => (
+                <SchemaCard key={`${s.sourceFile}:${s.name}`} schema={s} selected={selectedSchema === s} onSelect={() => setSelectedSchema(selectedSchema === s ? null : s)} onViewCode={onNavigate} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Structs section */}
+        {structs.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              <span className="text-[11px] font-semibold text-blue-400 uppercase tracking-wider">Data Structs</span>
+              <div className="flex-1 h-px bg-fn-border/50" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+              {structs.map((s) => (
+                <SchemaCard key={`${s.sourceFile}:${s.name}`} schema={s} selected={selectedSchema === s} onSelect={() => setSelectedSchema(selectedSchema === s ? null : s)} onViewCode={onNavigate} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {filtered.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="text-[11px] text-gray-600">{search ? 'No matching schemas' : 'No data schemas found'}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Schema detail modal */}
+      {selectedSchema && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSelectedSchema(null)}>
+          <div className="bg-fn-dark border border-fn-border rounded-xl shadow-2xl max-w-[700px] w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Modal header */}
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-fn-border">
+              <svg className={`w-5 h-5 ${selectedSchema.kind === 'persistable' ? 'text-emerald-400' : 'text-blue-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-bold text-white">{selectedSchema.name}</span>
+                  {selectedSchema.kind === 'persistable' && (
+                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 font-semibold uppercase">Persistable</span>
+                  )}
+                  {selectedSchema.parent && (
+                    <span className="text-[10px] text-gray-500">: {selectedSchema.parent}</span>
+                  )}
+                </div>
+                <div className="text-[9px] text-gray-600 font-mono mt-0.5">{selectedSchema.relativePath}</div>
               </div>
-              <div className="text-[9px] text-gray-600 mt-1 font-mono">{selectedSchema.sourceFile}</div>
+              <button
+                onClick={() => {
+                  setSelectedSchema(null)
+                  if (onNavigate) onNavigate('project-verse-files')
+                }}
+                className="px-3 py-1.5 text-[10px] font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded hover:bg-emerald-400/20 transition-colors"
+              >
+                View Code
+              </button>
+              <button onClick={() => setSelectedSchema(null)} className="p-1 text-gray-500 hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
 
             {/* Field table */}
-            <div className="flex-1 overflow-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <table className="w-full">
-                <thead className="sticky top-0 bg-fn-dark z-10">
-                  <tr className="border-b border-fn-border">
-                    <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-2">Field</th>
-                    <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-2">Type</th>
-                    <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-2">Default</th>
-                    <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-2">Description</th>
+                <thead className="sticky top-0 bg-fn-panel z-10">
+                  <tr>
+                    <th className="text-left text-[9px] font-semibold text-gray-500 uppercase tracking-wider px-5 py-2.5">#</th>
+                    <th className="text-left text-[9px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Field</th>
+                    <th className="text-left text-[9px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Type</th>
+                    <th className="text-left text-[9px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Default</th>
+                    <th className="text-left text-[9px] font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Description</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedSchema.fields.map((f, i) => (
-                    <tr key={f.name} className={`border-b border-fn-border/20 hover:bg-white/[0.02] ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
-                      <td className="px-4 py-2">
-                        <span className="text-[11px] text-white font-mono font-medium">{f.name}</span>
+                    <tr key={f.name} className={`border-t border-fn-border/20 ${i % 2 === 0 ? 'bg-fn-darker/30' : ''} hover:bg-white/[0.03]`}>
+                      <td className="px-5 py-2 text-[9px] text-gray-700 tabular-nums">{i + 1}</td>
+                      <td className="px-3 py-2">
+                        <span className="text-[11px] text-white font-medium">{f.name}</span>
                       </td>
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[9px] font-mono font-bold ${typeColor(f.type)}`}>{typeIcon(f.type)}</span>
-                          <span className={`text-[11px] font-mono ${typeColor(f.type)}`}>{f.type}</span>
-                        </div>
+                      <td className="px-3 py-2">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ${typeBadgeColor(f.type)}`}>{f.type}</span>
                       </td>
-                      <td className="px-4 py-2">
-                        <code className="text-[10px] text-gray-400 font-mono bg-fn-darker px-1.5 py-0.5 rounded">{f.defaultValue}</code>
+                      <td className="px-3 py-2">
+                        <code className="text-[10px] text-gray-400 font-mono">{f.defaultValue}</code>
                       </td>
-                      <td className="px-4 py-2">
-                        <span className="text-[10px] text-gray-600 italic">{f.comment || '—'}</span>
+                      <td className="px-3 py-2">
+                        <span className="text-[10px] text-gray-600">{f.comment || ''}</span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
-              {selectedSchema.fields.length === 0 && (
-                <div className="p-6 text-center text-[11px] text-gray-600">No fields defined</div>
-              )}
             </div>
-          </div>
 
-          {/* Source preview */}
-          {sourceContent && (
-            <>
-              <ResizeHandle direction="horizontal" onResize={(d) => setDetailWidth(w => Math.max(300, Math.min(800, w - d)))} />
-              <div className="border-l border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden" style={{ width: detailWidth }}>
-                <div className="px-3 py-2 border-b border-fn-border shrink-0">
-                  <span className="text-[10px] font-semibold text-gray-400">Source</span>
-                </div>
-                <div className="flex-1 overflow-auto min-h-0">
-                  {sourceLoading ? (
-                    <div className="flex items-center justify-center h-32">
-                      <div className="w-4 h-4 border-2 border-gray-600 border-t-gray-300 rounded-full animate-spin" />
-                    </div>
-                  ) : (
-                    <VerseHighlighter
-                      source={sourceContent}
-                      fontSize={fontSize}
-                      scrollToLine={selectedSchema.startLine}
-                    />
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 12c0 2.21 3.582 4 8 4s8-1.79 8-4" />
-            </svg>
-            <div className="text-[12px] text-gray-500 font-medium">Persistent Data Schemas</div>
-            <div className="text-[10px] text-gray-700 mt-1 max-w-xs">
-              View your project's persistable classes and data structures as formatted tables. Select a schema to inspect its fields.
+            {/* Footer */}
+            <div className="px-5 py-2.5 border-t border-fn-border text-[9px] text-gray-600 flex items-center gap-3 shrink-0">
+              <span>{selectedSchema.fields.length} fields</span>
+              <span>{selectedSchema.modifiers.join(', ')}</span>
             </div>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+// Schema card component
+function SchemaCard({ schema, selected, onSelect, onViewCode }: { schema: PersistSchema; selected: boolean; onSelect: () => void; onViewCode?: (page: string) => void }) {
+  const isPersist = schema.kind === 'persistable'
+  const accentColor = isPersist ? 'emerald' : 'blue'
+
+  // Count field types
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const f of schema.fields) {
+      const base = f.type === 'int' || f.type === 'float' ? 'number' : f.type === 'string' ? 'string' : f.type === 'logic' ? 'bool' : f.type.startsWith('[]') ? 'array' : 'other'
+      counts[base] = (counts[base] || 0) + 1
+    }
+    return counts
+  }, [schema])
+
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full text-left rounded-lg border transition-all ${
+        selected
+          ? `border-${accentColor}-400/50 bg-${accentColor}-400/5 ring-1 ring-${accentColor}-400/20`
+          : 'border-fn-border bg-fn-dark hover:bg-white/[0.02] hover:border-fn-border/80'
+      }`}
+    >
+      {/* Card header */}
+      <div className="px-4 py-3 border-b border-fn-border/30">
+        <div className="flex items-center gap-2">
+          <svg className={`w-4 h-4 text-${accentColor}-400 shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+          </svg>
+          <span className="text-[12px] font-semibold text-white truncate">{schema.name}</span>
+          {isPersist && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 font-bold uppercase shrink-0">DB</span>}
+        </div>
+        {schema.parent && <div className="text-[9px] text-gray-600 mt-0.5 pl-6">extends {schema.parent}</div>}
+      </div>
+
+      {/* Field preview */}
+      <div className="px-4 py-2 space-y-0.5">
+        {schema.fields.slice(0, 4).map((f) => (
+          <div key={f.name} className="flex items-center gap-2 text-[10px]">
+            <span className="text-gray-400 truncate flex-1">{f.name}</span>
+            <span className={`font-mono text-[9px] ${typeColor(f.type)}`}>{f.type}</span>
+          </div>
+        ))}
+        {schema.fields.length > 4 && (
+          <div className="text-[9px] text-gray-600">+{schema.fields.length - 4} more fields</div>
+        )}
+      </div>
+
+      {/* Card footer */}
+      <div className="px-4 py-2 border-t border-fn-border/30 flex items-center gap-2">
+        <span className="text-[9px] text-gray-600">{schema.fields.length} fields</span>
+        <div className="flex-1" />
+        {Object.entries(typeCounts).map(([type, count]) => (
+          <span key={type} className="text-[8px] text-gray-600">{count} {type}</span>
+        ))}
+      </div>
+    </button>
   )
 }

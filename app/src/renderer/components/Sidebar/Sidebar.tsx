@@ -631,25 +631,7 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
               </div>
             )}
 
-            {/* Verse Reference — always visible (language docs, not library content) */}
-            <div className="border-t border-fn-border/50">
-              <button
-                className={`w-full flex items-center gap-2.5 transition-colors pl-5 pr-3 py-1.5 ${
-                  activePage === 'verse-reference'
-                    ? 'text-purple-400 bg-purple-400/10'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
-                }`}
-                onClick={() => onNavigate('verse-reference')}
-              >
-                <span className="shrink-0">{icons.book}</span>
-                <span className="text-[11px] font-medium whitespace-nowrap truncate">
-                  Verse Reference
-                </span>
-                {activePage === 'verse-reference' && (
-                  <div className="ml-auto w-1 h-4 rounded-full bg-purple-400 shrink-0" />
-                )}
-              </button>
-            </div>
+            {/* Verse Reference moved to footer */}
           </div>
         ) : (
           /* Collapsed: library section */
@@ -686,44 +668,15 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
                 {icons.plus}
               </button>
             )}
-            {/* Verse Reference — always visible */}
-            <div className="h-px bg-fn-border mx-2 my-0.5" />
-            <button
-              className={`w-full flex items-center justify-center px-0 py-2 transition-colors ${
-                activePage === 'verse-reference'
-                  ? 'text-purple-400 bg-purple-400/10'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
-              }`}
-              onClick={() => onNavigate('verse-reference')}
-              title="Verse Reference"
-            >
-              <span className="shrink-0">{icons.book}</span>
-            </button>
+            {/* Verse Reference moved to footer */}
           </div>
         )}
       </div>
 
-      {/* Footer: Settings */}
-      <div className="border-t border-fn-border p-2 shrink-0">
-        <button
-          className={`w-full flex items-center gap-2.5 transition-colors rounded ${
-            collapsed ? 'justify-center px-0 py-1.5' : 'px-3 py-1.5'
-          } ${
-            activePage === 'settings'
-              ? 'text-fn-rare bg-fn-rare/10'
-              : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-          }`}
-          onClick={() => onNavigate('settings')}
-          title={collapsed ? 'Settings' : undefined}
-        >
-          <span className="shrink-0">{icons.settings}</span>
-          {!collapsed && (
-            <span className="text-[11px] font-medium whitespace-nowrap">Settings</span>
-          )}
-          {activePage === 'settings' && !collapsed && (
-            <div className="ml-auto w-1 h-4 rounded-full bg-fn-rare shrink-0" />
-          )}
-        </button>
+      {/* Footer: Verse Reference + Settings — always pinned */}
+      <div className="border-t border-fn-border p-1.5 shrink-0 space-y-0.5">
+        {renderNavButton({ id: 'verse-reference', label: 'Verse Reference', icon: icons.book })}
+        {renderNavButton({ id: 'settings', label: 'Settings', icon: icons.settings })}
       </div>
     </div>
   )
