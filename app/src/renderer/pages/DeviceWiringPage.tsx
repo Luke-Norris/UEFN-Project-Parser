@@ -43,21 +43,14 @@ interface DeviceWiringPageProps {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
+// Only match properties that are ACTUAL channel identifiers — not boolean flags or event names
 const CHANNEL_PROPERTY_PATTERNS = [
-  /channel/i,
-  /trigger/i,
-  /activate/i,
-  /deactivate/i,
-  /signal/i,
-  /event/i,
-  /on.*channel/i,
-  /enable/i,
-  /disable/i,
-  /toggle/i,
-  /transmit/i,
-  /receive/i,
-  /listen/i,
-  /broadcast/i
+  /^.*Channel\d*$/i,           // "Channel", "Channel1", "TriggerChannel"
+  /^.*ChannelName$/i,          // "ChannelName"
+  /^TransmitOn$/i,
+  /^ReceiveFrom$/i,
+  /^BroadcastChannel$/i,
+  /^ListenChannel$/i,
 ]
 
 const TYPE_COLORS: Record<string, string> = {
@@ -104,9 +97,12 @@ function isChannelProperty(name: string): boolean {
 }
 
 function isNonEmptyChannel(value: string): boolean {
-  if (!value || value === '' || value === 'None' || value === '(none)') return false
-  if (value === '0' || value === 'false' || value === 'False') return false
-  if (value.startsWith('(') && value.endsWith(')') && value.includes('0.000')) return false
+  if (!value || value === '' || value === 'None' || value === '(none)' || value === 'null') return false
+  if (value === '0' || value === 'false' || value === 'False' || value === 'true' || value === 'True') return false
+  if (value.startsWith('(') && value.endsWith(')')) return false  // vectors/structs
+  if (/^\d+(\.\d+)?$/.test(value)) return false  // pure numbers
+  if (value.length < 2) return false  // single chars
+  if (value.includes('/') && value.includes('.')) return false  // asset paths
   return true
 }
 
@@ -309,23 +305,23 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
       const edgeSet = new Set<string>()
 
       for (const [channel, members] of channelMap) {
-        if (members.length < 2) continue // Need at least 2 devices on same channel
+        if (members.length < 2) continue
         newChannelGroups.push({ channel, devices: members })
 
-        // Create edges between all pairs in this channel group
-        for (let i = 0; i < members.length; i++) {
-          for (let j = i + 1; j < members.length; j++) {
-            const key = `${members[i].nodeId}|${members[j].nodeId}|${channel}`
-            if (!edgeSet.has(key)) {
-              edgeSet.add(key)
-              newEdges.push({
-                source: members[i].nodeId,
-                target: members[j].nodeId,
-                channel,
-                sourceProperty: members[i].property,
-                targetProperty: members[j].property
-              })
-            }
+        // Connect members in a star from the first device (not all-pairs)
+        // This reduces C(n,2) edges to just (n-1) edges per channel
+        const hub = members[0]
+        for (let i = 1; i < members.length; i++) {
+          const key = `${hub.nodeId}|${members[i].nodeId}|${channel}`
+          if (!edgeSet.has(key)) {
+            edgeSet.add(key)
+            newEdges.push({
+              source: hub.nodeId,
+              target: members[i].nodeId,
+              channel,
+              sourceProperty: hub.property,
+              targetProperty: members[i].property
+            })
           }
         }
       }
