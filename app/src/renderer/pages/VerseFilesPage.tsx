@@ -38,6 +38,81 @@ function parseVerseSource(content: string) {
   return { classes, functions, devices, imports }
 }
 
+// Parse persistent data structures from verse source
+interface PersistField {
+  name: string
+  type: string
+  defaultValue: string
+  line: number
+}
+
+interface PersistStruct {
+  name: string
+  kind: 'persistable' | 'struct' | 'class'
+  parent?: string
+  fields: PersistField[]
+  sourceFile: string
+  startLine: number
+}
+
+function parsePersistentStructs(content: string, sourceFile: string): PersistStruct[] {
+  if (!content) return []
+  const lines = content.split('\n')
+  const structs: PersistStruct[] = []
+  let current: PersistStruct | null = null
+  let baseIndent = 0
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trim()
+
+    // Match class/struct definitions
+    const structMatch = trimmed.match(/^(\w+)(?:<[^>]*>)?\s*:=\s*(class|struct)(?:<([^>]+)>)?(?:\((\w+)\))?\s*:?\s*$/)
+    if (structMatch) {
+      const [, name, kind, modifiers, parent] = structMatch
+      const isPersistable = (modifiers || '').includes('persistable')
+      if (current) structs.push(current)
+      current = {
+        name,
+        kind: isPersistable ? 'persistable' : kind as 'struct' | 'class',
+        parent,
+        fields: [],
+        sourceFile,
+        startLine: i + 1,
+      }
+      baseIndent = line.search(/\S/)
+      continue
+    }
+
+    // If we're inside a struct, parse fields
+    if (current) {
+      const indent = line.search(/\S/)
+      // If indent goes back to base or less, the struct ended
+      if (indent >= 0 && indent <= baseIndent && trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('//')) {
+        structs.push(current)
+        current = null
+        // Re-check this line for a new struct
+        i--
+        continue
+      }
+
+      // Match field: FieldName<public> : type = default
+      const fieldMatch = trimmed.match(/^(?:@editable\s+)?(\w+)(?:<[^>]*>)?\s*:\s*(\S+)\s*=\s*(.+)$/)
+      if (fieldMatch) {
+        current.fields.push({
+          name: fieldMatch[1],
+          type: fieldMatch[2],
+          defaultValue: fieldMatch[3].replace(/\s*#.*$/, '').trim(),
+          line: i + 1,
+        })
+      }
+    }
+  }
+  if (current) structs.push(current)
+
+  return structs
+}
+
 function CollapsibleSection({ title, count, color, children }: { title: string; count: number; color: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true)
   return (
@@ -64,6 +139,8 @@ export function VerseFilesPage() {
   const [fileContent, setFileContent] = useState<VerseFileContent | null>(null)
   const [fileLoading, setFileLoading] = useState(false)
   const verseEditorFontSize = useSettingsStore((s) => s.verseEditorFontSize)
+  const [persistStructs, setPersistStructs] = useState<PersistStruct[]>([])
+  const [showPersistence, setShowPersistence] = useState(false)
 
   // Build tree from recursive browse
   useEffect(() => {
@@ -115,6 +192,23 @@ export function VerseFilesPage() {
 
       setTree(root)
       setExpandedDirs(autoExpand)
+
+      // Scan all verse files for persistent data structures
+      const allVerse: TreeNode[] = []
+      function collectVerse(n: TreeNode) { if (!n.isDir) allVerse.push(n); n.children.forEach(collectVerse) }
+      collectVerse(root)
+
+      const structs: PersistStruct[] = []
+      for (const vf of allVerse) {
+        try {
+          const result = await window.electronAPI.forgeReadVerse(vf.path) as any
+          const source = result?.content ?? result?.source ?? ''
+          if (source.includes('persistable') || source.includes(':= struct') || source.includes(':= class')) {
+            structs.push(...parsePersistentStructs(source, vf.path))
+          }
+        } catch { /* skip */ }
+      }
+      setPersistStructs(structs)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan verse files')
     } finally {
@@ -309,6 +403,73 @@ export function VerseFilesPage() {
             tree && tree.children.map((c) => renderNode(c, 0))
           )}
         </div>
+
+        {/* Persistence Data toggle */}
+        {persistStructs.length > 0 && (
+          <div className="border-t border-fn-border shrink-0">
+            <button
+              onClick={() => setShowPersistence(!showPersistence)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/[0.03] transition-colors"
+            >
+              <svg className={`w-3 h-3 text-gray-500 shrink-0 transition-transform ${showPersistence ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+              <svg className="w-3.5 h-3.5 text-emerald-400/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              </svg>
+              <span className="text-[10px] font-semibold text-gray-300">Persistent Data</span>
+              <span className="text-[9px] text-emerald-400/70 bg-emerald-400/10 px-1.5 py-0.5 rounded-full ml-auto">{persistStructs.length}</span>
+            </button>
+            {showPersistence && (
+              <div className="max-h-[300px] overflow-y-auto px-2 pb-2 space-y-2">
+                {persistStructs.filter(s => s.kind === 'persistable').length > 0 && (
+                  <div className="text-[8px] text-emerald-400/50 uppercase tracking-wider px-1 pt-1">Persistable</div>
+                )}
+                {persistStructs.filter(s => s.kind === 'persistable').map((s) => (
+                  <button
+                    key={`${s.sourceFile}:${s.name}`}
+                    onClick={() => {
+                      // Find and open the source file, scroll to line
+                      const allFiles: TreeNode[] = []
+                      function walk(n: TreeNode) { if (!n.isDir) allFiles.push(n); n.children.forEach(walk) }
+                      if (tree) walk(tree)
+                      const file = allFiles.find(f => f.path === s.sourceFile)
+                      if (file) { handleSelectFile(file); setTimeout(() => setScrollToLine(s.startLine), 300) }
+                    }}
+                    className="w-full text-left bg-fn-darker rounded px-2 py-1.5 hover:bg-white/[0.03] transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-semibold text-emerald-400">{s.name}</span>
+                      <span className="text-[8px] text-gray-600">{s.fields.length} fields</span>
+                    </div>
+                    <div className="text-[8px] text-gray-600 truncate">{s.sourceFile.split(/[/\\]/).pop()}</div>
+                  </button>
+                ))}
+                {persistStructs.filter(s => s.kind === 'struct').length > 0 && (
+                  <div className="text-[8px] text-blue-400/50 uppercase tracking-wider px-1 pt-1">Structs</div>
+                )}
+                {persistStructs.filter(s => s.kind === 'struct').map((s) => (
+                  <button
+                    key={`${s.sourceFile}:${s.name}`}
+                    onClick={() => {
+                      const allFiles: TreeNode[] = []
+                      function walk(n: TreeNode) { if (!n.isDir) allFiles.push(n); n.children.forEach(walk) }
+                      if (tree) walk(tree)
+                      const file = allFiles.find(f => f.path === s.sourceFile)
+                      if (file) { handleSelectFile(file); setTimeout(() => setScrollToLine(s.startLine), 300) }
+                    }}
+                    className="w-full text-left bg-fn-darker rounded px-2 py-1.5 hover:bg-white/[0.03] transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-semibold text-blue-400">{s.name}</span>
+                      <span className="text-[8px] text-gray-600">{s.fields.length} fields</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Center: File Content */}
@@ -396,6 +557,45 @@ export function VerseFilesPage() {
                 </button>
               ))}
             </CollapsibleSection>
+
+            {/* Persistent Data Tables for this file */}
+            {(() => {
+              const fileStructs = persistStructs.filter(s => s.sourceFile === selectedFile)
+              if (fileStructs.length === 0) return null
+              return (
+                <CollapsibleSection title="Data Schemas" count={fileStructs.length} color="text-emerald-400 bg-emerald-400/10">
+                  {fileStructs.map((s) => (
+                    <div key={s.name} className="mb-3">
+                      <button onClick={() => setScrollToLine(s.startLine)} className="flex items-center gap-1.5 mb-1 hover:bg-white/[0.03] rounded px-1 py-0.5 w-full text-left">
+                        <span className={`text-[10px] font-semibold ${s.kind === 'persistable' ? 'text-emerald-400' : 'text-blue-400'}`}>{s.name}</span>
+                        {s.kind === 'persistable' && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-400/10 text-emerald-400/70">PERSIST</span>}
+                        {s.parent && <span className="text-[8px] text-gray-600">: {s.parent}</span>}
+                      </button>
+                      {s.fields.length > 0 && (
+                        <table className="w-full text-[9px]">
+                          <thead>
+                            <tr className="text-gray-600">
+                              <th className="text-left font-medium px-1 py-0.5">Field</th>
+                              <th className="text-left font-medium px-1 py-0.5">Type</th>
+                              <th className="text-right font-medium px-1 py-0.5">Default</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {s.fields.map((f) => (
+                              <tr key={f.name} className="hover:bg-white/[0.02] cursor-pointer" onClick={() => setScrollToLine(f.line)}>
+                                <td className="px-1 py-0.5 text-white font-mono">{f.name}</td>
+                                <td className="px-1 py-0.5 text-cyan-400/70 font-mono">{f.type}</td>
+                                <td className="px-1 py-0.5 text-gray-500 text-right font-mono">{f.defaultValue}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  ))}
+                </CollapsibleSection>
+              )
+            })()}
           </div>
         </div>
       )}
