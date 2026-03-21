@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { DeviceRecipe } from '../../shared/recipes'
+import { BUILTIN_RECIPES } from '../../shared/builtin-recipes'
 
 interface RecipeState {
   /** All saved recipes */
@@ -61,6 +62,18 @@ export const useRecipeStore = create<RecipeState>()(
     }),
     {
       name: 'wellversed-recipes',
+      onRehydrate: (_state, options) => {
+        // After rehydrating, ensure built-in recipes are present
+        return (rehydrated) => {
+          if (rehydrated) {
+            const existingIds = new Set(rehydrated.recipes.map((r) => r.id))
+            const missing = BUILTIN_RECIPES.filter((r) => !existingIds.has(r.id))
+            if (missing.length > 0) {
+              rehydrated.recipes = [...missing, ...rehydrated.recipes]
+            }
+          }
+        }
+      },
     }
   )
 )

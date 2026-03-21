@@ -138,6 +138,7 @@ export function SettingsPage() {
     accentColor,
     fontSize,
     uiZoom,
+    fortnitePath,
     animationsEnabled,
     highContrast,
     reducedMotion,
@@ -393,6 +394,33 @@ export function SettingsPage() {
               min={10}
               max={24}
             />
+          </SettingRow>
+        </Section>
+
+        {/* ─── Asset Preview (CUE4Parse) ─── */}
+        <Section title="Asset Preview">
+          <SettingRow
+            label="Fortnite Install Path"
+            description="Point to your Fortnite installation to enable real asset previews (textures, meshes). Read-only access — no game files are modified."
+          >
+            <div className="flex items-center gap-2 w-full">
+              <input
+                type="text"
+                value={fortnitePath}
+                onChange={(e) => setSetting('fortnitePath', e.target.value)}
+                placeholder="C:\Program Files\Epic Games\Fortnite"
+                className="flex-1 bg-fn-darker border border-fn-border rounded px-2.5 py-1.5 text-[10px] text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono"
+              />
+              <button
+                onClick={async () => {
+                  const dir = await window.electronAPI.selectDirectory()
+                  if (dir) setSetting('fortnitePath', dir)
+                }}
+                className="shrink-0 px-2 py-1.5 text-[10px] text-gray-400 bg-fn-darker border border-fn-border rounded hover:bg-white/[0.05] transition-colors"
+              >
+                Browse
+              </button>
+            </div>
           </SettingRow>
         </Section>
 
