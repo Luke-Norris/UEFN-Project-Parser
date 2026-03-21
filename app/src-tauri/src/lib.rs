@@ -80,6 +80,13 @@ pub fn run() {
             commands::forge_get_library_assets_by_type,
             commands::forge_browse_library_dir,
             commands::forge_search_library_index,
+            // CUE4Parse preview commands
+            commands::forge_preview_init,
+            commands::forge_preview_status,
+            commands::forge_preview_search,
+            commands::forge_preview_texture,
+            commands::forge_preview_mesh_info,
+            // Local file system commands
             commands::scan_assets,
             commands::get_asset_data,
             commands::get_fonts,

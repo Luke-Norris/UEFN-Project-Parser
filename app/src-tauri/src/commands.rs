@@ -356,6 +356,60 @@ pub async fn forge_search_library_index(
         .await
 }
 
+// ─── CUE4Parse preview commands ──────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_preview_init(
+    state: State<'_, AppState>,
+    fortnite_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("preview-init", json!({"fortnitePath": fortnite_path}))
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_preview_status(state: State<'_, AppState>) -> Result<Value, String> {
+    state.bridge.call("preview-status", json!({})).await.or_else(|_| {
+        Ok(json!({"initialized": false, "fileCount": 0, "gamePath": null}))
+    })
+}
+
+#[tauri::command]
+pub async fn forge_preview_search(
+    state: State<'_, AppState>,
+    query: String,
+    limit: Option<i32>,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("preview-search", json!({"query": query, "limit": limit.unwrap_or(50)}))
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_preview_texture(
+    state: State<'_, AppState>,
+    asset_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("preview-texture", json!({"assetPath": asset_path}))
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_preview_mesh_info(
+    state: State<'_, AppState>,
+    asset_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("preview-mesh-info", json!({"assetPath": asset_path}))
+        .await
+}
+
 // ─── Local file system commands (replace Electron fs/dialog handlers) ────────
 
 #[tauri::command]

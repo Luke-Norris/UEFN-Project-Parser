@@ -399,6 +399,47 @@ export async function forgeListDirectory(
   return invoke('list_directory', { dirPath })
 }
 
+// ─── CUE4Parse asset preview (optional — requires Fortnite installed) ────────
+
+export async function previewInit(
+  fortnitePath: string
+): Promise<{ initialized: boolean; fileCount: number; gamePath: string }> {
+  return invoke('forge_preview_init', { fortnitePath })
+}
+
+export async function previewStatus(): Promise<{
+  initialized: boolean
+  fileCount: number
+  gamePath: string | null
+}> {
+  return invoke('forge_preview_status')
+}
+
+export async function previewSearch(
+  query: string,
+  limit?: number
+): Promise<{ query: string; results: string[]; count: number }> {
+  return invoke('forge_preview_search', { query, limit: limit ?? 50 })
+}
+
+export async function previewTexture(
+  assetPath: string
+): Promise<{ assetPath: string; dataUrl: string; size: number }> {
+  return invoke('forge_preview_texture', { assetPath })
+}
+
+export async function previewMeshInfo(
+  assetPath: string
+): Promise<{
+  assetPath: string
+  vertexCount: number
+  triangleCount: number
+  lodCount: number
+  materialCount: number
+}> {
+  return invoke('forge_preview_mesh_info', { assetPath })
+}
+
 // ─── Backward-compatible shim ────────────────────────────────────────────────
 // This allows existing code that calls window.electronAPI.* to work during
 // the migration. New code should import directly from this module.
@@ -450,6 +491,12 @@ const api = {
   forgeSearchLibraryIndex,
   forgeReadTextFile,
   forgeListDirectory,
+  // CUE4Parse preview
+  previewInit,
+  previewStatus,
+  previewSearch,
+  previewTexture,
+  previewMeshInfo,
 }
 
 // Install the shim on window so existing code works without changes

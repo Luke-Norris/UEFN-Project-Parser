@@ -34,6 +34,9 @@ export interface SettingsState {
   // UI Zoom (persisted between sessions)
   uiZoom: number
 
+  // Fortnite installation path (for CUE4Parse asset previews)
+  fortnitePath: string
+
   // Actions
   setSetting: <K extends keyof Omit<SettingsState, 'setSetting' | 'resetToDefaults'>>(
     key: K,
@@ -68,6 +71,8 @@ const defaults: Omit<SettingsState, 'setSetting' | 'resetToDefaults'> = {
   gridSize: 8,
 
   uiZoom: 1,
+
+  fortnitePath: '',
 }
 
 export const useSettingsStore = create<SettingsState>()(
