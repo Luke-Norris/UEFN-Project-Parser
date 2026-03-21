@@ -112,11 +112,11 @@ function isNonEmptyChannel(value: string): boolean {
 
 // ─── Force Layout ───────────────────────────────────────────────────────────
 
-const REPULSION = 8000
-const ATTRACTION = 0.005
-const DAMPING = 0.85
-const MIN_DISTANCE = 120
-const CENTER_GRAVITY = 0.01
+const REPULSION = 12000
+const ATTRACTION = 0.003
+const DAMPING = 0.8
+const MIN_DISTANCE = 150
+const CENTER_GRAVITY = 0.008
 
 function runForceLayout(
   nodes: WiringNode[],
@@ -733,48 +733,48 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
                 </marker>
               </defs>
 
-              {/* Edges */}
+              {/* Edges — only render edges connected to selected/hovered node for performance */}
               {edges.map((edge, idx) => {
+                // PERFORMANCE: Only render edges that connect to the highlighted node
+                // With 71K+ edges, rendering all of them crashes the browser
+                if (!connectedEdges.has(idx)) return null
+
                 const source = nodes.find(n => n.id === edge.source)
                 const target = nodes.find(n => n.id === edge.target)
                 if (!source || !target) return null
 
-                const isHighlighted = connectedEdges.has(idx)
-                const isDimmed = highlightTarget && !isHighlighted
-
-                // Calculate edge path between node centers
                 const x1 = source.x
                 const y1 = source.y
                 const x2 = target.x
                 const y2 = target.y
-                const mx = (x1 + x2) / 2
-                const my = (y1 + y2) / 2
+
+                // Curved path for better readability
+                const dx = x2 - x1
+                const dy = y2 - y1
+                const cx1 = x1 + dx * 0.3
+                const cy1 = y1
+                const cx2 = x1 + dx * 0.7
+                const cy2 = y2
 
                 return (
-                  <g key={idx} style={{ opacity: isDimmed ? 0.15 : 1, transition: 'opacity 0.2s' }}>
-                    <line
-                      x1={x1} y1={y1} x2={x2} y2={y2}
-                      stroke={isHighlighted ? '#60aa3a' : '#444'}
-                      strokeWidth={isHighlighted ? 2 : 1}
-                      strokeDasharray={isHighlighted ? 'none' : '4 4'}
+                  <g key={idx}>
+                    <path
+                      d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
+                      stroke="#60aa3a"
+                      strokeWidth={2}
+                      fill="none"
+                      strokeOpacity={0.8}
                     />
-                    {/* Channel label */}
-                    <rect
-                      x={mx - 30} y={my - 8}
-                      width={60} height={16}
-                      rx={3}
-                      fill="#1a1a2e"
-                      stroke={isHighlighted ? '#60aa3a' : '#333'}
-                      strokeWidth={0.5}
-                    />
+                    {/* Channel label at midpoint */}
                     <text
-                      x={mx} y={my + 3}
+                      x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 6}
                       textAnchor="middle"
-                      fill={isHighlighted ? '#8fdf6a' : '#666'}
-                      fontSize={8}
+                      fill="#8fdf6a"
+                      fontSize={9}
                       fontFamily="system-ui"
+                      fontWeight="500"
                     >
-                      {edge.channel.length > 10 ? edge.channel.slice(0, 10) + '...' : edge.channel}
+                      {edge.channel.length > 15 ? edge.channel.slice(0, 15) + '...' : edge.channel}
                     </text>
                   </g>
                 )
@@ -825,7 +825,7 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
                       rx={2}
                       fill={color}
                     />
-                    {/* Device name */}
+                    {/* Device name — cleaned up */}
                     <text
                       x={12} y={17}
                       fill="#e0e0e0"
@@ -833,7 +833,14 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
                       fontFamily="system-ui"
                       fontWeight="500"
                     >
-                      {node.label.length > 16 ? node.label.slice(0, 16) + '...' : node.label}
+                      {(() => {
+                        let name = node.label
+                        // Strip UAID hash
+                        if (name.includes('_UAID_')) name = name.split('_UAID_')[0]
+                        // Clean prefixes
+                        name = name.replace(/^BP_|^PBWA_|^Device_/, '').replace(/_C$/, '').replace(/_/g, ' ').trim()
+                        return name.length > 20 ? name.slice(0, 20) + '...' : name
+                      })()}
                     </text>
                     {/* Device type badge */}
                     <text
@@ -842,7 +849,7 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
                       fontSize={8}
                       fontFamily="system-ui"
                     >
-                      {node.deviceType.length > 18 ? node.deviceType.slice(0, 18) + '...' : node.deviceType}
+                      {node.deviceType.replace(/_/g, ' ').replace(/V\d+$/, '').trim().slice(0, 22)}
                     </text>
                     {/* Channel count badge */}
                     {channelCount > 0 && (
