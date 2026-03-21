@@ -1,0 +1,464 @@
+{
+  "Name": "Drop",
+  "SourceProject": "Deathrun250Level",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\Deathrun250Level\\Plugins\\Deathrun250Level\\Content\\UIbilder\\Drop.uasset",
+  "Category": "image_display",
+  "Description": "Widget with canvas layout, images, 1 positioned slots",
+  "ExportCount": 13,
+  "WidgetTypes": [
+    "11",
+    "CanvasPanel",
+    "CanvasPanelSlot",
+    "Image",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "CanvasPanel",
+    "CanvasPanelSlot",
+    "Image",
+    "UserWidget",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "/Deathrun250Level/UIbilder/FortniteCreative_SupportPanel_Set2_1_Dragonstudio_pro",
+    "FortniteCreative_SupportPanel_Set2_1_Dragonstudio_pro",
+    "Default__UserWidget",
+    "Default__WidgetBlueprint",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_27",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "3"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_27",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "4"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -661.9219
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": -260.54053
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 656.5565
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 354.31433
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -661.9219
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": -260.54053
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 656.5565
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 354.31433
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "8"
+        }
+      ]
+    },
+    {
+      "Type": "11",
+      "Name": "Default__Drop_C",
+      "Properties": [
+        {
+          "Name": "bHasScriptImplementedTick",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "bHasScriptImplementedPaint",
+          "Type": "BoolProperty",
+          "Value": false
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_0",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-18"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "3"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_0",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-18"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "Drop",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "12"
+        },
+        {
+          "Name": "ParentClass",
+          "Type": "ObjectProperty",
+          "Value": "-8"
+        },
+        {
+          "Name": "BlueprintSystemVersion",
+          "Type": "IntProperty",
+          "Value": 2
+        },
+        {
+          "Name": "UbergraphPages",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "6"
+            }
+          ]
+        },
+        {
+          "Name": "CategorySorting",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "NameProperty",
+              "Value": "Drop"
+            }
+          ]
+        },
+        {
+          "Name": "LastEditedDocuments",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "LastEditedDocuments",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "EditedObjectPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditedObjectPath",
+                      "Type": "SoftObjectPath",
+                      "Value": "[SoftObjectPathPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedViewOffset",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SavedViewOffset",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedZoomAmount",
+                  "Type": "FloatProperty",
+                  "Value": -1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "GeneratedClass",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "bLegacyNeedToPurgeSkelRefs",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "BlueprintGuid",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "BlueprintGuid",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "Drop_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "13"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "1"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "2"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "8"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

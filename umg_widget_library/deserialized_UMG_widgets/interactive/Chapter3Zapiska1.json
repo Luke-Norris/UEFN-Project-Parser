@@ -1,0 +1,1537 @@
+{
+  "Name": "Chapter3Zapiska1",
+  "SourceProject": "Slender",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\Slender\\Survival\\Plugins\\Survival\\Content\\Slender\\OBNOVAzapisok\\Chapter3\\Chapter3Zapiska1.uasset",
+  "Category": "interactive",
+  "Description": "Widget with buttons",
+  "ExportCount": 22,
+  "WidgetTypes": [
+    "20",
+    "Chapter3zapiska1_C",
+    "GridPanel",
+    "GridSlot",
+    "MVVMBlueprintView",
+    "MVVMBlueprintViewConversionFunction",
+    "MVVMBlueprintViewSettings",
+    "MVVMViewClass",
+    "MVVMWidgetBlueprintExtension_View",
+    "UEFN_Button_Loud_C",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "CommonButtonBase",
+    "MVVMWidgetBlueprintExtension_View",
+    "GridPanel",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "/Game/Valkyrie/UMG/UEFN_Button_Loud",
+    "Default__WidgetBlueprint",
+    "UEFN_Button_Loud_C",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "Chapter3zapiska1_C",
+      "Name": "Chapter3zapiska1",
+      "Properties": [
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Translation",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Translation",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "Scale",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Scale",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "Chapter3zapiska1_C",
+      "Name": "Chapter3zapiska1",
+      "Properties": [
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Translation",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Translation",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "Scale",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Scale",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "20",
+      "Name": "Default__Chapter3Zapiska1_C",
+      "Properties": [
+        {
+          "Name": "bHasScriptImplementedTick",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "bHasScriptImplementedPaint",
+          "Type": "BoolProperty",
+          "Value": false
+        }
+      ]
+    },
+    {
+      "Type": "GridPanel",
+      "Name": "GridPanel_90",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "8"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "7"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "GridPanel",
+      "Name": "GridPanel_90",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "10"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "9"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "GridSlot",
+      "Name": "GridSlot_0",
+      "Properties": [
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        }
+      ]
+    },
+    {
+      "Type": "GridSlot",
+      "Name": "GridSlot_2",
+      "Properties": [
+        {
+          "Name": "HorizontalAlignment",
+          "Type": "ByteProperty",
+          "Value": "HAlign_Center"
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "17"
+        }
+      ]
+    },
+    {
+      "Type": "GridSlot",
+      "Name": "GridSlot_0",
+      "Properties": [
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        }
+      ]
+    },
+    {
+      "Type": "GridSlot",
+      "Name": "GridSlot_2",
+      "Properties": [
+        {
+          "Name": "HorizontalAlignment",
+          "Type": "ByteProperty",
+          "Value": "HAlign_Center"
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "18"
+        }
+      ]
+    },
+    {
+      "Type": "MVVMBlueprintView",
+      "Name": "MVVMBlueprintView_0",
+      "Properties": [
+        {
+          "Name": "Settings",
+          "Type": "ObjectProperty",
+          "Value": "14"
+        },
+        {
+          "Name": "Bindings",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "SourcePath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::ViewModel"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "DestinationPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 0
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::None"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBindingMode::OneWayToSource"
+                },
+                {
+                  "Name": "bOverrideExecutionMode",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "OverrideExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::Immediate"
+                },
+                {
+                  "Name": "Conversion",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "DestinationToSourceConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "13"
+                    },
+                    {
+                      "Name": "SourceToDestinationConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "BindingId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "bEnabled",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCompile",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "AvailableViewModels",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "AvailableViewModels",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ViewModelContextId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ViewModelContextId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "NotifyFieldValueClass",
+                  "Type": "ObjectProperty",
+                  "Value": "-7"
+                },
+                {
+                  "Name": "ViewModelName",
+                  "Type": "NameProperty",
+                  "Value": "CreativeModalDialogViewmodel"
+                },
+                {
+                  "Name": "CreationType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBlueprintViewModelContextCreationType::Manual"
+                },
+                {
+                  "Name": "GlobalViewModelIdentifier",
+                  "Type": "NameProperty",
+                  "Value": "None"
+                },
+                {
+                  "Name": "ViewModelPropertyPath",
+                  "Type": "StrProperty"
+                },
+                {
+                  "Name": "Resolver",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "InstancedViewModel",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "bCreateSetterFunction",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCreateGetterFunction",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bOptional",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bExposeInstanceInEditor",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bCanRename",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bCanEdit",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bCanRemove",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bCreateSetterFunction_Deprecation",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "CompiledBindingLibraryId",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "CompiledBindingLibraryId",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "MVVMBlueprintViewConversionFunction",
+      "Name": "MVVMBlueprintViewConversionFunction_0",
+      "Properties": [
+        {
+          "Name": "ConversionFunction",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "FunctionReference",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "MemberParent",
+                  "Type": "ObjectProperty",
+                  "Value": "-6"
+                },
+                {
+                  "Name": "MemberName",
+                  "Type": "NameProperty",
+                  "Value": "GetResponseButton1"
+                }
+              ]
+            },
+            {
+              "Name": "Type",
+              "Type": "EnumProperty",
+              "Value": "EMVVMBlueprintFunctionReferenceType::Function"
+            }
+          ]
+        },
+        {
+          "Name": "GraphName",
+          "Type": "NameProperty",
+          "Value": "__282c8a07-4be5-2d97-4bef-35950e8137cd_SourceToDest"
+        },
+        {
+          "Name": "SavedPins",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "SavedPins",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Id",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "PinNames",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    }
+                  ]
+                },
+                {
+                  "Name": "Path",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "UEFN_Button_Loud_C"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::Widget"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "DefaultString",
+                  "Type": "StrProperty"
+                },
+                {
+                  "Name": "DefaultText",
+                  "Type": "TextProperty"
+                },
+                {
+                  "Name": "DefaultObject",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "bSplit",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "Status",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBlueprintPinStatus::Valid"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bWrapperGraphTransient",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "MVVMBlueprintViewSettings",
+      "Name": "Settings",
+      "Properties": []
+    },
+    {
+      "Type": "MVVMViewClass",
+      "Name": "MVVMViewClass_2",
+      "Properties": [
+        {
+          "Name": "Sources",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "Sources",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ExpectedSourceType",
+                  "Type": "ObjectProperty",
+                  "Value": "-7"
+                },
+                {
+                  "Name": "Resolver",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "GlobalViewModelInstance",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ContextClass",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "ContextName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "StartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "Num",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "PropertyName",
+                  "Type": "NameProperty",
+                  "Value": "CreativeModalDialogViewmodel"
+                },
+                {
+                  "Name": "FieldToRegisterTo",
+                  "Type": "ArrayProperty",
+                  "ArrayLength": 0
+                },
+                {
+                  "Name": "Bindings",
+                  "Type": "ArrayProperty",
+                  "ArrayLength": 0
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "UInt16Property",
+                  "Value": "[UInt16PropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "Sources",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ExpectedSourceType",
+                  "Type": "ObjectProperty",
+                  "Value": "-35"
+                },
+                {
+                  "Name": "Resolver",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "GlobalViewModelInstance",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ContextClass",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "ContextName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "StartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "Num",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "PropertyName",
+                  "Type": "NameProperty",
+                  "Value": "UEFN_Button_Loud_C"
+                },
+                {
+                  "Name": "FieldToRegisterTo",
+                  "Type": "ArrayProperty",
+                  "ArrayLength": 1,
+                  "Children": [
+                    {
+                      "Name": "FieldToRegisterTo",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldName",
+                          "Type": "NameProperty",
+                          "Value": "ClickEvent"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Bindings",
+                  "Type": "ArrayProperty",
+                  "ArrayLength": 1,
+                  "Children": [
+                    {
+                      "Name": "Bindings",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldId",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "BindingKey",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "Flags",
+                          "Type": "ByteProperty",
+                          "Value": "0"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "UInt16Property",
+                  "Value": "[UInt16PropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Bindings",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Binding",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SourceFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "DestinationFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "ConversionFunctionFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Type",
+                      "Type": "ByteProperty",
+                      "Value": "1"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "ByteProperty",
+                  "Value": "9"
+                },
+                {
+                  "Name": "ExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::DelayedWhenSharedElseImmediate"
+                },
+                {
+                  "Name": "SourceBitField",
+                  "Type": "UInt64Property",
+                  "Value": "[UInt64PropertyData]"
+                },
+                {
+                  "Name": "EditorId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditorId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "BindingLibrary",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "FieldPaths",
+              "Type": "ArrayProperty",
+              "ArrayLength": 6,
+              "Children": [
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "CompiledBindingLibraryId",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "CompiledBindingLibraryId",
+                  "Type": "Guid",
+                  "Value": "[GuidPropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "CompiledFields",
+              "Type": "ArrayProperty",
+              "ArrayLength": 4,
+              "Children": [
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "20"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "-2"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "-7"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "-6"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "CompiledFieldNames",
+              "Type": "ArrayProperty",
+              "ArrayLength": 5,
+              "Children": [
+                {
+                  "Name": "0",
+                  "Type": "NameProperty",
+                  "Value": "UEFN_Button_Loud_C"
+                },
+                {
+                  "Name": "1",
+                  "Type": "NameProperty",
+                  "Value": "CreativeModalDialogViewmodel"
+                },
+                {
+                  "Name": "2",
+                  "Type": "NameProperty",
+                  "Value": "ClickEvent"
+                },
+                {
+                  "Name": "3",
+                  "Type": "NameProperty",
+                  "Value": "Response"
+                },
+                {
+                  "Name": "4",
+                  "Type": "NameProperty",
+                  "Value": "GetResponseButton1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "OptionalSources",
+          "Type": "UInt64Property",
+          "Value": "[UInt64PropertyData]"
+        }
+      ]
+    },
+    {
+      "Type": "MVVMWidgetBlueprintExtension_View",
+      "Name": "MVVMWidgetBlueprintExtension_View_0",
+      "Properties": [
+        {
+          "Name": "BlueprintView",
+          "Type": "ObjectProperty",
+          "Value": "12"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_Button_Loud_C",
+      "Name": "UEFN_Button_Loud_C",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty"
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "8"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Translation",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Translation",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_Button_Loud_C",
+      "Name": "UEFN_Button_Loud_C",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty"
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Translation",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Translation",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "Chapter3Zapiska1",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "21"
+        },
+        {
+          "Name": "ParentClass",
+          "Type": "ObjectProperty",
+          "Value": "-5"
+        },
+        {
+          "Name": "BlueprintSystemVersion",
+          "Type": "IntProperty",
+          "Value": 2
+        },
+        {
+          "Name": "UbergraphPages",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "4"
+            }
+          ]
+        },
+        {
+          "Name": "CategorySorting",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "NameProperty",
+              "Value": "\u041C\u043E\u0434\u0435\u043B\u044C \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u0430"
+            },
+            {
+              "Name": "1",
+              "Type": "NameProperty",
+              "Value": "Sloyn"
+            }
+          ]
+        },
+        {
+          "Name": "Extensions",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "16"
+            }
+          ]
+        },
+        {
+          "Name": "GeneratedClass",
+          "Type": "ObjectProperty",
+          "Value": "20"
+        },
+        {
+          "Name": "bLegacyNeedToPurgeSkelRefs",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "BlueprintGuid",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "BlueprintGuid",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "Chapter3Zapiska1_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "22"
+        },
+        {
+          "Name": "Extensions",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "15"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 3,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "5"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "17"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 3,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "6"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "18"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "2"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

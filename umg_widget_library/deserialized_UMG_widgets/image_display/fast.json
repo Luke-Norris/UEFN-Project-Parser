@@ -1,0 +1,566 @@
+{
+  "Name": "fast",
+  "SourceProject": "Rankedpitty",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\Rankedpitty\\Plugins\\Rankedpitty\\Content\\hudimg\\fast.uasset",
+  "Category": "image_display",
+  "Description": "Widget with canvas layout, images, 1 positioned slots",
+  "ExportCount": 17,
+  "WidgetTypes": [
+    "15",
+    "CanvasPanel",
+    "CanvasPanelSlot",
+    "Image",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "CanvasPanel",
+    "CanvasPanelSlot",
+    "Image",
+    "UserWidget",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "Default__UserWidget",
+    "Default__WidgetBlueprint",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_102",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "3"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "4"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_102",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "5"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "6"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_2",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 3.5479736
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 3.0706177
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 1912.9241
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 1076.5922
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_3",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 1596
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 940
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 226.79349
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 137.87566
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_2",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 3.5479736
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 3.0706177
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 1912.9241
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 1076.5922
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_3",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 1596
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 940
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 226.79349
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 137.87566
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "12"
+        }
+      ]
+    },
+    {
+      "Type": "15",
+      "Name": "Default__fast_C",
+      "Properties": [
+        {
+          "Name": "bHasScriptImplementedTick",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "bHasScriptImplementedPaint",
+          "Type": "BoolProperty",
+          "Value": false
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_2",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-12"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "3"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_3",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-20"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_2",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-12"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_3",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-20"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "fast",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "16"
+        },
+        {
+          "Name": "ParentClass",
+          "Type": "ObjectProperty",
+          "Value": "-8"
+        },
+        {
+          "Name": "BlueprintSystemVersion",
+          "Type": "IntProperty",
+          "Value": 2
+        },
+        {
+          "Name": "UbergraphPages",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "7"
+            }
+          ]
+        },
+        {
+          "Name": "CategorySorting",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "NameProperty",
+              "Value": "Fast"
+            }
+          ]
+        },
+        {
+          "Name": "LastEditedDocuments",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "LastEditedDocuments",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "EditedObjectPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditedObjectPath",
+                      "Type": "SoftObjectPath",
+                      "Value": "[SoftObjectPathPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedViewOffset",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SavedViewOffset",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedZoomAmount",
+                  "Type": "FloatProperty",
+                  "Value": -1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "GeneratedClass",
+          "Type": "ObjectProperty",
+          "Value": "15"
+        },
+        {
+          "Name": "bLegacyNeedToPurgeSkelRefs",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "BlueprintGuid",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "BlueprintGuid",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "fast_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "17"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 3,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "1"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "9"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "10"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 3,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "2"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "11"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "12"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

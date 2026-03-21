@@ -1,0 +1,56 @@
+{
+  "Name": "NewWidgetBlueprint",
+  "SourceProject": "COOKIE TYCOON",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\COOKIE TYCOON\\naidi\\Plugins\\naidi\\Content\\NewFolder\\NewWidgetBlueprint.uasset",
+  "Category": "minimal",
+  "Description": "Widget Blueprint",
+  "ExportCount": 7,
+  "WidgetTypes": [
+    "5",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "UserWidget",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "Default__UserWidget",
+    "Default__WidgetBlueprint",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "5",
+      "Name": "Default__NewWidgetBlueprint_C",
+      "Properties": []
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "NewWidgetBlueprint",
+      "Properties": []
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "NewWidgetBlueprint_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": []
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": []
+    }
+  ]
+}

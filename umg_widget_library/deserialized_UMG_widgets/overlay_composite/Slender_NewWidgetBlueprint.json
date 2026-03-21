@@ -1,0 +1,354 @@
+{
+  "Name": "NewWidgetBlueprint",
+  "SourceProject": "Slender",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\Slender\\Survival\\Plugins\\Survival\\Content\\Slender\\NewWidgetBlueprint.uasset",
+  "Category": "overlay_composite",
+  "Description": "Widget with images, text, overlay",
+  "ExportCount": 12,
+  "WidgetTypes": [
+    "10",
+    "Image",
+    "Overlay",
+    "OverlaySlot",
+    "UEFN_TextBlock_C",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "UEFN_TextBlock_C",
+    "Image",
+    "Overlay",
+    "OverlaySlot",
+    "UserWidget",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "/Game/Valkyrie/UMG/UEFN_TextBlock",
+    "Default__UserWidget",
+    "Default__WidgetBlueprint",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "Image",
+      "Name": "Image_0",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-20"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        }
+      ]
+    },
+    {
+      "Type": "10",
+      "Name": "Default__NewWidgetBlueprint_C",
+      "Properties": []
+    },
+    {
+      "Type": "Overlay",
+      "Name": "Overlay_66",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 2,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "6"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "7"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_0",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 20
+            },
+            {
+              "Name": "Top",
+              "Type": "FloatProperty",
+              "Value": 20
+            },
+            {
+              "Name": "Right",
+              "Type": "FloatProperty",
+              "Value": 20
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 20
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "8"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_3",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 300
+            },
+            {
+              "Name": "Top",
+              "Type": "FloatProperty",
+              "Value": 300
+            },
+            {
+              "Name": "Right",
+              "Type": "FloatProperty",
+              "Value": 300
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 300
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "UEFN_TextBlock_C",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "E8A40451460521A1559C2792F0752A1A"
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "NewWidgetBlueprint",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "ParentClass",
+          "Type": "ObjectProperty",
+          "Value": "-9"
+        },
+        {
+          "Name": "BlueprintSystemVersion",
+          "Type": "IntProperty",
+          "Value": 2
+        },
+        {
+          "Name": "UbergraphPages",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "1"
+            }
+          ]
+        },
+        {
+          "Name": "CategorySorting",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "NameProperty",
+              "Value": "New Widget Blueprint"
+            }
+          ]
+        },
+        {
+          "Name": "LastEditedDocuments",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "LastEditedDocuments",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "EditedObjectPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditedObjectPath",
+                      "Type": "SoftObjectPath",
+                      "Value": "[SoftObjectPathPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedViewOffset",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SavedViewOffset",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedZoomAmount",
+                  "Type": "FloatProperty",
+                  "Value": -1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "GeneratedClass",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "bLegacyNeedToPurgeSkelRefs",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "BlueprintGuid",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "BlueprintGuid",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "NewWidgetBlueprint_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "12"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 3,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "5"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "8"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": []
+    }
+  ]
+}

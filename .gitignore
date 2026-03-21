@@ -35,3 +35,4 @@ backups/
 app/src-tauri/target/
 app/node_modules/
 app/dist/
+.claude/worktrees/

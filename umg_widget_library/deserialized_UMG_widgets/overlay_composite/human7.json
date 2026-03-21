@@ -1,0 +1,1009 @@
+{
+  "Name": "human7",
+  "SourceProject": "City_Tycoon",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\City_Tycoon\\MyProjectR___\\Plugins\\MyProjectR\\Content\\Model\\dva\\Interface\\human7.uasset",
+  "Category": "overlay_composite",
+  "Description": "Widget with images, text, overlay",
+  "ExportCount": 29,
+  "WidgetTypes": [
+    "27",
+    "Image",
+    "Overlay",
+    "OverlaySlot",
+    "UEFN_TextBlock_C",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "UEFN_TextBlock_C",
+    "Image",
+    "Overlay",
+    "OverlaySlot",
+    "UserWidget",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "/Game/Valkyrie/UMG/UEFN_TextBlock",
+    "Default__UserWidget",
+    "Default__WidgetBlueprint",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "27",
+      "Name": "Default__human7_C",
+      "Properties": [
+        {
+          "Name": "bHasScriptImplementedTick",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "bHasScriptImplementedPaint",
+          "Type": "BoolProperty",
+          "Value": false
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-22"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "14"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Angle",
+              "Type": "FloatProperty",
+              "Value": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_1",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-22"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "13"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_2",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-21"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "16"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Scale",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Scale",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-22"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "19"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Angle",
+              "Type": "FloatProperty",
+              "Value": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_1",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-22"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "18"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_2",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-21"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "21"
+        },
+        {
+          "Name": "RenderTransform",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Scale",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Scale",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "Overlay",
+      "Name": "Overlay_50",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 5,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "12"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "15"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "13"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "14"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "16"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "Overlay",
+      "Name": "Overlay_50",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 5,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "17"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "20"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "18"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "19"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "21"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_0",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 40
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 25
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "22"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_2",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 5
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 25
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_3",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 155
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 25
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "3"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_4",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 10
+            },
+            {
+              "Name": "Top",
+              "Type": "FloatProperty",
+              "Value": 100
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 15
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "23"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_5",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 60
+            },
+            {
+              "Name": "Top",
+              "Type": "FloatProperty",
+              "Value": 150
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 20
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_0",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 40
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 25
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "24"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_2",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 5
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 25
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_3",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 155
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 25
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_4",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 10
+            },
+            {
+              "Name": "Top",
+              "Type": "FloatProperty",
+              "Value": 100
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 15
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "25"
+        }
+      ]
+    },
+    {
+      "Type": "OverlaySlot",
+      "Name": "OverlaySlot_5",
+      "Properties": [
+        {
+          "Name": "Padding",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Left",
+              "Type": "FloatProperty",
+              "Value": 60
+            },
+            {
+              "Name": "Top",
+              "Type": "FloatProperty",
+              "Value": 150
+            },
+            {
+              "Name": "Bottom",
+              "Type": "FloatProperty",
+              "Value": 20
+            }
+          ]
+        },
+        {
+          "Name": "VerticalAlignment",
+          "Type": "ByteProperty",
+          "Value": "VAlign_Center"
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "8"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "UEFN_TextBlock_C",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "5BB46D674FE42DB2A32D128678ED96CE"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "OutlineSettings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "OutlineSize",
+                  "Type": "IntProperty",
+                  "Value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "12"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "UEFN_TextBlock_C_1",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "D038044147A868D273C469B548FB7442"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "OutlineSettings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "OutlineSize",
+                  "Type": "IntProperty",
+                  "Value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "15"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "UEFN_TextBlock_C",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "5BB46D674FE42DB2A32D128678ED96CE"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "OutlineSettings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "OutlineSize",
+                  "Type": "IntProperty",
+                  "Value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "17"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "UEFN_TextBlock_C_1",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "D038044147A868D273C469B548FB7442"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "OutlineSettings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "OutlineSize",
+                  "Type": "IntProperty",
+                  "Value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "20"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "human7",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "28"
+        },
+        {
+          "Name": "ParentClass",
+          "Type": "ObjectProperty",
+          "Value": "-9"
+        },
+        {
+          "Name": "BlueprintSystemVersion",
+          "Type": "IntProperty",
+          "Value": 2
+        },
+        {
+          "Name": "UbergraphPages",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "1"
+            }
+          ]
+        },
+        {
+          "Name": "CategorySorting",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "NameProperty",
+              "Value": "Human 7"
+            }
+          ]
+        },
+        {
+          "Name": "GeneratedClass",
+          "Type": "ObjectProperty",
+          "Value": "27"
+        },
+        {
+          "Name": "bLegacyNeedToPurgeSkelRefs",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "BlueprintGuid",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "BlueprintGuid",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "human7_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "29"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 6,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "10"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "22"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "23"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "4"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 6,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "11"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "24"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "25"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "7"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "6"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

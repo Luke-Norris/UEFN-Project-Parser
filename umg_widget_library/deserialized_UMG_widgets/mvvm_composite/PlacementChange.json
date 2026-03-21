@@ -1,0 +1,4347 @@
+{
+  "Name": "PlacementChange",
+  "SourceProject": "Minigame1v1s",
+  "SourcePath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\Minigame1v1s\\Plugins\\Minigame1v1s\\Content\\HUDs\\ChoosingHUD\\PlacementChange.uasset",
+  "Category": "mvvm_composite",
+  "Description": "Widget with canvas layout, images, text, 1 positioned slots",
+  "ExportCount": 49,
+  "WidgetTypes": [
+    "47",
+    "CanvasPanel",
+    "CanvasPanelSlot",
+    "Image",
+    "MVVMBlueprintView",
+    "MVVMBlueprintViewSettings",
+    "MVVMViewClass",
+    "MVVMWidgetBlueprintExtension_View",
+    "UEFN_TextBlock_C",
+    "WidgetBlueprint",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree"
+  ],
+  "Imports": [
+    "MVVM_UEFN_HUDMessage_C",
+    "UEFN_TextBlock_C",
+    "MVVMWidgetBlueprintExtension_View",
+    "CanvasPanel",
+    "CanvasPanelSlot",
+    "Image",
+    "TextBlock",
+    "UserWidget",
+    "WidgetBlueprintGeneratedClass",
+    "WidgetTree",
+    "WidgetBlueprint",
+    "/CreativeCoreDevices/HUDMessage/MVVM_UEFN_HUDMessage",
+    "/Game/Valkyrie/UMG/UEFN_TextBlock",
+    "Default__UserWidget",
+    "Default__WidgetBlueprint",
+    "WidgetTree"
+  ],
+  "Exports": [
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "11"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "16"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_1",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "12"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "17"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_2",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "13"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "18"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_40",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 5,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "14"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "18"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "17"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "16"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "15"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_74",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "19"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "15"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "20"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "25"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_1",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "21"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "26"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_2",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "22"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "27"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_40",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 5,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "23"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "27"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "26"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "25"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "24"
+            }
+          ]
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanel",
+      "Name": "CanvasPanel_74",
+      "Properties": [
+        {
+          "Name": "Slots",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "28"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "24"
+        },
+        {
+          "Name": "bExpandedInDesigner",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Clipping",
+          "Type": "EnumProperty",
+          "Value": "EWidgetClipping::ClipToBounds"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 182.86296
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 27.600006
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "41"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 27.462982
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": -28.006702
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "39"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.337036
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": -79.4
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "3"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "40"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 180
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 1280
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 720
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "30"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_5",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.6142047
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 81.33333
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 832.0213
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.66666
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_6",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.36296597
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 169.73332
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 833.3041
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 43.466656
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "1"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_7",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.16296396
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 229.5728
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 833.00745
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 57.46666
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "2"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_8",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.4962972
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 286.34872
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 832.34076
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 54.23589
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "3"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 477.8333
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 156.00002
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "5"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "38"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 182.86296
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 27.600006
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "45"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 27.462982
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": -28.006702
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "43"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.337036
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": -79.4
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "8"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "44"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 180
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 1280
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 720
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "31"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_5",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.6142047
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 81.33333
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 832.0213
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.66666
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_6",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.36296597
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 169.73332
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 833.3041
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 43.466656
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "6"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_7",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.16296396
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 229.5728
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 833.00745
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 57.46666
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "7"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_8",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": -0.4962972
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 286.34872
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 832.34076
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 54.23589
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "8"
+        }
+      ]
+    },
+    {
+      "Type": "CanvasPanelSlot",
+      "Name": "CanvasPanelSlot_0",
+      "Properties": [
+        {
+          "Name": "LayoutData",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Offsets",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Left",
+                  "Type": "FloatProperty",
+                  "Value": 477.8333
+                },
+                {
+                  "Name": "Top",
+                  "Type": "FloatProperty",
+                  "Value": 156.00002
+                },
+                {
+                  "Name": "Right",
+                  "Type": "FloatProperty",
+                  "Value": 426.21906
+                },
+                {
+                  "Name": "Bottom",
+                  "Type": "FloatProperty",
+                  "Value": 98.14286
+                }
+              ]
+            },
+            {
+              "Name": "Anchors",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Minimum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Minimum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "Maximum",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Maximum",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Alignment",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Alignment",
+                  "Type": "Vector2D",
+                  "Value": "[Vector2DPropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "bAutoSize",
+          "Type": "BoolProperty",
+          "Value": true
+        },
+        {
+          "Name": "Parent",
+          "Type": "ObjectProperty",
+          "Value": "10"
+        },
+        {
+          "Name": "Content",
+          "Type": "ObjectProperty",
+          "Value": "42"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_48",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ImageSize",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ImageSize",
+                  "Type": "DeprecateSlateVector2D",
+                  "Value": "[DeprecateSlateVector2DPropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-31"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "14"
+        }
+      ]
+    },
+    {
+      "Type": "Image",
+      "Name": "Image_48",
+      "Properties": [
+        {
+          "Name": "Brush",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ImageSize",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ImageSize",
+                  "Type": "DeprecateSlateVector2D",
+                  "Value": "[DeprecateSlateVector2DPropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "ResourceObject",
+              "Type": "ObjectProperty",
+              "Value": "-31"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "23"
+        }
+      ]
+    },
+    {
+      "Type": "MVVMBlueprintView",
+      "Name": "MVVMBlueprintView_0",
+      "Properties": [
+        {
+          "Name": "Settings",
+          "Type": "ObjectProperty",
+          "Value": "34"
+        },
+        {
+          "Name": "Bindings",
+          "Type": "ArrayProperty",
+          "ArrayLength": 4,
+          "Children": [
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "SourcePath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::ViewModel"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "DestinationPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "Rating"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::Widget"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBindingMode::OneWayToDestination"
+                },
+                {
+                  "Name": "bOverrideExecutionMode",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "OverrideExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::Immediate"
+                },
+                {
+                  "Name": "Conversion",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "DestinationToSourceConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "SourceToDestinationConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "BindingId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "bEnabled",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCompile",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            },
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "SourcePath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::ViewModel"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "DestinationPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "Opponent"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::Widget"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBindingMode::OneWayToDestination"
+                },
+                {
+                  "Name": "bOverrideExecutionMode",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "OverrideExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::Immediate"
+                },
+                {
+                  "Name": "Conversion",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "DestinationToSourceConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "SourceToDestinationConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "BindingId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "bEnabled",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCompile",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            },
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "SourcePath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::ViewModel"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "DestinationPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "Wins"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::Widget"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBindingMode::OneWayToDestination"
+                },
+                {
+                  "Name": "bOverrideExecutionMode",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "OverrideExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::Immediate"
+                },
+                {
+                  "Name": "Conversion",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "DestinationToSourceConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "SourceToDestinationConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "BindingId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "bEnabled",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCompile",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            },
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "SourcePath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::ViewModel"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "DestinationPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Paths",
+                      "Type": "ArrayProperty",
+                      "ArrayLength": 1
+                    },
+                    {
+                      "Name": "WidgetName",
+                      "Type": "NameProperty",
+                      "Value": "First"
+                    },
+                    {
+                      "Name": "ContextId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "ContextId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Source",
+                      "Type": "EnumProperty",
+                      "Value": "EMVVMBlueprintFieldPathSource::Widget"
+                    },
+                    {
+                      "Name": "bDeprecatedSource",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBindingMode::OneWayToDestination"
+                },
+                {
+                  "Name": "bOverrideExecutionMode",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "OverrideExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::Immediate"
+                },
+                {
+                  "Name": "Conversion",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "DestinationToSourceConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "SourceToDestinationConversion",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    }
+                  ]
+                },
+                {
+                  "Name": "BindingId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "BindingId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "bEnabled",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCompile",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "AvailableViewModels",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "AvailableViewModels",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ViewModelContextId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ViewModelContextId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "NotifyFieldValueClass",
+                  "Type": "ObjectProperty",
+                  "Value": "-1"
+                },
+                {
+                  "Name": "ViewModelName",
+                  "Type": "NameProperty",
+                  "Value": "MVVM_UEFN_HUDMessage"
+                },
+                {
+                  "Name": "CreationType",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMBlueprintViewModelContextCreationType::Manual"
+                },
+                {
+                  "Name": "GlobalViewModelIdentifier",
+                  "Type": "NameProperty",
+                  "Value": "None"
+                },
+                {
+                  "Name": "ViewModelPropertyPath",
+                  "Type": "StrProperty"
+                },
+                {
+                  "Name": "Resolver",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "InstancedViewModel",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "bCreateSetterFunction",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCreateGetterFunction",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bOptional",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bExposeInstanceInEditor",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bGlobalViewModelCollectionUpdate",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bOverrideForceExecuteBindingsOnSetSource",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bForceExecuteBindingsOnSetSource",
+                  "Type": "BoolProperty",
+                  "Value": false
+                },
+                {
+                  "Name": "bCanRename",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCanEdit",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCanRemove",
+                  "Type": "BoolProperty",
+                  "Value": true
+                },
+                {
+                  "Name": "bCreateSetterFunction_Deprecation",
+                  "Type": "BoolProperty",
+                  "Value": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "CompiledBindingLibraryId",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "CompiledBindingLibraryId",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "MVVMBlueprintViewSettings",
+      "Name": "Settings",
+      "Properties": []
+    },
+    {
+      "Type": "MVVMViewClass",
+      "Name": "MVVMViewClass_0",
+      "Properties": [
+        {
+          "Name": "Sources",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "Sources",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "ExpectedSourceType",
+                  "Type": "ObjectProperty",
+                  "Value": "-1"
+                },
+                {
+                  "Name": "Resolver",
+                  "Type": "ObjectProperty",
+                  "Value": "0"
+                },
+                {
+                  "Name": "GlobalViewModelInstance",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ContextClass",
+                      "Type": "ObjectProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "ContextName",
+                      "Type": "NameProperty",
+                      "Value": "None"
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "StartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "Num",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "PropertyName",
+                  "Type": "NameProperty",
+                  "Value": "MVVM_UEFN_HUDMessage"
+                },
+                {
+                  "Name": "FieldToRegisterTo",
+                  "Type": "ArrayProperty",
+                  "ArrayLength": 1,
+                  "Children": [
+                    {
+                      "Name": "FieldToRegisterTo",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldName",
+                          "Type": "NameProperty",
+                          "Value": "Text"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Bindings",
+                  "Type": "ArrayProperty",
+                  "ArrayLength": 4,
+                  "Children": [
+                    {
+                      "Name": "Bindings",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldId",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "BindingKey",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "Flags",
+                          "Type": "ByteProperty",
+                          "Value": "1"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Bindings",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldId",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "BindingKey",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "Flags",
+                          "Type": "ByteProperty",
+                          "Value": "1"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Bindings",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldId",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "BindingKey",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "Flags",
+                          "Type": "ByteProperty",
+                          "Value": "1"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Bindings",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "FieldId",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "BindingKey",
+                          "Type": "StructProperty"
+                        },
+                        {
+                          "Name": "Flags",
+                          "Type": "ByteProperty",
+                          "Value": "1"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "UInt16Property",
+                  "Value": "[UInt16PropertyData]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Bindings",
+          "Type": "ArrayProperty",
+          "ArrayLength": 4,
+          "Children": [
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Binding",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SourceFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "DestinationFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "ConversionFunctionFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Type",
+                      "Type": "ByteProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "ByteProperty",
+                  "Value": "9"
+                },
+                {
+                  "Name": "ExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::DelayedWhenSharedElseImmediate"
+                },
+                {
+                  "Name": "SourceBitField",
+                  "Type": "UInt64Property",
+                  "Value": "[UInt64PropertyData]"
+                },
+                {
+                  "Name": "EditorId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditorId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Binding",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SourceFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "DestinationFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "ConversionFunctionFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Type",
+                      "Type": "ByteProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "ByteProperty",
+                  "Value": "9"
+                },
+                {
+                  "Name": "ExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::DelayedWhenSharedElseImmediate"
+                },
+                {
+                  "Name": "SourceBitField",
+                  "Type": "UInt64Property",
+                  "Value": "[UInt64PropertyData]"
+                },
+                {
+                  "Name": "EditorId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditorId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Binding",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SourceFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "DestinationFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "ConversionFunctionFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Type",
+                      "Type": "ByteProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "ByteProperty",
+                  "Value": "9"
+                },
+                {
+                  "Name": "ExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::DelayedWhenSharedElseImmediate"
+                },
+                {
+                  "Name": "SourceBitField",
+                  "Type": "UInt64Property",
+                  "Value": "[UInt64PropertyData]"
+                },
+                {
+                  "Name": "EditorId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditorId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "Bindings",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "Binding",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SourceFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "DestinationFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "ConversionFunctionFieldPath",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "StartIndex",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "Num",
+                          "Type": "Int16Property",
+                          "Value": "[Int16PropertyData]"
+                        },
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "StructProperty"
+                        }
+                      ]
+                    },
+                    {
+                      "Name": "Type",
+                      "Type": "ByteProperty",
+                      "Value": "0"
+                    },
+                    {
+                      "Name": "CompiledBindingLibraryId",
+                      "Type": "StructProperty",
+                      "Children": [
+                        {
+                          "Name": "CompiledBindingLibraryId",
+                          "Type": "Guid",
+                          "Value": "[GuidPropertyData]"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Name": "Flags",
+                  "Type": "ByteProperty",
+                  "Value": "9"
+                },
+                {
+                  "Name": "ExecutionMode",
+                  "Type": "EnumProperty",
+                  "Value": "EMVVMExecutionMode::DelayedWhenSharedElseImmediate"
+                },
+                {
+                  "Name": "SourceBitField",
+                  "Type": "UInt64Property",
+                  "Value": "[UInt64PropertyData]"
+                },
+                {
+                  "Name": "EditorId",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditorId",
+                      "Type": "Guid",
+                      "Value": "[GuidPropertyData]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "BindingLibrary",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "FieldPaths",
+              "Type": "ArrayProperty",
+              "ArrayLength": 10,
+              "Children": [
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                },
+                {
+                  "Name": "FieldPaths",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "Index",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "bIsObjectProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    },
+                    {
+                      "Name": "bIsScriptStructProperty",
+                      "Type": "BoolProperty",
+                      "Value": false
+                    },
+                    {
+                      "Name": "bIsProperty",
+                      "Type": "BoolProperty",
+                      "Value": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "CompiledBindingLibraryId",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "CompiledBindingLibraryId",
+                  "Type": "Guid",
+                  "Value": "[GuidPropertyData]"
+                }
+              ]
+            },
+            {
+              "Name": "CompiledFields",
+              "Type": "ArrayProperty",
+              "ArrayLength": 3,
+              "Children": [
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "47"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "-1"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "CompiledFields",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "ClassOrScriptStruct",
+                      "Type": "ObjectProperty",
+                      "Value": "-14"
+                    },
+                    {
+                      "Name": "LibraryStartIndex",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfProperties",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    },
+                    {
+                      "Name": "NumberOfFunctions",
+                      "Type": "Int16Property",
+                      "Value": "[Int16PropertyData]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Name": "CompiledFieldNames",
+              "Type": "ArrayProperty",
+              "ArrayLength": 7,
+              "Children": [
+                {
+                  "Name": "0",
+                  "Type": "NameProperty",
+                  "Value": "MVVM_UEFN_HUDMessage"
+                },
+                {
+                  "Name": "1",
+                  "Type": "NameProperty",
+                  "Value": "Rating"
+                },
+                {
+                  "Name": "2",
+                  "Type": "NameProperty",
+                  "Value": "Opponent"
+                },
+                {
+                  "Name": "3",
+                  "Type": "NameProperty",
+                  "Value": "Wins"
+                },
+                {
+                  "Name": "4",
+                  "Type": "NameProperty",
+                  "Value": "First"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "OptionalSources",
+          "Type": "UInt64Property",
+          "Value": "[UInt64PropertyData]"
+        }
+      ]
+    },
+    {
+      "Type": "MVVMWidgetBlueprintExtension_View",
+      "Name": "MVVMWidgetBlueprintExtension_View_0",
+      "Properties": [
+        {
+          "Name": "BlueprintView",
+          "Type": "ObjectProperty",
+          "Value": "33"
+        }
+      ]
+    },
+    {
+      "Type": "47",
+      "Name": "Default__PlacementChange_C",
+      "Properties": [
+        {
+          "Name": "bHasScriptImplementedTick",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "bHasScriptImplementedPaint",
+          "Type": "BoolProperty",
+          "Value": false
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "First",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "EF8712084B68A472B9A7E2B334617EB5"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 60
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "19"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "First"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "Opponent",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "00D266D2441EB931548D72B422BC8000"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 30
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "12"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "Opponent"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "Rating",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "80AE1ED3466C50ED49E147956DD0E709"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 30
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "13"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "Rating"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "Wins",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "DF82778944D0CE8E0D00BBA6A2306788"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 30
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "11"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "Wins"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "First",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "EF8712084B68A472B9A7E2B334617EB5"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 60
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "28"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "First"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "Opponent",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "00D266D2441EB931548D72B422BC8000"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 30
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "21"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "Opponent"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "Rating",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "80AE1ED3466C50ED49E147956DD0E709"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 30
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "22"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "Rating"
+        }
+      ]
+    },
+    {
+      "Type": "UEFN_TextBlock_C",
+      "Name": "Wins",
+      "Properties": [
+        {
+          "Name": "Text",
+          "Type": "TextProperty",
+          "Value": "DF82778944D0CE8E0D00BBA6A2306788"
+        },
+        {
+          "Name": "Font",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "Size",
+              "Type": "FloatProperty",
+              "Value": 30
+            }
+          ]
+        },
+        {
+          "Name": "ShadowOffset",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowOffset",
+              "Type": "Vector2D",
+              "Value": "[Vector2DPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "ShadowColorAndOpacity",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "ShadowColorAndOpacity",
+              "Type": "LinearColor",
+              "Value": "[LinearColorPropertyData]"
+            }
+          ]
+        },
+        {
+          "Name": "Slot",
+          "Type": "ObjectProperty",
+          "Value": "20"
+        },
+        {
+          "Name": "DisplayLabel",
+          "Type": "StrProperty",
+          "Value": "Wins"
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprint",
+      "Name": "PlacementChange",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "48"
+        },
+        {
+          "Name": "ParentClass",
+          "Type": "ObjectProperty",
+          "Value": "-15"
+        },
+        {
+          "Name": "BlueprintSystemVersion",
+          "Type": "IntProperty",
+          "Value": 2
+        },
+        {
+          "Name": "UbergraphPages",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "29"
+            }
+          ]
+        },
+        {
+          "Name": "CategorySorting",
+          "Type": "ArrayProperty",
+          "ArrayLength": 3,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "NameProperty",
+              "Value": "Placement Change"
+            },
+            {
+              "Name": "1",
+              "Type": "NameProperty",
+              "Value": "Viewmodel"
+            },
+            {
+              "Name": "2",
+              "Type": "NameProperty",
+              "Value": "Widget"
+            }
+          ]
+        },
+        {
+          "Name": "LastEditedDocuments",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "LastEditedDocuments",
+              "Type": "StructProperty",
+              "Children": [
+                {
+                  "Name": "EditedObjectPath",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "EditedObjectPath",
+                      "Type": "SoftObjectPath",
+                      "Value": "[SoftObjectPathPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedViewOffset",
+                  "Type": "StructProperty",
+                  "Children": [
+                    {
+                      "Name": "SavedViewOffset",
+                      "Type": "Vector2D",
+                      "Value": "[Vector2DPropertyData]"
+                    }
+                  ]
+                },
+                {
+                  "Name": "SavedZoomAmount",
+                  "Type": "FloatProperty",
+                  "Value": -1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Extensions",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "36"
+            }
+          ]
+        },
+        {
+          "Name": "GeneratedClass",
+          "Type": "ObjectProperty",
+          "Value": "47"
+        },
+        {
+          "Name": "bLegacyNeedToPurgeSkelRefs",
+          "Type": "BoolProperty",
+          "Value": false
+        },
+        {
+          "Name": "BlueprintGuid",
+          "Type": "StructProperty",
+          "Children": [
+            {
+              "Name": "BlueprintGuid",
+              "Type": "Guid",
+              "Value": "[GuidPropertyData]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetBlueprintGeneratedClass",
+      "Name": "PlacementChange_C",
+      "Properties": [
+        {
+          "Name": "WidgetTree",
+          "Type": "ObjectProperty",
+          "Value": "49"
+        },
+        {
+          "Name": "Extensions",
+          "Type": "ArrayProperty",
+          "ArrayLength": 1,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "4"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 10,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "4"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "30"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "3"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "40"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Type": "WidgetTree",
+      "Name": "WidgetTree",
+      "Properties": [
+        {
+          "Name": "RootWidget",
+          "Type": "ObjectProperty",
+          "Value": "9"
+        },
+        {
+          "Name": "AllWidgets",
+          "Type": "ArrayProperty",
+          "ArrayLength": 10,
+          "Children": [
+            {
+              "Name": "0",
+              "Type": "ObjectProperty",
+              "Value": "9"
+            },
+            {
+              "Name": "1",
+              "Type": "ObjectProperty",
+              "Value": "31"
+            },
+            {
+              "Name": "2",
+              "Type": "ObjectProperty",
+              "Value": "8"
+            },
+            {
+              "Name": "3",
+              "Type": "ObjectProperty",
+              "Value": "44"
+            },
+            {
+              "Name": "4",
+              "Type": "ObjectProperty",
+              "Value": "7"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
