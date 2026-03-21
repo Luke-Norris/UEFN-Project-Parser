@@ -114,6 +114,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [showGrid, setShowGrid] = useState(true)
   const [showFog, setShowFog] = useState(true)
   const [showHierarchy, setShowHierarchy] = useState(true)
+  const [hierarchyWidth, setHierarchyWidth] = useState(260)
   const [hierarchySearch, setHierarchySearch] = useState('')
   const [flySpeed, setFlySpeed] = useState(2)
   const [fov, setFov] = useState(60)
@@ -571,21 +572,32 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   // Clean device display name
-  const cleanDeviceName = useCallback((dev: DeviceEntry, index: number, showType: boolean) => {
-    // If device has a meaningful label (not a raw class name), use it
-    if (dev.name && !dev.name.includes('_C_') && !dev.name.includes('_C ') && !dev.name.includes('UAI') && !dev.name.includes('Component') && dev.name.length < 35) {
-      return dev.name
+  const cleanDeviceName = useCallback((dev: DeviceEntry, index: number) => {
+    let name = dev.name || ''
+
+    // If it has UAID hash, strip it to get a cleaner base name
+    if (name.includes('_UAID_')) {
+      name = name.split('_UAID_')[0]
     }
-    // In hierarchy (showType=false), just show index since type is in the group header
-    if (!showType) {
-      return `#${index + 1}`
+
+    // If it's still a raw class name (ends with _C), clean it up
+    if (name.endsWith('_C') || name.includes('_C_')) {
+      name = name.replace(/_C$/, '').replace(/_C_.*/, '')
     }
-    const typeName = (dev.deviceType || 'Unknown')
+
+    // Clean up common prefixes/suffixes
+    name = name
+      .replace(/^BP_|^PBWA_|^B_|^Device_/, '')
+      .replace(/_V\d+$/, '')
+      .replace(/_Placed$/, '')
       .replace(/_/g, ' ')
-      .replace(/V\d+$/, '')
-      .replace(/Placed$/, '')
       .trim()
-    return `${typeName} ${index + 1}`
+
+    if (!name || name.length < 2) {
+      name = (dev.deviceType || 'Object').replace(/_/g, ' ').replace(/V\d+$/, '').trim()
+    }
+
+    return `${name} ${index + 1}`
   }, [])
 
   // Group hierarchy by type
@@ -595,7 +607,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       const type = d.deviceType || 'Unknown'
       if (!groups.has(type)) groups.set(type, [])
       const list = groups.get(type)!
-      const displayName = cleanDeviceName(d, list.length, false)
+      const displayName = cleanDeviceName(d, list.length)
       list.push({ ...d, _displayName: displayName })
     }
     return Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length)
@@ -608,7 +620,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       {/* Hierarchy Panel */}
       {showHierarchy && devices.length > 0 && (
         <>
-          <div className="w-[260px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 overflow-hidden">
+          <div className="flex flex-col border-r border-fn-border bg-fn-dark shrink-0 overflow-hidden" style={{ width: hierarchyWidth }}>
             <div className="px-2 py-2 border-b border-fn-border shrink-0">
               <input
                 type="text"
@@ -666,7 +678,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
               {hierarchyDevices.length} / {devices.length} objects
             </div>
           </div>
-          <ResizeHandle direction="horizontal" onResize={() => {}} />
+          <ResizeHandle direction="horizontal" onResize={(delta) => setHierarchyWidth((w) => Math.max(180, Math.min(500, w + delta)))} />
         </>
       )}
 
@@ -826,8 +838,8 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
         </div>
       </div>
 
-      {/* Right Panel — Device Inspector (collapsible) */}
-      {inspectorCollapsed ? (
+      {/* Right Panel — Device Inspector (only shows when device selected) */}
+      {!selectedDevice ? null : inspectorCollapsed ? (
         <div className="w-10 border-l border-fn-border bg-fn-dark flex flex-col items-center shrink-0">
           <button
             onClick={() => setInspectorCollapsed(false)}
