@@ -1,82 +1,196 @@
-import { useEffect, useState, useMemo } from 'react'
-import type { ContentBrowseResult, ContentEntry, VerseFileContent } from '../../shared/types'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { VerseHighlighter } from '../components/VerseHighlighter'
+import { useSettingsStore } from '../stores/settingsStore'
+import type { VerseFileContent } from '../../shared/types'
+
+interface TreeNode {
+  name: string
+  path: string // relative path from content root
+  isDir: boolean
+  children: TreeNode[]
+  size?: number
+}
 
 export function VerseFilesPage() {
-  const [data, setData] = useState<ContentBrowseResult | null>(null)
+  const [tree, setTree] = useState<TreeNode | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [viewingFile, setViewingFile] = useState<VerseFileContent | null>(null)
-  const [viewLoading, setViewLoading] = useState(false)
+  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [fileContent, setFileContent] = useState<VerseFileContent | null>(null)
+  const [fileLoading, setFileLoading] = useState(false)
+  const verseEditorFontSize = useSettingsStore((s) => s.verseEditorFontSize)
 
+  // Build tree from recursive browse
   useEffect(() => {
-    loadVerseFiles()
+    buildTree()
   }, [])
 
-  async function loadVerseFiles() {
+  async function buildTree() {
     try {
       setLoading(true)
       setError(null)
-      // Recursively find all .verse files by walking the content directory
-      const allVerseFiles: ContentEntry[] = []
+      const root: TreeNode = { name: 'Content', path: '', isDir: true, children: [] }
 
-      async function scanDir(path?: string) {
+      async function scanDir(node: TreeNode, path?: string) {
         const result = await window.electronAPI.forgeBrowseContent(path)
         for (const entry of result?.entries ?? []) {
-          // Sidecar returns type: "folder" for dirs, not isDirectory
           const isDir = entry.isDirectory || (entry as any).type === 'folder'
           if (isDir) {
-            // Skip __External* directories (huge, no verse)
-            if (entry.name?.startsWith('__')) continue
-            await scanDir(entry.path)
+            if (entry.name?.startsWith('__')) continue // skip __ExternalActors__ etc
+            if (entry.name === 'Developers') continue
+            if (entry.name === 'Collections') continue
+            const child: TreeNode = { name: entry.name, path: entry.path || entry.relativePath || '', isDir: true, children: [] }
+            node.children.push(child)
+            await scanDir(child, entry.path || entry.relativePath)
           } else if (entry.name?.endsWith('.verse') || (entry as any).type === 'verse') {
-            allVerseFiles.push(entry)
+            node.children.push({
+              name: entry.name,
+              path: entry.path || entry.relativePath || '',
+              isDir: false,
+              children: [],
+              size: entry.size,
+            })
           }
         }
+        // Sort: dirs first, then alphabetical
+        node.children.sort((a, b) => {
+          if (a.isDir && !b.isDir) return -1
+          if (!a.isDir && b.isDir) return 1
+          return a.name.localeCompare(b.name)
+        })
       }
 
-      await scanDir()
-      setData({ currentPath: '', relativePath: '', entries: allVerseFiles })
+      await scanDir(root)
+
+      // Auto-expand root and first-level dirs
+      const autoExpand = new Set<string>([''])
+      for (const child of root.children) {
+        if (child.isDir) autoExpand.add(child.path)
+      }
+
+      setTree(root)
+      setExpandedDirs(autoExpand)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load verse files')
+      setError(err instanceof Error ? err.message : 'Failed to scan verse files')
     } finally {
       setLoading(false)
     }
   }
 
-  const verseFiles = useMemo(() => {
-    return data?.entries ?? []
-  }, [data])
+  // Count verse files in tree
+  const totalFiles = useMemo(() => {
+    if (!tree) return 0
+    let count = 0
+    function walk(node: TreeNode) {
+      if (!node.isDir) count++
+      for (const c of node.children) walk(c)
+    }
+    walk(tree)
+    return count
+  }, [tree])
+
+  // Flatten tree for search
+  const allFiles = useMemo(() => {
+    if (!tree) return []
+    const files: TreeNode[] = []
+    function walk(node: TreeNode) {
+      if (!node.isDir) files.push(node)
+      for (const c of node.children) walk(c)
+    }
+    walk(tree)
+    return files
+  }, [tree])
 
   const filteredFiles = useMemo(() => {
-    if (!search.trim()) return verseFiles
+    if (!search.trim()) return null // null = show tree view
     const q = search.toLowerCase()
-    return verseFiles.filter((f) => f.name.toLowerCase().includes(q))
-  }, [verseFiles, search])
+    return allFiles.filter((f) => f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q))
+  }, [allFiles, search])
 
-  async function handleViewFile(entry: ContentEntry) {
+  const toggleDir = useCallback((path: string) => {
+    setExpandedDirs((prev) => {
+      const next = new Set(prev)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }, [])
+
+  const handleSelectFile = useCallback(async (node: TreeNode) => {
+    setSelectedFile(node.path)
+    setFileLoading(true)
     try {
-      setViewLoading(true)
-      const result = await window.electronAPI.forgeReadVerse(entry.path)
-      setViewingFile(result)
-    } catch (err) {
-      console.error('Failed to read verse file:', err)
+      const result = await window.electronAPI.forgeReadVerse(node.path)
+      setFileContent(result)
+    } catch {
+      setFileContent(null)
     } finally {
-      setViewLoading(false)
+      setFileLoading(false)
     }
+  }, [])
+
+  // Render a tree node recursively
+  function renderNode(node: TreeNode, depth: number = 0): React.ReactNode {
+    if (node.isDir) {
+      const isExpanded = expandedDirs.has(node.path)
+      const verseCount = node.children.reduce((acc, c) => {
+        if (!c.isDir) return acc + 1
+        let n = 0; function walk(x: TreeNode) { if (!x.isDir) n++; x.children.forEach(walk) }; walk(c); return acc + n
+      }, 0)
+      if (verseCount === 0) return null // hide empty dirs
+
+      return (
+        <div key={node.path}>
+          <button
+            onClick={() => toggleDir(node.path)}
+            className="w-full flex items-center gap-1.5 py-1 hover:bg-white/[0.03] transition-colors text-left"
+            style={{ paddingLeft: depth * 16 + 8 }}
+          >
+            <svg className={`w-3 h-3 text-gray-600 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+            <svg className="w-3.5 h-3.5 text-yellow-500/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            <span className="text-[11px] text-gray-300 flex-1 truncate">{node.name}</span>
+            <span className="text-[9px] text-gray-600 shrink-0 pr-2">{verseCount}</span>
+          </button>
+          {isExpanded && node.children.map((c) => renderNode(c, depth + 1))}
+        </div>
+      )
+    }
+
+    // File node
+    const isSelected = selectedFile === node.path
+    return (
+      <button
+        key={node.path}
+        onClick={() => handleSelectFile(node)}
+        className={`w-full flex items-center gap-1.5 py-1 transition-colors text-left ${
+          isSelected ? 'bg-blue-500/15 text-white' : 'text-gray-400 hover:bg-white/[0.03] hover:text-gray-200'
+        }`}
+        style={{ paddingLeft: depth * 16 + 8 }}
+        title={node.path}
+      >
+        <svg className="w-3.5 h-3.5 text-green-400/60 shrink-0 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+        <span className="text-[11px] truncate flex-1">{node.name.replace('.verse', '')}</span>
+      </button>
+    )
   }
 
-  function formatSize(bytes?: number): string {
-    if (bytes == null) return ''
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-
+  // Loading
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-fn-darker">
-        <div className="text-[11px] text-gray-400">Loading verse files...</div>
+        <div className="text-center">
+          <div className="w-5 h-5 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin mx-auto mb-2" />
+          <div className="text-[11px] text-gray-400">Scanning verse files...</div>
+        </div>
       </div>
     )
   }
@@ -86,116 +200,88 @@ export function VerseFilesPage() {
       <div className="flex-1 flex items-center justify-center bg-fn-darker">
         <div className="text-center">
           <div className="text-[11px] text-red-400 mb-3">{error}</div>
-          <button
-            onClick={loadVerseFiles}
-            className="px-3 py-1.5 text-[10px] font-medium text-white bg-fn-panel border border-fn-border rounded hover:bg-white/[0.06] transition-colors"
-          >
-            Retry
-          </button>
+          <button onClick={buildTree} className="px-3 py-1.5 text-[10px] font-medium text-white bg-fn-panel border border-fn-border rounded hover:bg-white/[0.06]">Retry</button>
         </div>
-      </div>
-    )
-  }
-
-  // If viewing a file, show the source panel
-  if (viewingFile || viewLoading) {
-    return (
-      <div className="flex-1 bg-fn-darker overflow-hidden flex flex-col">
-        {/* Header bar */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-fn-border bg-fn-dark shrink-0">
-          <button
-            onClick={() => setViewingFile(null)}
-            className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-gray-400 hover:text-white bg-fn-darker border border-fn-border rounded transition-colors"
-          >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-          {viewingFile && (
-            <>
-              <span className="text-[11px] font-medium text-white">{viewingFile.name}</span>
-              <span className="text-[10px] text-gray-500">{viewingFile.lineCount} lines</span>
-            </>
-          )}
-        </div>
-
-        {viewLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-[11px] text-gray-400">Loading source...</div>
-          </div>
-        ) : viewingFile ? (
-          <div className="flex-1 overflow-auto">
-            <pre className="p-4 text-[11px] leading-5 font-mono text-gray-300 whitespace-pre">{viewingFile.content}</pre>
-          </div>
-        ) : null}
       </div>
     )
   }
 
   return (
-    <div className="flex-1 bg-fn-darker overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
-        {/* Header */}
-        <div>
-          <h1 className="text-lg font-semibold text-white">Verse Files</h1>
-          <p className="text-[11px] text-gray-500 mt-0.5">
-            Browse and view Verse gameplay logic scripts ({verseFiles.length} files)
-          </p>
-        </div>
-
-        {/* Search */}
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search verse files..."
-          className="w-full bg-fn-darker border border-fn-border rounded px-3 py-2 text-[11px] text-white placeholder-gray-600 focus:outline-none focus:border-fn-rare/50"
-        />
-
-        {/* File list */}
-        {filteredFiles.length === 0 ? (
-          <div className="bg-fn-panel border border-fn-border rounded-lg p-6 text-center">
-            <p className="text-[11px] text-gray-400 mb-1">
-              {search ? 'No matching verse files' : 'No verse files found'}
-            </p>
-            <p className="text-[10px] text-gray-600">
-              {search ? 'Try a different search term.' : 'Verse files live in the project Content directory.'}
-            </p>
+    <div className="flex-1 flex bg-fn-darker overflow-hidden">
+      {/* Left: File Tree */}
+      <div className="w-[280px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 min-h-0">
+        <div className="px-3 py-2 border-b border-fn-border shrink-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-semibold text-white">Verse Files</span>
+            <span className="text-[9px] text-gray-500">{totalFiles} files</span>
           </div>
-        ) : (
-          <div className="bg-fn-dark border border-fn-border rounded-lg overflow-hidden">
-            {/* Table header */}
-            <div className="grid grid-cols-[1fr_2fr_auto] gap-4 px-4 py-2 border-b border-fn-border bg-fn-panel">
-              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">File Name</span>
-              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Path</span>
-              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Size</span>
-            </div>
-
-            {/* Table rows */}
-            {filteredFiles.map((file) => (
-              <button
-                key={file.path}
-                onClick={() => handleViewFile(file)}
-                className="w-full grid grid-cols-[1fr_2fr_auto] gap-4 px-4 py-2.5 border-b border-fn-border/30 hover:bg-white/[0.02] transition-colors text-left"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <svg className="w-3.5 h-3.5 text-green-400/70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter files..."
+            className="w-full bg-fn-darker border border-fn-border rounded px-2 py-1 text-[10px] text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {filteredFiles ? (
+            // Search results — flat list
+            filteredFiles.length === 0 ? (
+              <div className="p-4 text-center text-[10px] text-gray-600">No matches</div>
+            ) : (
+              filteredFiles.map((f) => (
+                <button
+                  key={f.path}
+                  onClick={() => handleSelectFile(f)}
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors ${
+                    selectedFile === f.path ? 'bg-blue-500/15 text-white' : 'text-gray-400 hover:bg-white/[0.03]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-green-400/60 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
-                  <span className="text-[11px] text-white truncate">{file.name}</span>
-                </div>
-                <span className="text-[11px] text-gray-500 truncate self-center">{file.relativePath}</span>
-                <span className="text-[10px] text-gray-500 self-center shrink-0">{formatSize(file.size)}</span>
-              </button>
-            ))}
-          </div>
-        )}
+                  <div className="min-w-0">
+                    <div className="text-[11px] truncate">{f.name.replace('.verse', '')}</div>
+                    <div className="text-[9px] text-gray-600 truncate">{f.path}</div>
+                  </div>
+                </button>
+              ))
+            )
+          ) : (
+            // Tree view
+            tree && tree.children.map((c) => renderNode(c, 0))
+          )}
+        </div>
+      </div>
 
-        {/* Search count */}
-        {search && filteredFiles.length > 0 && (
-          <div className="text-[10px] text-gray-600">
-            {filteredFiles.length} result{filteredFiles.length !== 1 ? 's' : ''} for &quot;{search}&quot;
+      {/* Right: File Content */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {fileLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-5 h-5 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
+          </div>
+        ) : fileContent ? (
+          <>
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-fn-border bg-fn-dark shrink-0">
+              <span className="text-[11px] font-semibold text-white">{fileContent.name}</span>
+              <span className="text-[10px] text-gray-500">{fileContent.lineCount} lines</span>
+              <span className="text-[9px] text-gray-600 font-mono truncate ml-auto">{selectedFile}</span>
+            </div>
+            <div className="flex-1 overflow-auto min-h-0">
+              <VerseHighlighter
+                code={fileContent.content}
+                fontSize={verseEditorFontSize}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <svg className="w-10 h-10 mx-auto mb-2 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <div className="text-[11px] text-gray-600">Select a verse file to view</div>
+            </div>
           </div>
         )}
       </div>
