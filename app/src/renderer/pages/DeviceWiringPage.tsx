@@ -110,90 +110,55 @@ function isNonEmptyChannel(value: string): boolean {
   return true
 }
 
-// ─── Force Layout ───────────────────────────────────────────────────────────
-
-const REPULSION = 12000
-const ATTRACTION = 0.003
-const DAMPING = 0.8
-const MIN_DISTANCE = 150
-const CENTER_GRAVITY = 0.008
+// ─── Grid Layout by Type ─────────────────────────────────────────────────────
+// Groups devices by type and arranges them in a clean grid.
+// Much faster and more readable than force-directed layout.
 
 function runForceLayout(
   nodes: WiringNode[],
   edges: WiringEdge[],
   width: number,
   height: number,
-  iterations: number
+  _iterations: number
 ): void {
-  const cx = width / 2
-  const cy = height / 2
-
-  for (let iter = 0; iter < iterations; iter++) {
-    // Repulsion between all node pairs
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i].pinned) continue
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].x - nodes[j].x
-        const dy = nodes[i].y - nodes[j].y
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1
-        const force = REPULSION / (dist * dist)
-        const fx = (dx / dist) * force
-        const fy = (dy / dist) * force
-
-        if (!nodes[i].pinned) {
-          nodes[i].vx += fx
-          nodes[i].vy += fy
-        }
-        if (!nodes[j].pinned) {
-          nodes[j].vx -= fx
-          nodes[j].vy -= fy
-        }
-      }
-    }
-
-    // Attraction along edges
-    for (const edge of edges) {
-      const source = nodes.find(n => n.id === edge.source)
-      const target = nodes.find(n => n.id === edge.target)
-      if (!source || !target) continue
-
-      const dx = target.x - source.x
-      const dy = target.y - source.y
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1
-      const force = (dist - MIN_DISTANCE) * ATTRACTION
-      const fx = (dx / dist) * force
-      const fy = (dy / dist) * force
-
-      if (!source.pinned) {
-        source.vx += fx
-        source.vy += fy
-      }
-      if (!target.pinned) {
-        target.vx -= fx
-        target.vy -= fy
-      }
-    }
-
-    // Center gravity
-    for (const node of nodes) {
-      if (node.pinned) continue
-      node.vx += (cx - node.x) * CENTER_GRAVITY
-      node.vy += (cy - node.y) * CENTER_GRAVITY
-    }
-
-    // Apply velocities
-    for (const node of nodes) {
-      if (node.pinned) continue
-      node.vx *= DAMPING
-      node.vy *= DAMPING
-      node.x += node.vx
-      node.y += node.vy
-
-      // Clamp to bounds
-      node.x = Math.max(80, Math.min(width - 80, node.x))
-      node.y = Math.max(40, Math.min(height - 40, node.y))
-    }
+  // Group nodes by device type
+  const groups = new Map<string, WiringNode[]>()
+  for (const node of nodes) {
+    if (node.pinned) continue
+    const type = node.deviceType || 'Unknown'
+    if (!groups.has(type)) groups.set(type, [])
+    groups.get(type)!.push(node)
   }
+
+  // Sort groups by size (largest first)
+  const sortedGroups = Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length)
+
+  const NODE_GAP_X = 220
+  const NODE_GAP_Y = 70
+  const GROUP_GAP = 80
+  const COLS_PER_GROUP = 4  // max items per row in a group
+
+  let cursorY = 50
+
+  for (const [_type, groupNodes] of sortedGroups) {
+    const rows = Math.ceil(groupNodes.length / COLS_PER_GROUP)
+    const cols = Math.min(groupNodes.length, COLS_PER_GROUP)
+    const groupWidth = cols * NODE_GAP_X
+    const startX = (width - groupWidth) / 2
+
+    for (let i = 0; i < groupNodes.length; i++) {
+      const col = i % COLS_PER_GROUP
+      const row = Math.floor(i / COLS_PER_GROUP)
+      groupNodes[i].x = startX + col * NODE_GAP_X + NODE_GAP_X / 2
+      groupNodes[i].y = cursorY + row * NODE_GAP_Y + NODE_GAP_Y / 2
+      groupNodes[i].vx = 0
+      groupNodes[i].vy = 0
+    }
+
+    cursorY += rows * NODE_GAP_Y + GROUP_GAP
+  }
+
+  void edges; // used by signature
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -779,6 +744,40 @@ export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate 
                   </g>
                 )
               })}
+
+              {/* Group labels */}
+              {(() => {
+                const groups = new Map<string, { minX: number; minY: number; maxX: number; count: number }>()
+                for (const node of nodes) {
+                  const type = node.deviceType || 'Unknown'
+                  const g = groups.get(type)
+                  if (!g) {
+                    groups.set(type, { minX: node.x, minY: node.y, maxX: node.x, count: 1 })
+                  } else {
+                    g.minX = Math.min(g.minX, node.x)
+                    g.minY = Math.min(g.minY, node.y)
+                    g.maxX = Math.max(g.maxX, node.x)
+                    g.count++
+                  }
+                }
+                return Array.from(groups.entries()).map(([type, g]) => {
+                  const prettyType = type.replace(/_/g, ' ').replace(/V\d+$/, '').replace(/Placed$/, '').trim()
+                  return (
+                    <text
+                      key={`label-${type}`}
+                      x={g.minX - NODE_W / 2}
+                      y={g.minY - NODE_H / 2 - 10}
+                      fill={getTypeColor(type)}
+                      fontSize={12}
+                      fontFamily="system-ui"
+                      fontWeight="600"
+                      opacity={0.7}
+                    >
+                      {prettyType} ({g.count})
+                    </text>
+                  )
+                })
+              })()}
 
               {/* Nodes */}
               {nodes.map((node) => {
