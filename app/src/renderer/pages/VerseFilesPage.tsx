@@ -17,9 +17,22 @@ export function VerseFilesPage() {
     try {
       setLoading(true)
       setError(null)
-      // Browse content — we filter to .verse files client-side
-      const result = await window.electronAPI.forgeBrowseContent()
-      setData(result)
+      // Recursively find all .verse files by walking the content directory
+      const allVerseFiles: ContentEntry[] = []
+
+      async function scanDir(path?: string) {
+        const result = await window.electronAPI.forgeBrowseContent(path)
+        for (const entry of result?.entries ?? []) {
+          if (entry.isDirectory) {
+            await scanDir(entry.path)
+          } else if (entry.name?.endsWith('.verse') || entry.extension?.toLowerCase() === '.verse') {
+            allVerseFiles.push(entry)
+          }
+        }
+      }
+
+      await scanDir()
+      setData({ currentPath: '', relativePath: '', entries: allVerseFiles })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load verse files')
     } finally {
@@ -28,8 +41,7 @@ export function VerseFilesPage() {
   }
 
   const verseFiles = useMemo(() => {
-    const entries = data?.entries ?? []
-    return entries.filter((e) => !e.isDirectory && e.extension?.toLowerCase() === '.verse')
+    return data?.entries ?? []
   }, [data])
 
   const filteredFiles = useMemo(() => {
