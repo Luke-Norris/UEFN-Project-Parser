@@ -235,6 +235,10 @@
 <div class="page-layout">
   <nav class="changelog-sidebar">
     <h3>Sessions</h3>
+    <a class="sidebar-session" href="#session-2026-03-21c">
+      <span class="sidebar-date">Mar 21</span>
+      <span class="sidebar-title">Scene Preview Phase 3 — Real Mesh Geometry</span>
+    </a>
     <a class="sidebar-session" href="#session-2026-03-21">
       <span class="sidebar-date">Mar 21</span>
       <span class="sidebar-title">Electron App, 3D Scene, Verse Files &amp; Wiring</span>
@@ -266,8 +270,14 @@
 <!-- ==================== CURRENT TASKING ==================== -->
 <h2><span class="mi">task_alt</span> Current Tasking</h2>
 <div class="task-card">
-  <span class="id">T1</span>
+  <span class="id">T0</span>
   <span class="status-dot dot-active"></span>
+  <span class="priority pri-high">high</span>
+  <span class="desc"><strong>Scene Preview Phase 3 — Real Mesh Geometry</strong> &mdash; CUE4Parse GLB export pipeline live; progressive proxy-to-mesh swap via "Meshes" toggle. Cache at Z:/UEFN_Resources/mesh-cache/.</span>
+</div>
+<div class="task-card">
+  <span class="id">T1</span>
+  <span class="status-dot dot-done"></span>
   <span class="priority pri-high">high</span>
   <span class="desc"><strong>Electron App stability</strong> &mdash; Post-merge cleanup: restore MCP tools, widget library, and tests that were dropped during Tauri migration.</span>
 </div>
@@ -286,9 +296,26 @@
 
 <!-- ==================== SESSIONS ==================== -->
 
-<div class="phase" id="session-2026-03-21">
+<div class="phase" id="session-2026-03-21c">
   <div class="phase-header">
     <span class="badge badge-active">Active</span>
+    <h3>Session 2026-03-21c &mdash; Scene Preview Phase 3 &mdash; Real Mesh Geometry</h3>
+  </div>
+  <table>
+    <thead><tr><th>Hash</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><a href="https://github.com/Luke-Norris/UEFN-Project-Parser/commit/1fc9c9fc4fc25861d94d60f778332e3b6658fe43" class="hash" target="_blank" rel="noopener">1fc9c9f</a></td>
+        <td><span class="tag tag-feat">feat</span></td>
+        <td>Scene preview Phase 3 &mdash; real mesh geometry via CUE4Parse: MeshExportService GLB export from PAK files, meshCache.ts with batch preloading, Tauri commands + frontend API, progressive proxy-to-mesh swap via Meshes toggle (8 files, +616)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="phase" id="session-2026-03-21">
+  <div class="phase-header">
+    <span class="badge badge-done">Done</span>
     <h3>Session 2026-03-21 &mdash; Electron App, 3D Scene, Verse Files &amp; Wiring</h3>
   </div>
   <table>

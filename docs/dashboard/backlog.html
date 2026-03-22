@@ -289,15 +289,6 @@
 
 <div class="section-label">Planned Features</div>
 
-<div class="item-card" data-priority="high" data-status="open" data-category="improvement">
-  <div class="item-meta"><span class="item-id">C12</span><span class="status-dot dot-open"></span></div>
-  <div class="item-body">
-    <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
-    <div class="item-desc">CUE4Parse mesh extraction for real 3D device models in Scene Preview — replace placeholder boxes with actual actor meshes pulled via CUE4Parse.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/</div>
-    <div class="item-date">2026-03-21</div>
-  </div>
-</div>
 
 <div class="item-card" data-priority="medium" data-status="open" data-category="improvement">
   <div class="item-meta"><span class="item-id">C13</span><span class="status-dot dot-open"></span></div>
@@ -349,6 +340,106 @@
   </div>
 </div>
 
+<div class="item-card" data-priority="high" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C27</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Full Scene Reconstruction — CUE4Parse can parse landscapes, foliage, static meshes, and materials. Render a full UEFN map approximation in Three.js combining terrain, buildings, devices, and foliage layers.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="medium" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C28</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Material Preview Pipeline — export material definitions and texture references from PAK via CUE4Parse and render realistic PBR materials in Three.js so devices match their actual in-game appearance.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="medium" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C29</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Blueprint Graph Visualization — CUE4Parse parses <code>EdGraph</code> Blueprint node graphs. Visualize device Blueprint logic in an interactive node-graph editor UI within WellVersed.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="high" data-status="open" data-category="architecture">
+  <div class="item-meta"><span class="item-id">C30</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
+    <div class="item-desc">Verse Type Extraction from PAK — <code>UVerseClass</code>, <code>UVerseDigest</code>, and <code>UVerseStruct</code> are accessible via CUE4Parse. Extract Verse type definitions directly from Fortnite PAK files to build a complete, authoritative type database.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  src/FortniteForge.MCP/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="low" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C31</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Audio Preview — extract <code>USoundWave</code> assets from PAK via CUE4Parse, decode to a playable format, and stream in-browser so device sound effects can be auditioned directly in WellVersed.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="low" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C32</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Animation Preview — export skeletal mesh and animation sequences as glTF via CUE4Parse and play animations in Three.js for character and prop asset inspection.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="medium" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C33</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Landscape / Terrain Extraction — export terrain heightmap and material layer data via CUE4Parse and apply as displacement maps in Three.js for accurate terrain representation in Scene Preview.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="high" data-status="open" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C34</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Asset Search Engine — searchable catalog of every Epic PAK asset with preview thumbnails generated via CUE4Parse texture extraction. Enables rapid lookup and reference browsing across all Fortnite content.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  src/FortniteForge.Web/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="low" data-status="open" data-category="architecture">
+  <div class="item-meta"><span class="item-id">C35</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-architecture">architecture</span></div>
+    <div class="item-desc">Nanite Mesh Support — CUE4Parse handles Nanite virtualized geometry. Investigate extraction path and LOD fallback strategy for Nanite-enabled meshes in Scene Preview.</div>
+    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="high" data-status="open" data-category="architecture">
+  <div class="item-meta"><span class="item-id">C36</span><span class="status-dot dot-open"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
+    <div class="item-desc">Cross-Map Asset Import Intelligence — CUE4Parse can resolve full dependency trees (mesh → materials → textures). Use this to power accurate dependency resolution when copying user assets between projects, replacing the current heuristic approach (C17).</div>
+    <div class="item-files">src/FortniteForge.Core/Services/AssetService.cs  ·  src/FortniteForge.Core/Safety/AssetGuard.cs</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
 <div class="section-label">Completed This Session</div>
 
 <div class="item-card" data-priority="high" data-status="done" data-category="architecture">
@@ -387,6 +478,16 @@
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">CUE4Parse integrated as a texture and mesh preview service, enabling raw asset inspection outside UAssetAPI's scope.</div>
     <div class="item-files">src/FortniteForge.Core/  ·  lib/UAssetAPI/</div>
+    <div class="item-date">2026-03-21</div>
+  </div>
+</div>
+
+<div class="item-card" data-priority="high" data-status="done" data-category="improvement">
+  <div class="item-meta"><span class="item-id">C12</span><span class="status-dot dot-done"></span></div>
+  <div class="item-body">
+    <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
+    <div class="item-desc">Scene Preview Phase 3 complete — real mesh geometry via CUE4Parse. Implemented <code>MeshExportService</code> with GLB export, disk cache, and progressive loading so actor meshes stream into the Three.js scene without blocking the UI.</div>
+    <div class="item-files">src/FortniteForge.Core/Services/MeshExportService.cs  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>

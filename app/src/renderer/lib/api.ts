@@ -56,7 +56,6 @@ export async function getFontData(
 export async function importFiles(): Promise<
   Array<{ path: string; name: string; dataUrl: string }>
 > {
-  // Use Tauri dialog to pick files, then read them via Rust
   const selected = await open({
     multiple: true,
     filters: [
@@ -178,8 +177,6 @@ export async function exportWidgetSpec(
   if (!filePath) return { success: false }
 
   try {
-    // Write via Rust — reuse export_png's write pattern but for text
-    // For now, write as base64-encoded text through the existing mechanism
     const encoder = new TextEncoder()
     const bytes = encoder.encode(specJson)
     const binary = Array.from(bytes)

@@ -62,10 +62,21 @@ public class Program
 
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.SetIsOriginAllowed(_ => true)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
+
         var app = builder.Build();
 
         try { app.Services.GetRequiredService<DigestService>().LoadDigests(); } catch { }
 
+        app.UseCors();
         app.UseStaticFiles();
 
         var api = app.MapGroup("/api");
