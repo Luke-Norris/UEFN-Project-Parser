@@ -11,6 +11,7 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { bracketMatching, indentOnInput, foldGutter, foldKeymap } from '@codemirror/language'
 import { search, searchKeymap, highlightSelectionMatches } from '@codemirror/search'
+import { lintGutter } from '@codemirror/lint'
 import { verseLanguage, verseEditorTheme, verseSyntaxHighlighting } from '../verse-language'
 import {
   verseLspAutocompletion,
@@ -18,6 +19,7 @@ import {
   getDefinitionAt,
   filePathToUri,
 } from '../verse-language/verse-lsp-extensions'
+import { verseLspLinter } from '../verse-language/verse-lsp-diagnostics'
 
 interface VerseEditorProps {
   source: string
@@ -88,6 +90,8 @@ export function VerseEditor({
     if (lspReady && fileUri) {
       extensions.push(verseLspAutocompletion(fileUri))
       extensions.push(verseLspHoverTooltip(fileUri))
+      extensions.push(verseLspLinter(fileUri))
+      extensions.push(lintGutter())
 
       // Ctrl+Click goto definition
       if (onGotoDefinition) {

@@ -8,6 +8,9 @@ use tokio::sync::oneshot;
 
 type LspPendingMap = Arc<Mutex<HashMap<i64, oneshot::Sender<Value>>>>;
 
+/// Callback for LSP notifications (diagnostics, etc.)
+type NotificationCallback = Arc<Mutex<Option<Box<dyn Fn(String, Value) + Send + 'static>>>>;
+
 /// Bridge to Epic's verse-lsp.exe process.
 /// Communicates via standard LSP JSON-RPC over stdio with Content-Length framing.
 pub struct LspBridge {
@@ -17,6 +20,7 @@ pub struct LspBridge {
     stdin: Mutex<Option<std::process::ChildStdin>>,
     initialized: Arc<std::sync::atomic::AtomicBool>,
     server_capabilities: Mutex<Option<Value>>,
+    on_notification: NotificationCallback,
 }
 
 impl LspBridge {
@@ -28,7 +32,16 @@ impl LspBridge {
             stdin: Mutex::new(None),
             initialized: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             server_capabilities: Mutex::new(None),
+            on_notification: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Set a callback for LSP notifications (diagnostics, etc.)
+    pub fn set_notification_handler<F>(&self, handler: F)
+    where
+        F: Fn(String, Value) + Send + 'static,
+    {
+        *self.on_notification.lock().unwrap() = Some(Box::new(handler));
     }
 
     /// Find Epic's verse-lsp.exe binary
@@ -62,9 +75,26 @@ impl LspBridge {
         None
     }
 
+    /// Copy binary to temp to avoid file locking (same approach as Epic's extension)
+    fn copy_to_temp(lsp_binary: &str) -> Result<String, String> {
+        let src = std::path::Path::new(lsp_binary);
+        let ext = src.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+        let pid = std::process::id();
+        let temp_name = format!("verse-lsp-wellversed-{}.{}", pid, ext);
+        let temp_path = std::env::temp_dir().join(&temp_name);
+
+        std::fs::copy(src, &temp_path)
+            .map_err(|e| format!("Failed to copy verse-lsp to temp: {}", e))?;
+
+        Ok(temp_path.to_string_lossy().to_string())
+    }
+
     /// Start the LSP server and send initialize request
     pub fn start(&self, lsp_binary: &str, workspace_root: &str) -> Result<(), String> {
-        let mut child = Command::new(lsp_binary)
+        // Copy to temp dir to avoid file locking
+        let binary_path = Self::copy_to_temp(lsp_binary)?;
+
+        let mut child = Command::new(&binary_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -82,6 +112,7 @@ impl LspBridge {
         let pending = Arc::clone(&self.pending);
         let capabilities = self.server_capabilities.clone();
         let initialized = Arc::clone(&self.initialized);
+        let on_notification = Arc::clone(&self.on_notification);
         std::thread::spawn(move || {
             let mut reader = BufReader::new(stdout);
             loop {
@@ -107,9 +138,15 @@ impl LspBridge {
                                     }
                                 }
                             }
+                        } else if let Some(method) = msg.get("method").and_then(|v| v.as_str()) {
+                            // Notification (no id) — diagnostics, progress, etc.
+                            let params = msg.get("params").cloned().unwrap_or(Value::Null);
+                            if let Ok(handler) = on_notification.lock() {
+                                if let Some(ref cb) = *handler {
+                                    cb(method.to_string(), params);
+                                }
+                            }
                         }
-                        // Notifications (no id) — diagnostics, etc.
-                        // TODO: Forward to frontend via Tauri events
                     }
                     Ok(None) => break, // EOF
                     Err(e) => {
