@@ -229,6 +229,25 @@ export async function forgeGenerateVerse(
   return invoke('forge_generate_verse', { spec: JSON.parse(specJson) })
 }
 
+// Widget parsing
+export interface WidgetSummary {
+  name: string
+  path: string
+  widgetCount: number
+}
+
+export async function forgeListProjectWidgets(): Promise<{ widgets: WidgetSummary[] }> {
+  return invoke('forge_list_project_widgets')
+}
+
+export async function forgeParseWidget(path: string): Promise<{ spec: any }> {
+  return invoke('forge_parse_widget', { path })
+}
+
+export async function forgeListLibraryWidgets(): Promise<{ widgets: WidgetSummary[] }> {
+  return invoke('forge_list_library_widgets')
+}
+
 // Project management
 export async function forgeStatus(): Promise<ForgeStatus> {
   return invoke('forge_status')
@@ -462,6 +481,9 @@ const api = {
   forgeValidateSpec,
   forgeBuildUasset,
   forgeGenerateVerse,
+  forgeListProjectWidgets,
+  forgeParseWidget,
+  forgeListLibraryWidgets,
   forgeStatus,
   forgeListProjects,
   forgeAddProject,
