@@ -590,6 +590,10 @@ public class Program
                 "get-library-assets-by-type" => HandleGetLibraryAssetsByType(req),
                 "browse-library-dir" => HandleBrowseLibraryDir(req),
                 "search-library-index" => HandleSearchLibraryIndex(req),
+                // Widget parsing
+                "list-project-widgets" => HandleListProjectWidgets(req),
+                "parse-widget" => HandleParseWidget(req),
+                "list-library-widgets" => HandleListLibraryWidgets(req),
                 // CUE4Parse asset preview
                 "preview-init" => HandlePreviewInit(req),
                 "preview-search" => HandlePreviewSearch(req),
@@ -1552,6 +1556,108 @@ public class Program
         var verseCode = WidgetSpecVerseGenerator.Generate(spec);
 
         return new SidecarResponse(req.Id, new { code = verseCode });
+    }
+
+    // ========= Widget Parsing Handlers =========
+
+    private static SidecarResponse HandleListProjectWidgets(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        if (!Directory.Exists(cfg.ContentPath))
+            return new SidecarResponse(req.Id, new { widgets = Array.Empty<object>() });
+
+        var widgets = new List<object>();
+        var files = Directory.EnumerateFiles(cfg.ContentPath, "*.uasset", SearchOption.AllDirectories)
+            .Where(f => !f.Contains("__External"));
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                var summary = WidgetBlueprintParser.GetSummary(asset);
+                if (summary != null)
+                {
+                    widgets.Add(new
+                    {
+                        name = summary.Value.name,
+                        path = file,
+                        widgetCount = summary.Value.widgetCount
+                    });
+                }
+            }
+            catch { /* Skip unparseable files */ }
+        }
+
+        return new SidecarResponse(req.Id, new { widgets });
+    }
+
+    private static SidecarResponse HandleParseWidget(SidecarRequest req)
+    {
+        var path = req.Params?.GetProperty("path").GetString()
+            ?? throw new ArgumentException("Missing 'path' parameter");
+
+        if (!File.Exists(path))
+            return new SidecarResponse(req.Id, Error: new SidecarError("FILE_NOT_FOUND", $"File not found: {path}"));
+
+        // Build a temporary SafeFileAccess for copy-on-read
+        var config = new ForgeConfig { ProjectPath = Path.GetDirectoryName(path) ?? "", ReadOnly = true };
+        var detector = new UefnDetector(config, Microsoft.Extensions.Logging.Abstractions.NullLogger<UefnDetector>.Instance);
+        using var fileAccess = new SafeFileAccess(config, detector,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<SafeFileAccess>.Instance);
+
+        var parser = new WidgetBlueprintParser();
+        var spec = parser.Parse(path, fileAccess);
+
+        if (spec == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("PARSE_FAILED", "Could not parse widget blueprint"));
+
+        var specJson = WidgetSpecSerializer.ToJson(spec);
+
+        return new SidecarResponse(req.Id, new { spec = System.Text.Json.JsonDocument.Parse(specJson).RootElement });
+    }
+
+    private static SidecarResponse HandleListLibraryWidgets(SidecarRequest req)
+    {
+        var lm = _sidecarLibraries!;
+        var active = lm.GetActiveLibrary();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_LIBRARY", "No active library"));
+
+        var widgets = new List<object>();
+
+        // Scan library path for widget blueprints
+        if (Directory.Exists(active.Path))
+        {
+            var files = Directory.EnumerateFiles(active.Path, "*.uasset", SearchOption.AllDirectories)
+                .Where(f => !f.Contains("__External"));
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var asset = new UAssetAPI.UAsset(file, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+                    var summary = WidgetBlueprintParser.GetSummary(asset);
+                    if (summary != null)
+                    {
+                        widgets.Add(new
+                        {
+                            name = summary.Value.name,
+                            path = file,
+                            widgetCount = summary.Value.widgetCount
+                        });
+                    }
+                }
+                catch { }
+            }
+        }
+
+        return new SidecarResponse(req.Id, new { widgets });
     }
 
     // ========= Sidecar Library Management Handlers =========

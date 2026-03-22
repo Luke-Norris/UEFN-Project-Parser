@@ -71,6 +71,10 @@ pub fn run() {
             commands::forge_validate_spec,
             commands::forge_build_uasset,
             commands::forge_generate_verse,
+            // Widget parsing commands
+            commands::forge_list_project_widgets,
+            commands::forge_parse_widget,
+            commands::forge_list_library_widgets,
             commands::forge_list_libraries,
             commands::forge_add_library,
             commands::forge_remove_library,

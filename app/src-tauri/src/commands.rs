@@ -253,6 +253,37 @@ pub async fn forge_generate_verse(
         .await
 }
 
+// ─── Widget parsing commands ─────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_list_project_widgets(state: State<'_, AppState>) -> Result<Value, String> {
+    state
+        .bridge
+        .call("list-project-widgets", json!({}))
+        .await
+        .or_else(|_| Ok(json!({"widgets": []})))
+}
+
+#[tauri::command]
+pub async fn forge_parse_widget(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("parse-widget", json!({"path": path}))
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_list_library_widgets(state: State<'_, AppState>) -> Result<Value, String> {
+    state
+        .bridge
+        .call("list-library-widgets", json!({}))
+        .await
+        .or_else(|_| Ok(json!({"widgets": []})))
+}
+
 // ─── Library management commands ─────────────────────────────────────────────
 
 #[tauri::command]

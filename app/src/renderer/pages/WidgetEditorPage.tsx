@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { AssetBrowser } from '../components/AssetBrowser/AssetBrowser'
 import { CanvasEditor } from '../components/Canvas/CanvasEditor'
 import { TemplatePanel } from '../components/TemplatePanel/TemplatePanel'
 import { PropertyPanel } from '../components/PropertyPanel/PropertyPanel'
 import { VariablesPanel } from '../components/VariablesPanel/VariablesPanel'
 import { LayersPanel } from '../components/LayersPanel/LayersPanel'
+import { WidgetBrowser } from '../components/WidgetBrowser/WidgetBrowser'
 import { Toolbar } from '../components/Toolbar/Toolbar'
 import { useCanvasStore } from '../stores/canvasStore'
+import { useWidgetStore } from '../stores/widgetStore'
+import { widgetSpecToTemplate } from '../templates/UMGWidgetConverter'
 
-type LeftTab = 'assets' | 'layers'
+type LeftTab = 'widgets' | 'layers'
 type RightTab = 'design' | 'properties' | 'variables'
 
 // Minimum / maximum widths for the side panels (in px)
@@ -24,9 +26,10 @@ export function WidgetEditorPage({
   fontsLoaded: boolean
   fontsError: string | null
 }) {
-  const [leftTab, setLeftTab] = useState<LeftTab>('layers')
+  const [leftTab, setLeftTab] = useState<LeftTab>('widgets')
   const [rightTab, setRightTab] = useState<RightTab>('design')
   const { canvas, selectedObjectId } = useCanvasStore()
+  const { loadWidget, parseLoading, parseError } = useWidgetStore()
 
   // Resizable panel widths
   const [leftWidth, setLeftWidth] = useState(LEFT_DEFAULT)
@@ -57,9 +60,26 @@ export function WidgetEditorPage({
     }
   }, [fontsLoaded, canvas])
 
+  // Handle widget selection from browser
+  const handleWidgetSelect = useCallback(async (path: string) => {
+    const spec = await loadWidget(path)
+    if (spec && canvas) {
+      try {
+        const template = widgetSpecToTemplate(spec)
+        // Clear canvas and load the new template
+        canvas.clear()
+        // TODO: Load template layers onto canvas via existing CanvasEditor methods
+        // For now, the spec is available in widgetStore for the property panel
+        canvas.renderAll()
+      } catch (e) {
+        console.error('Failed to convert widget to canvas:', e)
+      }
+    }
+  }, [canvas, loadWidget])
+
   const leftTabs: Array<{ id: LeftTab; label: string }> = [
-    { id: 'layers', label: 'Layers' },
-    { id: 'assets', label: 'Assets' }
+    { id: 'widgets', label: 'Widgets' },
+    { id: 'layers', label: 'Layers' }
   ]
 
   const rightTabs: Array<{ id: RightTab; label: string }> = [
@@ -111,9 +131,21 @@ export function WidgetEditorPage({
 
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto min-h-0">
+              {leftTab === 'widgets' && <WidgetBrowser onWidgetSelect={handleWidgetSelect} />}
               {leftTab === 'layers' && <LayersPanel />}
-              {leftTab === 'assets' && <AssetBrowser />}
             </div>
+
+            {/* Loading/error indicator */}
+            {parseLoading && (
+              <div className="px-3 py-1.5 bg-fn-accent/10 border-t border-fn-border text-fn-accent text-xs">
+                Loading widget...
+              </div>
+            )}
+            {parseError && (
+              <div className="px-3 py-1.5 bg-red-900/20 border-t border-fn-border text-red-400 text-xs truncate" title={parseError}>
+                {parseError}
+              </div>
+            )}
           </div>
         ) : (
           /* Collapsed left panel - thin strip */
