@@ -1,0 +1,6 @@
+{
+  "project_name": "WellVersed",
+  "repo_url": "https://github.com/Luke-Norris/UEFN-Project-Parser",
+  "dashboard_dir": "docs/dashboard",
+  "dashboards": ["changelog", "backlog", "documentation"]
+}

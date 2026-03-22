@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WellVersed — Project Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   BASE & RESET
+   ================================================================ */
+:root {
+    --bg: #0d1117;
+    --bg-surface: #161b22;
+    --bg-elevated: #1c2128;
+    --bg-card: #21262d;
+    --border: #30363d;
+    --border-light: #21262d;
+    --text: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+    --blue: #58a6ff;
+    --blue-dim: rgba(88,166,255,0.15);
+    --green: #3fb950;
+    --green-dim: rgba(63,185,80,0.15);
+    --red: #f85149;
+    --red-dim: rgba(248,81,73,0.15);
+    --yellow: #d29922;
+    --yellow-dim: rgba(210,153,34,0.15);
+    --purple: #bc8cff;
+    --purple-dim: rgba(188,140,255,0.15);
+    --orange: #f0883e;
+    --orange-dim: rgba(240,136,62,0.15);
+    --cyan: #39d2c0;
+    --cyan-dim: rgba(57,210,192,0.15);
+    --code-bg: #0d1117;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+    scroll-behavior: smooth;
+    font-size: 15px;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================================
+   PRINT STYLES
+   ================================================================ */
+@media print {
+    body { background: white; color: #1a1a2e; font-size: 11pt; }
+    .title-page { page-break-after: always; }
+    .toc-sidebar { display: none; }
+    section { page-break-inside: avoid; }
+    h2 { page-break-before: always; page-break-after: avoid; }
+    h3, h4 { page-break-after: avoid; }
+    pre, .diagram-container, table { page-break-inside: avoid; }
+    .toc-nav { display: none; }
+    :root {
+        --bg: #ffffff;
+        --bg-surface: #f6f8fa;
+        --bg-elevated: #f0f2f5;
+        --bg-card: #eaecef;
+        --border: #d0d7de;
+        --text: #1a1a2e;
+        --text-secondary: #57606a;
+        --code-bg: #f6f8fa;
+    }
+}
+
+/* ================================================================
+   TITLE PAGE
+   ================================================================ */
+.title-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.title-page::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(88,166,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.title-logo {
+    width: 180px;
+    height: 180px;
+    margin-bottom: 40px;
+    filter: drop-shadow(0 0 40px rgba(88,166,255,0.2));
+}
+
+.title-name {
+    font-size: 4.5rem;
+    font-weight: 800;
+    letter-spacing: 12px;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.title-subtitle {
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 6px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 50px;
+}
+
+.title-doc-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 10px;
+}
+
+.title-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 2;
+}
+
+.title-meta span { color: var(--text-secondary); }
+
+.title-divider {
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    margin: 30px auto;
+}
+
+/* ================================================================
+   NAV BAR
+   ================================================================ */
+.nav-bar {
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 40px;
+    display: flex;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+.nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.nav-link:hover { color: var(--text); background: rgba(88,166,255,0.1); }
+.nav-link.active { color: var(--blue); background: rgba(88,166,255,0.15); }
+
+/* ================================================================
+   SIDEBAR TOC LAYOUT
+   ================================================================ */
+.doc-layout {
+    display: flex;
+    max-width: 1400px;
+    margin: 0 auto;
+    gap: 0;
+}
+
+.toc-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding: 20px 16px 20px 24px;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+}
+.toc-sidebar h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+}
+.toc-sidebar .toc-item {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin: 1px 0;
+    border-left: 2px solid transparent;
+    transition: background 0.15s, color 0.15s;
+}
+.toc-sidebar .toc-item:hover {
+    background: var(--bg-surface);
+    color: var(--text);
+}
+.toc-sidebar .toc-item.toc-active {
+    background: rgba(88,166,255,0.08);
+    color: var(--blue);
+    border-left-color: var(--blue);
+}
+.toc-sidebar .toc-item .toc-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-right: 8px;
+}
+.toc-sidebar .toc-item.toc-sub {
+    padding-left: 28px;
+    font-size: 12px;
+}
+.toc-sidebar .toc-item.toc-sub .toc-num {
+    font-size: 10px;
+}
+
+.doc-content {
+    flex: 1;
+    min-width: 0;
+    padding: 40px;
+    max-width: 900px;
+}
+
+@media (max-width: 900px) {
+    .toc-sidebar { display: none; }
+    .doc-layout { display: block; }
+    .doc-content { padding: 20px; }
+}
+
+@media print {
+    .toc-sidebar { display: none; }
+    .doc-layout { display: block; }
+}
+
+/* ================================================================
+   SECTION HEADINGS
+   ================================================================ */
+section {
+    padding: 60px 0 40px;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--blue);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+h2 .section-num {
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--blue);
+    background: var(--blue-dim);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 35px 0 15px;
+}
+
+h3 .sub-num {
+    color: var(--blue);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    margin-right: 8px;
+}
+
+h4 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 25px 0 10px;
+}
+
+p {
+    margin-bottom: 16px;
+    color: var(--text);
+}
+
+/* ================================================================
+   CODE BLOCKS
+   ================================================================ */
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 16px 0;
+}
+
+code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--bg-surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--cyan);
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    color: var(--text);
+}
+
+/* ================================================================
+   TABLES
+   ================================================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.9rem;
+}
+
+th {
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+}
+
+td {
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+}
+
+/* ================================================================
+   LISTS
+   ================================================================ */
+ul, ol {
+    margin: 12px 0 16px 24px;
+    color: var(--text);
+}
+
+li {
+    margin-bottom: 6px;
+}
+
+/* ================================================================
+   DIAGRAM CONTAINERS
+   ================================================================ */
+.diagram-container {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+}
+
+.diagram-container pre {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    white-space: pre;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+/* ================================================================
+   INFO BOXES
+   ================================================================ */
+.info-box {
+    background: var(--blue-dim);
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+}
+
+.info-box.warning {
+    background: var(--yellow-dim);
+    border-color: rgba(210,153,34,0.3);
+}
+
+.info-box.danger {
+    background: var(--red-dim);
+    border-color: rgba(248,81,73,0.3);
+}
+
+.info-box strong {
+    display: block;
+    margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <a href="changelog.html" class="nav-link">Changelog</a>
+  <a href="documentation.html" class="nav-link active">Documentation</a>
+  <a href="backlog.html" class="nav-link">Backlog</a>
+</nav>
+<!-- ================================================================
+     TITLE PAGE
+     ================================================================ -->
+<div class="title-page">
+    <div class="title-name">WellVersed</div>
+    <div class="title-subtitle">UEFN Project Management Studio — scene preview, device recipes, persistent data, Verse intelligence, widget editor</div>
+    <div class="title-divider"></div>
+    <div class="title-doc-name">Comprehensive Project Documentation</div>
+    <div class="title-meta">
+        <span>Version 0.1-dev</span> &nbsp;&middot;&nbsp;
+        <span>Updated 2026-03-21</span>
+    </div>
+</div>
+
+<div class="doc-layout">
+    <!-- Sidebar TOC -->
+    <nav class="toc-sidebar">
+        <h3>Contents</h3>
+        <a class="toc-item" href="#overview"><span class="toc-num">01</span><span class="toc-title">Overview</span></a>
+        <a class="toc-item toc-sub" href="#architecture"><span class="toc-num">1.1</span><span class="toc-title">Architecture</span></a>
+        <a class="toc-item toc-sub" href="#tech-stack"><span class="toc-num">1.2</span><span class="toc-title">Technology Stack</span></a>
+        <a class="toc-item toc-sub" href="#build-run"><span class="toc-num">1.3</span><span class="toc-title">Build &amp; Run</span></a>
+        <a class="toc-item" href="#tauri-frontend"><span class="toc-num">02</span><span class="toc-title">Tauri App (Frontend)</span></a>
+        <a class="toc-item toc-sub" href="#tauri-rust"><span class="toc-num">2.1</span><span class="toc-title">Rust Backend</span></a>
+        <a class="toc-item toc-sub" href="#tauri-commands"><span class="toc-num">2.2</span><span class="toc-title">Tauri Commands</span></a>
+        <a class="toc-item toc-sub" href="#api-bridge"><span class="toc-num">2.3</span><span class="toc-title">API Bridge (api.ts)</span></a>
+        <a class="toc-item toc-sub" href="#pages"><span class="toc-num">2.4</span><span class="toc-title">Pages (28 total)</span></a>
+        <a class="toc-item toc-sub" href="#stores"><span class="toc-num">2.5</span><span class="toc-title">Zustand Stores</span></a>
+        <a class="toc-item toc-sub" href="#shared-types"><span class="toc-num">2.6</span><span class="toc-title">Shared Types</span></a>
+        <a class="toc-item" href="#sidecar"><span class="toc-num">03</span><span class="toc-title">NDJSON Sidecar Protocol</span></a>
+        <a class="toc-item toc-sub" href="#sidecar-bridge"><span class="toc-num">3.1</span><span class="toc-title">ForgeBridge (Rust)</span></a>
+        <a class="toc-item toc-sub" href="#sidecar-methods"><span class="toc-num">3.2</span><span class="toc-title">Sidecar Methods</span></a>
+        <a class="toc-item" href="#dotnet-core"><span class="toc-num">04</span><span class="toc-title">.NET Core Services</span></a>
+        <a class="toc-item toc-sub" href="#core-services-list"><span class="toc-num">4.1</span><span class="toc-title">Service Catalogue</span></a>
+        <a class="toc-item toc-sub" href="#safety"><span class="toc-num">4.2</span><span class="toc-title">Safety System</span></a>
+        <a class="toc-item toc-sub" href="#config"><span class="toc-num">4.3</span><span class="toc-title">ForgeConfig</span></a>
+        <a class="toc-item" href="#mcp"><span class="toc-num">05</span><span class="toc-title">MCP Server Tools</span></a>
+        <a class="toc-item toc-sub" href="#mcp-tool-list"><span class="toc-num">5.1</span><span class="toc-title">Tool Files (16)</span></a>
+        <a class="toc-item" href="#cli"><span class="toc-num">06</span><span class="toc-title">CLI Reference</span></a>
+        <a class="toc-item" href="#uasset-structure"><span class="toc-num">07</span><span class="toc-title">UEFN Asset Structure</span></a>
+        <a class="toc-item toc-sub" href="#uassetapi-patch"><span class="toc-num">7.1</span><span class="toc-title">UAssetAPI Patch</span></a>
+        <a class="toc-item" href="#recipes"><span class="toc-num">08</span><span class="toc-title">Device Recipes</span></a>
+        <a class="toc-item" href="#widget-pipeline"><span class="toc-num">09</span><span class="toc-title">Widget Blueprint Pipeline</span></a>
+        <a class="toc-item" href="#library"><span class="toc-num">10</span><span class="toc-title">Library System</span></a>
+        <a class="toc-item" href="#scene-preview"><span class="toc-num">11</span><span class="toc-title">Scene Preview (Three.js)</span></a>
+        <a class="toc-item" href="#verse-tools"><span class="toc-num">12</span><span class="toc-title">Verse Tools</span></a>
+    </nav>
+
+    <div class="doc-content">
+
+        <!-- ============================================================
+             SECTION 01 — OVERVIEW
+             ============================================================ -->
+        <section id="overview">
+            <h2><span class="section-num">01</span> Overview</h2>
+            <p>
+                <strong>WellVersed</strong> is a professional UEFN (Unreal Editor for Fortnite) project management
+                studio. It provides read-safe inspection, device management, scene previewing, Verse code intelligence,
+                widget blueprint generation, and a reusable device recipe library — packaged as a desktop application
+                that is safe to run alongside an open UEFN editor.
+            </p>
+            <p>
+                The product follows a dual-mode philosophy: a powerful terminal/developer tool today, and a
+                consumer-facing AI-powered assistant in the future. The dark-first UI aesthetic and Tauri v2 desktop
+                shell reflect this professional positioning.
+            </p>
+
+            <h3 id="architecture"><span class="sub-num">1.1</span> Architecture</h3>
+            <div class="diagram-container">
+<pre>WellVersed Desktop App (Tauri v2)
+│
+├── app/src-tauri/          Rust host process
+│   ├── lib.rs              Plugin setup, AppState, invoke_handler registration
+│   ├── commands.rs         45+ #[tauri::command] handlers
+│   └── sidecar.rs          ForgeBridge — manages the .NET child process over NDJSON stdio
+│
+├── app/src/renderer/       React 19 + Tailwind + Zustand SPA
+│   ├── pages/              28 page components
+│   ├── stores/             7 Zustand stores (forgeStore, libraryStore, recipeStore, …)
+│   ├── lib/api.ts          Tauri invoke() wrapper — all renderer→backend calls go here
+│   └── lib/zoom.ts         CSS transform zoom utility
+│
+├── app/src/shared/         TypeScript types shared between renderer and build tools
+│   ├── types.ts            All TS interfaces (ForgeStatus, DeviceEntry, …)
+│   ├── recipes.ts          DeviceRecipe schema + helper functions
+│   ├── widget-spec.ts      WidgetSpec schema
+│   ├── widget-rules.ts     UEFN widget containment rules
+│   └── builtin-recipes.ts  Bundled stock recipe library
+│
+└── .NET sidecar (FortniteForge.CLI  sidecar  command)
+    ├── src/FortniteForge.CLI/       CLI + sidecar entry point
+    ├── src/FortniteForge.Core/      Business logic, models, safety
+    └── src/FortniteForge.MCP/       MCP server (Claude Code integration)</pre>
+            </div>
+
+            <h3 id="tech-stack"><span class="sub-num">1.2</span> Technology Stack</h3>
+            <table>
+                <thead>
+                    <tr><th>Layer</th><th>Technology</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Desktop shell</td><td>Tauri v2 (Rust)</td><td>Replaces Electron; no Node.js runtime</td></tr>
+                    <tr><td>Frontend</td><td>React 19 + Tailwind CSS</td><td>Vanilla JS SPA, dark theme</td></tr>
+                    <tr><td>State management</td><td>Zustand</td><td>7 stores, 60s TTL caching in forgeStore</td></tr>
+                    <tr><td>3D scene preview</td><td>Three.js</td><td>OrbitControls, device meshes by type</td></tr>
+                    <tr><td>Sidecar runtime</td><td>.NET 8 (C#)</td><td>Pre-built, launched by Rust via stdio pipe</td></tr>
+                    <tr><td>Asset parsing</td><td>UAssetAPI (patched)</td><td>Submodule at lib/UAssetAPI/, UE5.4 fix</td></tr>
+                    <tr><td>Game file reading</td><td>CUE4Parse</td><td>Optional — requires Fortnite installed</td></tr>
+                    <tr><td>MCP integration</td><td>ModelContextProtocol 0.1.0-preview.9</td><td>Stdio transport, 16 tool files</td></tr>
+                    <tr><td>CLI framework</td><td>System.CommandLine 2.0.0-beta4</td><td>Used by FortniteForge.CLI</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="build-run"><span class="sub-num">1.3</span> Build &amp; Run</h3>
+            <pre><code># Build .NET sidecar
+dotnet build FortniteForge.sln
+
+# Launch the Tauri desktop app (dev mode)
+cd app && npm run dev
+
+# MCP server (Claude Code integration)
+dotnet run --project src/FortniteForge.MCP -- path/to/forge.config.json
+
+# CLI (standalone, no UI)
+dotnet run --project src/FortniteForge.CLI -- -c forge.config.json status
+dotnet run --project src/FortniteForge.CLI -- -c forge.config.json audit
+
+# Tests
+dotnet test
+FORTNITEFORGE_SANDBOX="Z:/UEFN_Resources/mapContent/map_resources" dotnet test --filter SandboxTests</code></pre>
+
+            <div class="info-box">
+                <strong>Sidecar startup behaviour</strong>
+                On first launch the Rust host pre-builds the .NET CLI project (<code>dotnet build</code>), then starts
+                the sidecar with <code>--no-build</code> so subsequent startups are fast. The window appears immediately
+                while the build runs in the background.
+            </div>
+        </section>
+
+        <!-- ============================================================
+             SECTION 02 — TAURI APP
+             ============================================================ -->
+        <section id="tauri-frontend">
+            <h2><span class="section-num">02</span> Tauri App (Frontend)</h2>
+            <p>
+                The desktop application is a Tauri v2 app. The Rust host registers all commands and manages the
+                <code>AppState</code> (bridge handle, assets directory, fonts directory). The React renderer calls
+                commands via <code>@tauri-apps/api/core</code>'s <code>invoke()</code>.
+            </p>
+
+            <h3 id="tauri-rust"><span class="sub-num">2.1</span> Rust Backend</h3>
+            <p>The Rust backend (<code>app/src-tauri/src/</code>) consists of four files:</p>
+            <table>
+                <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td><code>lib.rs</code></td><td>Plugin setup (<code>tauri_plugin_dialog</code>, <code>tauri_plugin_fs</code>, <code>tauri_plugin_shell</code>), AppState construction, full <code>invoke_handler!</code> registration for all 45+ commands, sidecar spawn on background thread</td></tr>
+                    <tr><td><code>commands.rs</code></td><td>All <code>#[tauri::command]</code> functions — sidecar passthroughs and direct filesystem operations</td></tr>
+                    <tr><td><code>sidecar.rs</code></td><td><code>ForgeBridge</code> struct — see section 3.1</td></tr>
+                    <tr><td><code>main.rs</code></td><td>Entry point, calls <code>lib::run()</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="tauri-commands"><span class="sub-num">2.2</span> Tauri Commands</h3>
+            <p>Commands fall into two groups:</p>
+            <h4>Sidecar passthroughs (forge_* prefix)</h4>
+            <p>These serialize JSON params and forward the call to the .NET sidecar via <code>ForgeBridge::call()</code>.</p>
+            <table>
+                <thead><tr><th>Command</th><th>Sidecar method</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>forge_ping</code></td><td><code>ping</code></td><td>Healthcheck</td></tr>
+                    <tr><td><code>forge_status</code></td><td><code>status</code></td><td>Project status, mode, counts</td></tr>
+                    <tr><td><code>forge_list_projects</code></td><td><code>list-projects</code></td><td>Multi-project list</td></tr>
+                    <tr><td><code>forge_add_project</code></td><td><code>add-project</code></td><td>Register project (path + type)</td></tr>
+                    <tr><td><code>forge_remove_project</code></td><td><code>remove-project</code></td><td>Remove by id</td></tr>
+                    <tr><td><code>forge_activate_project</code></td><td><code>activate-project</code></td><td>Switch active project</td></tr>
+                    <tr><td><code>forge_scan_projects</code></td><td><code>scan-projects</code></td><td>Discover .uefnproject files under a path</td></tr>
+                    <tr><td><code>forge_list_levels</code></td><td><code>list-levels</code></td><td>Enumerate .umap files</td></tr>
+                    <tr><td><code>forge_audit</code></td><td><code>audit</code></td><td>Project/level audit</td></tr>
+                    <tr><td><code>forge_browse_content</code></td><td><code>browse-content</code></td><td>Directory listing of Content/</td></tr>
+                    <tr><td><code>forge_inspect_asset</code></td><td><code>inspect-asset</code></td><td>Deep asset property read</td></tr>
+                    <tr><td><code>forge_list_devices</code></td><td><code>list-devices</code></td><td>Devices in a level</td></tr>
+                    <tr><td><code>forge_inspect_device</code></td><td><code>inspect-device</code></td><td>Full device properties</td></tr>
+                    <tr><td><code>forge_list_user_assets</code></td><td><code>list-user-assets</code></td><td>Plugin/Content definitions</td></tr>
+                    <tr><td><code>forge_list_epic_assets</code></td><td><code>list-epic-assets</code></td><td>Placed external actor types + counts</td></tr>
+                    <tr><td><code>forge_read_verse</code></td><td><code>read-verse</code></td><td>Read a .verse source file</td></tr>
+                    <tr><td><code>forge_list_staged</code></td><td><code>list-staged</code></td><td>Pending staged writes</td></tr>
+                    <tr><td><code>forge_apply_staged</code></td><td><code>apply-staged</code></td><td>Write staged files to source</td></tr>
+                    <tr><td><code>forge_discard_staged</code></td><td><code>discard-staged</code></td><td>Delete staged files</td></tr>
+                    <tr><td><code>forge_validate_spec</code></td><td><code>validate-spec</code></td><td>Validate a WidgetSpec JSON</td></tr>
+                    <tr><td><code>forge_build_uasset</code></td><td><code>build-uasset</code></td><td>Build Widget Blueprint .uasset from spec</td></tr>
+                    <tr><td><code>forge_generate_verse</code></td><td><code>generate-verse</code></td><td>Generate Verse controller code for a spec</td></tr>
+                    <tr><td><code>forge_list_libraries</code></td><td><code>list-libraries</code></td><td>Reference library list</td></tr>
+                    <tr><td><code>forge_add_library</code></td><td><code>add-library</code></td><td>Register a library path</td></tr>
+                    <tr><td><code>forge_remove_library</code></td><td><code>remove-library</code></td><td>Remove library</td></tr>
+                    <tr><td><code>forge_activate_library</code></td><td><code>activate-library</code></td><td>Switch active library</td></tr>
+                    <tr><td><code>forge_index_library</code></td><td><code>index-library</code></td><td>Scan &amp; index library projects</td></tr>
+                    <tr><td><code>forge_get_library_verse_files</code></td><td><code>get-library-verse-files</code></td><td>Verse files from index</td></tr>
+                    <tr><td><code>forge_get_library_assets_by_type</code></td><td><code>get-library-assets-by-type</code></td><td>Asset groups from index</td></tr>
+                    <tr><td><code>forge_browse_library_dir</code></td><td><code>browse-library-dir</code></td><td>Directory listing of library</td></tr>
+                    <tr><td><code>forge_search_library_index</code></td><td><code>search-library-index</code></td><td>Full-text search across indexed library</td></tr>
+                    <tr><td><code>forge_preview_init</code></td><td><code>preview-init</code></td><td>Initialize CUE4Parse with Fortnite path</td></tr>
+                    <tr><td><code>forge_preview_status</code></td><td><code>preview-status</code></td><td>CUE4Parse init state + file count</td></tr>
+                    <tr><td><code>forge_preview_search</code></td><td><code>preview-search</code></td><td>Search game asset paths</td></tr>
+                    <tr><td><code>forge_preview_texture</code></td><td><code>preview-texture</code></td><td>Extract texture as base64 data URL</td></tr>
+                    <tr><td><code>forge_preview_mesh_info</code></td><td><code>preview-mesh-info</code></td><td>Mesh statistics (verts, tris, LODs, mats)</td></tr>
+                </tbody>
+            </table>
+
+            <h4>Direct filesystem commands</h4>
+            <p>These operate on the local filesystem without going through the sidecar.</p>
+            <table>
+                <thead><tr><th>Command</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>scan_assets</code></td><td>Recursively scan <code>app/fortnite_assets/</code> for image files</td></tr>
+                    <tr><td><code>get_asset_data</code></td><td>Read file and return as base64 data URL</td></tr>
+                    <tr><td><code>get_fonts</code></td><td>List font files in <code>app/fonts/</code></td></tr>
+                    <tr><td><code>get_font_data</code></td><td>Read font file as base64</td></tr>
+                    <tr><td><code>export_png</code></td><td>Write base64 PNG to user-chosen path (uses Tauri save dialog)</td></tr>
+                    <tr><td><code>export_batch</code></td><td>Batch write PNG files to a directory</td></tr>
+                    <tr><td><code>import_to_assets</code></td><td>Copy user-selected images into assets dir (prevents path traversal)</td></tr>
+                    <tr><td><code>create_asset_folder</code></td><td>Create a subfolder in assets dir</td></tr>
+                    <tr><td><code>delete_asset</code></td><td>Delete a file from assets dir (validates path is within assets dir)</td></tr>
+                    <tr><td><code>read_text_file</code></td><td>Read any text file by absolute path</td></tr>
+                    <tr><td><code>list_directory</code></td><td>List directory entries with metadata</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="api-bridge"><span class="sub-num">2.3</span> API Bridge (api.ts)</h3>
+            <p>
+                <code>app/src/renderer/lib/api.ts</code> is the single import point for all renderer-to-backend calls.
+                It imports <code>invoke</code> from <code>@tauri-apps/api/core</code> and wraps every Tauri command in a
+                typed async function. File dialogs use <code>@tauri-apps/plugin-dialog</code>'s <code>open()</code> and
+                <code>save()</code>.
+            </p>
+            <p>
+                The module also installs a <code>window.electronAPI</code> shim so legacy code written against the
+                Electron preload bridge continues to work without changes during migration.
+            </p>
+            <pre><code>// Import directly in new code:
+import { forgeListDevices, forgeInspectDevice } from '../lib/api'
+
+// Legacy shim (still works):
+window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
+
+            <h3 id="pages"><span class="sub-num">2.4</span> Pages (28 total)</h3>
+            <p>All pages live in <code>app/src/renderer/pages/</code>.</p>
+            <table>
+                <thead><tr><th>Page file</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td><code>HomePage.tsx</code></td><td>Welcome / quick-start landing</td></tr>
+                    <tr><td><code>ProjectsPage.tsx</code></td><td>Multi-project manager — add, remove, scan, activate</td></tr>
+                    <tr><td><code>DashboardPage.tsx</code></td><td>Active project summary — status, counts, mode</td></tr>
+                    <tr><td><code>LevelsPage.tsx</code></td><td>Level list with navigation to Devices / Scene Preview</td></tr>
+                    <tr><td><code>DevicesPage.tsx</code></td><td>Device inspector — grouped by type, property importance ranking</td></tr>
+                    <tr><td><code>DeviceWiringPage.tsx</code></td><td>Force-directed wiring graph — shows channel connections between devices</td></tr>
+                    <tr><td><code>ScenePreviewPage.tsx</code></td><td>Three.js 3D scene — devices as coloured meshes, orbit controls, click-to-inspect</td></tr>
+                    <tr><td><code>EpicAssetsPage.tsx</code></td><td>Placed Epic asset types with counts (external actors)</td></tr>
+                    <tr><td><code>UserAssetsPage.tsx</code></td><td>User-created definitions in Plugins/Content</td></tr>
+                    <tr><td><code>ContentBrowserPage.tsx</code></td><td>Tree browser of the Content/ directory</td></tr>
+                    <tr><td><code>AuditPage.tsx</code></td><td>Project / level audit findings with severity coding</td></tr>
+                    <tr><td><code>ProjectHealthPage.tsx</code></td><td>Actor count health bar (soft/hard limit warnings), asset statistics, audit summary</td></tr>
+                    <tr><td><code>VerseFilesPage.tsx</code></td><td>Verse source browser — syntax-highlighted viewer, parsed class/function/device outline</td></tr>
+                    <tr><td><code>VerseReferencePage.tsx</code></td><td>Verse reference library browser (Book of Verse chapters)</td></tr>
+                    <tr><td><code>VerseErrorExplainerPage.tsx</code></td><td>Paste Verse compiler errors → pattern-matched explanations + fix examples</td></tr>
+                    <tr><td><code>PersistentDataPage.tsx</code></td><td>Parse and display <code>persistable</code> structs/classes from Verse files</td></tr>
+                    <tr><td><code>RecipesPage.tsx</code></td><td>Device Recipe library — browse, create, export <code>device-recipe-v1</code> JSON</td></tr>
+                    <tr><td><code>WidgetEditorPage.tsx</code></td><td>Visual Widget Blueprint editor — canvas, layer tree, properties, variables panels</td></tr>
+                    <tr><td><code>StagedPage.tsx</code></td><td>Staged modifications queue — review diffs, apply or discard</td></tr>
+                    <tr><td><code>SettingsPage.tsx</code></td><td>App settings — zoom, theme, Fortnite path, preferences</td></tr>
+                    <tr><td><code>LibraryPage.tsx</code></td><td>Library hub — manage reference collections</td></tr>
+                    <tr><td><code>LibraryManagePage.tsx</code></td><td>Add / remove / index library paths</td></tr>
+                    <tr><td><code>LibraryBrowsePage.tsx</code></td><td>Browse a library's directory structure</td></tr>
+                    <tr><td><code>LibraryVersePage.tsx</code></td><td>Search/filter Verse files across library index</td></tr>
+                    <tr><td><code>LibraryAssetsByTypePage.tsx</code></td><td>Browse indexed assets grouped by class</td></tr>
+                    <tr><td><code>LibraryDeviceConfigsPage.tsx</code></td><td>Device configuration patterns from library</td></tr>
+                    <tr><td><code>LibraryMaterialsPage.tsx</code></td><td>Material assets browsing from library</td></tr>
+                    <tr><td><code>LibraryWidgetsPage.tsx</code></td><td>Widget Blueprint inventory from library</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="stores"><span class="sub-num">2.5</span> Zustand Stores</h3>
+            <table>
+                <thead><tr><th>Store file</th><th>Contents</th></tr></thead>
+                <tbody>
+                    <tr><td><code>forgeStore.ts</code></td><td>Status, projects, levels, devices, assets, staged files — 60s TTL caching, fetchStatus/fetchLevels/… actions</td></tr>
+                    <tr><td><code>libraryStore.ts</code></td><td>Library list, active library, favorites (persisted to localStorage)</td></tr>
+                    <tr><td><code>recipeStore.ts</code></td><td>Device recipes — CRUD, persistence</td></tr>
+                    <tr><td><code>canvasStore.ts</code></td><td>Fabric.js canvas instance, selected object, widget tree</td></tr>
+                    <tr><td><code>assetStore.ts</code></td><td>Asset index cache (local image assets)</td></tr>
+                    <tr><td><code>templateStore.ts</code></td><td>Component template library</td></tr>
+                    <tr><td><code>settingsStore.ts</code></td><td>Zoom level, theme, Fortnite path — persisted via localStorage</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="shared-types"><span class="sub-num">2.6</span> Shared Types</h3>
+            <p>
+                <code>app/src/shared/types.ts</code> contains all TypeScript interfaces used across renderer, stores,
+                and the api bridge. Key groups:
+            </p>
+            <ul>
+                <li><strong>Asset management</strong> — <code>AssetEntry</code>, <code>AssetCategory</code>, <code>AssetIndex</code></li>
+                <li><strong>Template/canvas layers</strong> — <code>TemplateLayer</code>, <code>ComponentTemplate</code>, <code>TemplateVariable</code></li>
+                <li><strong>FortniteForge project</strong> — <code>ForgeStatus</code>, <code>ForgeProject</code>, <code>ForgeProjectList</code>, <code>ForgeDiscoveredProject</code></li>
+                <li><strong>Audit</strong> — <code>AuditFinding</code>, <code>AuditResult</code></li>
+                <li><strong>Devices</strong> — <code>DeviceEntry</code>, <code>DeviceListResult</code>, <code>DeviceInspectResult</code></li>
+                <li><strong>Assets</strong> — <code>ContentEntry</code>, <code>AssetInspectResult</code>, <code>UserAssetEntry</code>, <code>EpicAssetTypeEntry</code></li>
+                <li><strong>Verse</strong> — <code>VerseFileEntry</code>, <code>VerseFileContent</code></li>
+                <li><strong>Staged</strong> — <code>StagedFileEntry</code>, <code>StagedListResult</code></li>
+                <li><strong>Library</strong> — <code>LibraryEntry</code>, <code>LibraryList</code>, <code>LibraryIndexResult</code>, <code>LibVerseFileEntry</code>, <code>LibAssetGroup</code>, <code>LibrarySearchResult</code></li>
+                <li><strong>Rarity</strong> — <code>RarityTier</code>, <code>RARITY_COLORS</code> (common → exotic)</li>
+            </ul>
+            <p>
+                <code>app/src/shared/recipes.ts</code> defines the <code>device-recipe-v1</code> schema
+                (<code>DeviceRecipe</code>, <code>RecipeDevice</code>, <code>RecipeWiring</code>) plus helper functions
+                <code>generateRecipeId()</code>, <code>computeCenter()</code>, <code>toOffsets()</code>,
+                <code>inferCategory()</code>, and <code>validateRecipe()</code>.
+            </p>
+        </section>
+
+        <!-- ============================================================
+             SECTION 03 — NDJSON SIDECAR
+             ============================================================ -->
+        <section id="sidecar">
+            <h2><span class="section-num">03</span> NDJSON Sidecar Protocol</h2>
+            <p>
+                The Tauri host communicates with the .NET CLI process over newline-delimited JSON (NDJSON) on stdin/stdout.
+                Each request is a single JSON line; each response is a single JSON line.
+            </p>
+
+            <h3 id="sidecar-bridge"><span class="sub-num">3.1</span> ForgeBridge (Rust)</h3>
+            <p><code>app/src-tauri/src/sidecar.rs</code> implements the <code>ForgeBridge</code> struct:</p>
+            <ul>
+                <li><strong>Startup</strong> — <code>start()</code> runs <code>dotnet build</code> then spawns <code>dotnet run --no-build -- sidecar</code></li>
+                <li><strong>Ready handshake</strong> — waits for a <code>{"id":"ready"}</code> line from the sidecar before sending requests</li>
+                <li><strong>Async call</strong> — <code>call(method, params)</code> assigns an auto-incremented request ID, registers a <code>oneshot</code> channel, writes the request line, then awaits the response with a 30-second timeout</li>
+                <li><strong>Response routing</strong> — a background thread reads stdout lines, parses <code>SidecarResponse</code>, and routes each response to the matching pending sender</li>
+                <li><strong>Stderr forwarding</strong> — a second background thread forwards sidecar stderr to host stderr with a <code>[forge]</code> prefix</li>
+                <li><strong>Cleanup</strong> — <code>Drop</code> closes stdin and kills the child process</li>
+            </ul>
+
+            <pre><code>// Request format:
+{"id":"req-42","method":"list-devices","params":{"levelPath":"/..."}}
+
+// Response format (success):
+{"id":"req-42","result":{...},"error":null}
+
+// Response format (error):
+{"id":"req-42","result":null,"error":{"code":"NOT_FOUND","message":"...","details":null}}</code></pre>
+
+            <h3 id="sidecar-methods"><span class="sub-num">3.2</span> Sidecar Methods</h3>
+            <p>
+                The .NET sidecar (<code>FortniteForge.CLI</code> <code>sidecar</code> subcommand) handles all
+                <code>forge_*</code> Tauri commands. The project manager (<code>SidecarProjectManager</code>) and
+                library manager (<code>SidecarLibraryManager</code>) maintain state across calls within a session.
+                The optional <code>AssetPreviewService</code> (CUE4Parse) is initialised on demand via
+                <code>preview-init</code>.
+            </p>
+            <p>
+                Sidecar JSON is serialised with <code>WriteIndented=false, CamelCase, WhenWritingNull</code> to keep
+                each response on a single line.
+            </p>
+        </section>
+
+        <!-- ============================================================
+             SECTION 04 — .NET CORE SERVICES
+             ============================================================ -->
+        <section id="dotnet-core">
+            <h2><span class="section-num">04</span> .NET Core Services</h2>
+            <p>
+                <code>src/FortniteForge.Core/</code> contains all business logic with no UI dependencies.
+                Services are composed manually (no DI container) in <code>LoadServices()</code> in the CLI.
+            </p>
+
+            <h3 id="core-services-list"><span class="sub-num">4.1</span> Service Catalogue</h3>
+            <table>
+                <thead><tr><th>Service</th><th>Responsibility</th></tr></thead>
+                <tbody>
+                    <tr><td><code>AssetService</code></td><td>List and inspect .uasset / .umap files via <code>SafeFileAccess</code> (copy-on-read). Parses properties using UAssetAPI with our ScriptSerializationOffset fix.</td></tr>
+                    <tr><td><code>DeviceService</code></td><td>Enumerate external actors, classify devices vs props, expose property digests. Calls <code>AssetService</code> + <code>DigestService</code>.</td></tr>
+                    <tr><td><code>AuditService</code></td><td>Project and level auditing — finds missing Verse files, oversized levels, suspicious device configs. Returns <code>AuditResult</code> with <code>Error/Warning/Info</code> findings.</td></tr>
+                    <tr><td><code>DigestService</code></td><td>Parses <code>.digest</code> Verse source files to extract device class/property schema definitions.</td></tr>
+                    <tr><td><code>ModificationService</code></td><td>Two-step modify workflow: preview diff → apply. Writes through <code>SafeFileAccess</code> (staged or direct based on mode).</td></tr>
+                    <tr><td><code>ActorPlacementService</code></td><td>Clone-and-modify actor placement. Reads a source actor, adjusts transform/properties, writes a new external actor file.</td></tr>
+                    <tr><td><code>BackupService</code></td><td>Pre-modification backups to <code>.fortniteforge/backups/</code>. Configurable per-file limit with automatic pruning.</td></tr>
+                    <tr><td><code>SafeFileAccess</code></td><td>Copy-on-read (all .uasset reads go through a temp copy). Staged writes: writes go to <code>.fortniteforge/staged/</code> when UEFN is running. Direct writes with backup when UEFN is closed.</td></tr>
+                    <tr><td><code>UefnDetector</code></td><td>Process detection for the UEFN editor and URC (Unreal Remote Control). Determines current <code>OperationMode</code>.</td></tr>
+                    <tr><td><code>BuildService</code></td><td>Triggers UEFN project builds and reads build logs.</td></tr>
+                    <tr><td><code>AssetPreviewService</code></td><td>CUE4Parse-backed texture extraction and mesh statistics from the Fortnite game files. Optional — requires a local Fortnite installation.</td></tr>
+                    <tr><td><code>LibraryIndexer</code></td><td>Scans a directory of UEFN projects, indexes all Verse files, assets, and device patterns into a searchable <code>LibraryIndex</code>. Also handles standalone Verse code packs.</td></tr>
+                    <tr><td><code>LevelAnalyticsService</code></td><td>Actor count, performance score, device breakdown, duplicate detection, and wiring analysis for a level file.</td></tr>
+                    <tr><td><code>WidgetBlueprintBuilder</code></td><td>Builds Widget Blueprint .uasset files from a <code>WidgetSpec</code>. Clone-and-extend: starts from a minimal template, adds widget exports according to the spec's tree.</td></tr>
+                    <tr><td><code>WidgetSpecSerializer</code></td><td>Serialises/deserialises <code>WidgetSpec</code> to/from JSON.</td></tr>
+                    <tr><td><code>WidgetSpecVerseGenerator</code></td><td>Generates paired Verse controller code for a <code>WidgetSpec</code>.</td></tr>
+                    <tr><td><code>VerseReferenceService</code></td><td>Reads reference .verse files from <code>ReferenceLibraryPath</code> for Claude Code context.</td></tr>
+                    <tr><td><code>VerseWidgetReference</code></td><td>UEFN widget binding and reference data for Verse UI generation.</td></tr>
+                    <tr><td><code>PropertyValueSetter</code></td><td>Writes a typed property value into a UAsset export. Handles all UAssetAPI property types.</td></tr>
+                    <tr><td><code>MapGeneration/MapGenerator</code></td><td>Procedural map generation — places devices from an <code>AssetCatalog</code>.</td></tr>
+                    <tr><td><code>MapGeneration/AssetCatalog</code></td><td>Catalogs available assets for procedural placement.</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="safety"><span class="sub-num">4.2</span> Safety System</h3>
+            <p>Three layered safeguards protect UEFN project files:</p>
+
+            <h4>Operation modes (automatic)</h4>
+            <table>
+                <thead><tr><th>Mode</th><th>When active</th><th>Reads</th><th>Writes</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ReadOnly</code></td><td><code>readOnly: true</code> in config, or Library project</td><td>Copy-on-read</td><td>Blocked</td></tr>
+                    <tr><td><code>Staged</code></td><td>UEFN editor process running, or URC active</td><td>Copy-on-read</td><td>To <code>.fortniteforge/staged/</code></td></tr>
+                    <tr><td><code>Direct</code></td><td>UEFN not running, My Project type</td><td>Copy-on-read</td><td>To source, with auto-backup</td></tr>
+                </tbody>
+            </table>
+
+            <h4>AssetGuard</h4>
+            <p>
+                <code>AssetGuard.CanModify()</code> gates every write operation. It checks: (1) operation mode,
+                (2) <code>PKG_FilterEditorOnly</code> and <code>UsesEventDrivenLoader</code> flags in the .uasset
+                binary header (cooked detection), (3) path allowlist/blocklist from config. Cooked assets are
+                never modified under any circumstances.
+            </p>
+
+            <h4>Copy-on-read (SafeFileAccess)</h4>
+            <p>
+                All reads use <code>SafeFileAccess</code> which copies the source file to a temp location before
+                handing it to UAssetAPI. This ensures the source file is never locked while UEFN has it open.
+            </p>
+
+            <div class="info-box danger">
+                <strong>Critical rule</strong>
+                Never open a .uasset source file directly with UAssetAPI. Always go through <code>SafeFileAccess</code>.
+                Locking a file that UEFN has open can corrupt the project.
+            </div>
+
+            <h3 id="config"><span class="sub-num">4.3</span> ForgeConfig</h3>
+            <p>Loaded from <code>forge.config.json</code> in the project root (or specified with <code>-c</code>).</p>
+            <table>
+                <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>projectPath</code></td><td>string</td><td>""</td><td>UEFN project root</td></tr>
+                    <tr><td><code>uefnInstallPath</code></td><td>string</td><td>""</td><td>Fortnite installation path</td></tr>
+                    <tr><td><code>readOnly</code></td><td>bool</td><td>false</td><td>Hard kill switch for all writes</td></tr>
+                    <tr><td><code>modifiableFolders</code></td><td>string[]</td><td>[]</td><td>Relative Content/ paths allowed for writes</td></tr>
+                    <tr><td><code>readOnlyFolders</code></td><td>string[]</td><td>["FortniteGame","Engine"]</td><td>Paths that must never be modified</td></tr>
+                    <tr><td><code>backupDirectory</code></td><td>string</td><td>.fortniteforge/backups</td><td>Backup storage relative to project root</td></tr>
+                    <tr><td><code>stagingDirectory</code></td><td>string</td><td>.fortniteforge/staged</td><td>Staged write destination</td></tr>
+                    <tr><td><code>maxBackupsPerFile</code></td><td>int</td><td>10</td><td>Oldest pruned when exceeded</td></tr>
+                    <tr><td><code>requireDryRun</code></td><td>bool</td><td>true</td><td>Preview before applying modifications</td></tr>
+                    <tr><td><code>autoBackup</code></td><td>bool</td><td>true</td><td>Backup before every direct write</td></tr>
+                    <tr><td><code>referenceLibraryPath</code></td><td>string?</td><td>null</td><td>Path to .verse reference files</td></tr>
+                    <tr><td><code>verseErrorForwardPath</code></td><td>string?</td><td>null</td><td>Forward Verse compiler errors here</td></tr>
+                </tbody>
+            </table>
+            <p>Use <code>ForgeConfig.DiscoverProjects(path)</code> to recursively find UEFN project roots (files with <code>.uefnproject</code>).</p>
+        </section>
+
+        <!-- ============================================================
+             SECTION 05 — MCP SERVER
+             ============================================================ -->
+        <section id="mcp">
+            <h2><span class="section-num">05</span> MCP Server Tools</h2>
+            <p>
+                <code>src/FortniteForge.MCP/</code> runs as a Model Context Protocol server on stdio transport,
+                letting Claude Code interact with UEFN projects directly. Uses
+                <code>ModelContextProtocol 0.1.0-preview.9</code>.
+            </p>
+
+            <h3 id="mcp-tool-list"><span class="sub-num">5.1</span> Tool Files (16)</h3>
+            <table>
+                <thead><tr><th>File</th><th>Tools &amp; purpose</th></tr></thead>
+                <tbody>
+                    <tr><td><code>PowerTools.cs</code></td><td><code>get_project_context</code> — complete project snapshot for AI work sessions (levels, device types, Verse files, property names). Also <code>configure_device</code>, <code>copy_asset</code>.</td></tr>
+                    <tr><td><code>AssetTools.cs</code></td><td>Browse content, inspect assets, list user-created definitions and Epic external actors.</td></tr>
+                    <tr><td><code>DeviceTools.cs</code></td><td>List devices in a level, inspect individual devices, look up device digest schema.</td></tr>
+                    <tr><td><code>AuditTools.cs</code></td><td>Project and level audit — returns findings with severity, category, message, suggestion.</td></tr>
+                    <tr><td><code>ModifyTools.cs</code></td><td>Two-step modification: preview diff, then apply. Writes respect the safety tier.</td></tr>
+                    <tr><td><code>PlacementTools.cs</code></td><td>Clone and place actors at new positions with property overrides.</td></tr>
+                    <tr><td><code>BackupTools.cs</code></td><td>List backups, restore from a specific backup.</td></tr>
+                    <tr><td><code>BuildTools.cs</code></td><td>Trigger UEFN builds, read build logs.</td></tr>
+                    <tr><td><code>MapGenTools.cs</code></td><td>Procedural map generation from an asset catalog.</td></tr>
+                    <tr><td><code>AnalyticsTools.cs</code></td><td>Level analytics — actor count, performance score, device breakdown, duplicates.</td></tr>
+                    <tr><td><code>LibraryTools.cs</code></td><td>Library index management, Verse file and asset search across indexed projects.</td></tr>
+                    <tr><td><code>VerseGenTools.cs</code></td><td>Verse code generation utilities.</td></tr>
+                    <tr><td><code>VerseReferenceTools.cs</code></td><td>Query the Verse reference library for type information and examples.</td></tr>
+                    <tr><td><code>WidgetTools.cs</code></td><td>WidgetSpec validation, .uasset building, Verse code generation for widgets.</td></tr>
+                    <tr><td><code>WidgetBlueprintTools.cs</code></td><td><code>get_widget_blueprint_reference</code> — complete UMG widget type catalogue based on 1,543 real Widget Blueprints across 61 projects. Also clone, inspect, and reference tools.</td></tr>
+                    <tr><td><code>UtilityTools.cs</code></td><td>Misc helper tools (status, config info, etc.).</td></tr>
+                </tbody>
+            </table>
+
+            <p>Start the MCP server:</p>
+            <pre><code>dotnet run --project src/FortniteForge.MCP -- path/to/forge.config.json</code></pre>
+        </section>
+
+        <!-- ============================================================
+             SECTION 06 — CLI REFERENCE
+             ============================================================ -->
+        <section id="cli">
+            <h2><span class="section-num">06</span> CLI Reference</h2>
+            <p>
+                <code>src/FortniteForge.CLI/</code> provides both a standalone CLI and the sidecar entry point.
+                All commands accept <code>--config/-c &lt;path&gt;</code> (falls back to
+                <code>FORTNITEFORGE_CONFIG</code> env var, then walks parent directories).
+            </p>
+            <p>Every command prints a coloured status line to stderr before its output.</p>
+            <table>
+                <thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>status</code></td><td>Show project status, UEFN running state, operation mode, URC, counts</td></tr>
+                    <tr><td><code>list [--folder] [--class] [--name]</code></td><td>List project assets with optional filters</td></tr>
+                    <tr><td><code>inspect &lt;asset-path&gt;</code></td><td>Deep inspect a single asset file</td></tr>
+                    <tr><td><code>devices &lt;level-path&gt;</code></td><td>List all devices in a level</td></tr>
+                    <tr><td><code>device &lt;name&gt; [--level]</code></td><td>Inspect a device by actor name (searches all levels if no --level)</td></tr>
+                    <tr><td><code>audit [--level]</code></td><td>Audit entire project or a specific level</td></tr>
+                    <tr><td><code>staged [--apply | --discard]</code></td><td>List / apply / discard staged modifications</td></tr>
+                    <tr><td><code>build</code></td><td>Trigger a UEFN project build</td></tr>
+                    <tr><td><code>build-log</code></td><td>Print the latest build log summary</td></tr>
+                    <tr><td><code>backups [--asset]</code></td><td>List available backups, optionally filtered by asset</td></tr>
+                    <tr><td><code>schema &lt;device-type&gt;</code></td><td>Look up device property schema from .digest files</td></tr>
+                    <tr><td><code>init &lt;project-path&gt; [--read-only]</code></td><td>Create a <code>forge.config.json</code> in the current directory</td></tr>
+                    <tr><td><code>sidecar</code></td><td>Run as NDJSON sidecar — used by the Tauri app. Not for direct use.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ============================================================
+             SECTION 07 — UEFN ASSET STRUCTURE
+             ============================================================ -->
+        <section id="uasset-structure">
+            <h2><span class="section-num">07</span> UEFN Asset Structure</h2>
+            <table>
+                <thead><tr><th>Location</th><th>Contents</th><th>Editability</th></tr></thead>
+                <tbody>
+                    <tr><td><code>Plugins/&lt;Name&gt;/Content/*.uasset</code></td><td>User-created definitions — blueprints, materials, custom props, textures</td><td>Full access</td></tr>
+                    <tr><td><code>Content/__ExternalActors__/&lt;Level&gt;/*.uasset</code></td><td>Placed instances — each file is one actor with transform + property overrides</td><td>Override properties only</td></tr>
+                    <tr><td><code>Content/__ExternalObjects__/&lt;Level&gt;/*.uasset</code></td><td>Non-actor objects referenced by the level</td><td>Read-only</td></tr>
+                    <tr><td><code>Content/*.umap</code></td><td>Level metadata — world settings, HLOD, partitioning</td><td>Read-only</td></tr>
+                    <tr><td><code>Content/*.verse</code></td><td>Verse source — gameplay logic scripts</td><td>Via CLI/MCP</td></tr>
+                </tbody>
+            </table>
+            <p>
+                External actors only store <strong>non-default property overrides</strong>. If a property appears in
+                an external actor file, it was explicitly changed from Epic's default. This is why device inspection
+                shows a small, meaningful property set rather than hundreds of defaults.
+            </p>
+
+            <h3 id="uassetapi-patch"><span class="sub-num">7.1</span> UAssetAPI Patch (ScriptSerializationOffset)</h3>
+            <p>
+                UAssetAPI submodule is at <code>lib/UAssetAPI/</code> with a custom fix for UE5.4 external actor
+                property parsing.
+            </p>
+            <p>
+                <strong>Problem:</strong> <code>NormalExport.Read()</code> unconditionally skipped 4 dummy bytes
+                after the export header. In UE5.4 external actors, <code>ScriptSerializationEndOffset &gt; 0</code>,
+                meaning there is no padding at that position — the skip caused the property reader to land at the
+                wrong offset and miss all properties.
+            </p>
+            <p>
+                <strong>Fix:</strong> When <code>ScriptSerializationEndOffset &gt; 0</code>, seek directly to the
+                property data region using the offset fields instead of applying the fixed skip. This enables reading
+                all 130+ properties from devices like vending machines.
+            </p>
+            <p>
+                The fix is in <code>lib/UAssetAPI/UAssetAPI/ExportTypes/NormalExport.cs</code> around line 122.
+                Engine version is always <code>EngineVersion.VER_UE5_4</code> from <code>UAssetAPI.UnrealTypes</code>.
+            </p>
+
+            <div class="info-box warning">
+                <strong>Known UAssetAPI gotchas</strong>
+                <ul>
+                    <li><code>SetPropertyData</code> extends <code>ArrayPropertyData</code> — match it first in switch statements</li>
+                    <li><code>MulticastDelegatePropertyData.ToString()</code> can throw — always wrap in try/catch</li>
+                    <li><code>StructPropertyData.StructGUID</code> (capital D, not <code>StructGuid</code>)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             SECTION 08 — DEVICE RECIPES
+             ============================================================ -->
+        <section id="recipes">
+            <h2><span class="section-num">08</span> Device Recipes</h2>
+            <p>
+                Device Recipes (<code>device-recipe-v1</code>) are reusable multi-device patterns. A recipe captures
+                a group of devices with their relative positions, property configurations, and wiring (signal connections).
+            </p>
+            <p>Defined in <code>app/src/shared/recipes.ts</code>. Managed in the <code>recipeStore</code>.</p>
+
+            <h4>Schema</h4>
+            <pre><code>interface DeviceRecipe {
+  $schema: 'device-recipe-v1'
+  id: string
+  name: string
+  description: string
+  category: RecipeCategory
+  tags: string[]
+  author?: string
+  createdAt: string
+  sourceProject?: string
+  sourceLevel?: string
+  devices: RecipeDevice[]     // roles + offsets + property overrides
+  wiring: RecipeWiring[]      // signal connections between device roles
+}</code></pre>
+
+            <h4>Recipe categories</h4>
+            <p><code>gameplay</code>, <code>combat</code>, <code>spawning</code>, <code>triggers</code>, <code>ui</code>, <code>environment</code>, <code>economy</code>, <code>custom</code></p>
+
+            <h4>Helper functions</h4>
+            <ul>
+                <li><code>generateRecipeId()</code> — base36 timestamp + random suffix</li>
+                <li><code>computeCenter(positions)</code> — average position of a group</li>
+                <li><code>toOffsets(positions, center)</code> — convert absolute to relative offsets</li>
+                <li><code>inferCategory(devices)</code> — heuristic category from device class names</li>
+                <li><code>validateRecipe(unknown)</code> — type guard that checks schema version, id, devices array</li>
+            </ul>
+            <p>
+                Built-in stock recipes are bundled in <code>app/src/shared/builtin-recipes.ts</code>.
+                The <code>RecipesPage</code> allows browsing, creating (from live level devices), and exporting as JSON.
+            </p>
+        </section>
+
+        <!-- ============================================================
+             SECTION 09 — WIDGET BLUEPRINT PIPELINE
+             ============================================================ -->
+        <section id="widget-pipeline">
+            <h2><span class="section-num">09</span> Widget Blueprint Pipeline</h2>
+            <p>
+                WellVersed can generate UEFN Widget Blueprint <code>.uasset</code> files from a visual spec,
+                complete with paired Verse controller code. The pipeline spans both the Rust/React frontend
+                and the .NET Core backend.
+            </p>
+
+            <h4>Flow</h4>
+            <ol>
+                <li>User builds a widget tree in <code>WidgetEditorPage</code> (canvas + layer tree)</li>
+                <li>Canvas store produces a <code>WidgetSpec</code> JSON (<code>widget-spec-v1</code>)</li>
+                <li><code>forgeValidateSpec()</code> → <code>forge_validate_spec</code> Tauri command → <code>validate-spec</code> sidecar method → <code>WidgetSpec.Validate()</code></li>
+                <li><code>forgeBuildUasset()</code> → <code>forge_build_uasset</code> → <code>build-uasset</code> → <code>WidgetBlueprintBuilder.Build()</code></li>
+                <li><code>forgeGenerateVerse()</code> → <code>forge_generate_verse</code> → <code>generate-verse</code> → <code>WidgetSpecVerseGenerator</code></li>
+            </ol>
+
+            <h4>WidgetBlueprintBuilder</h4>
+            <p>
+                Uses a clone-and-extend approach: starts from a minimal template .uasset that has valid
+                <code>WidgetBlueprint</code> / <code>WidgetBlueprintGeneratedClass</code> / <code>WidgetTree</code>
+                infrastructure. Each widget gets two exports (editor tree + runtime tree).
+                Each slot relationship also gets a pair of exports.
+            </p>
+
+            <h4>Widget containment rules</h4>
+            <p>
+                <code>app/src/shared/widget-rules.ts</code> encodes UEFN's UMG widget containment constraints,
+                derived from scanning 883 real Widget Blueprints. It defines which widget types can contain
+                which other types, and what slot properties each parent-child combination supports.
+            </p>
+
+            <h4>Models</h4>
+            <ul>
+                <li><code>src/FortniteForge.Core/Models/WidgetSpec.cs</code> — C# widget tree spec</li>
+                <li><code>src/FortniteForge.Core/Models/WidgetRules.cs</code> — containment rule validation</li>
+                <li><code>src/FortniteForge.Core/Models/WidgetValidationError.cs</code> — validation error with path and severity</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================
+             SECTION 10 — LIBRARY SYSTEM
+             ============================================================ -->
+        <section id="library">
+            <h2><span class="section-num">10</span> Library System</h2>
+            <p>
+                A <strong>Library</strong> is a read-only reference collection — a directory of UEFN projects used
+                for searching, pattern discovery, and AI context. It is distinct from the active project.
+                Libraries are always opened in <code>ReadOnly</code> mode.
+            </p>
+
+            <p>The production sandbox has approximately 92 UEFN projects at <code>Z:\UEFN_Resources\mapContent\map_resources\</code> and a collection of Verse code packs at <code>Z:\UEFN_Resources\mapContent\code_resources\</code>.</p>
+
+            <h4>Indexing</h4>
+            <p>
+                <code>LibraryIndexer.BuildIndex(path)</code> uses <code>ForgeConfig.DiscoverProjects()</code>
+                to find all project roots, then indexes each:
+            </p>
+            <ul>
+                <li>Verse files — classes, functions, device references, imports, summary</li>
+                <li>Assets — by class, with file sizes and project provenance</li>
+                <li>Device types — class names with usage counts across projects</li>
+                <li>Standalone Verse code packs (directories with .verse files but no .uefnproject)</li>
+            </ul>
+            <p>The resulting <code>LibraryIndex</code> JSON is persisted alongside the library path and can be queried via <code>search-library-index</code> (full-text) or browsed by type, Verse file, or device config.</p>
+
+            <h4>Library pages</h4>
+            <p>Seven pages are dedicated to library browsing: <code>LibraryPage</code>, <code>LibraryManagePage</code>, <code>LibraryBrowsePage</code>, <code>LibraryVersePage</code>, <code>LibraryAssetsByTypePage</code>, <code>LibraryDeviceConfigsPage</code>, <code>LibraryMaterialsPage</code>, <code>LibraryWidgetsPage</code>.</p>
+        </section>
+
+        <!-- ============================================================
+             SECTION 11 — SCENE PREVIEW
+             ============================================================ -->
+        <section id="scene-preview">
+            <h2><span class="section-num">11</span> Scene Preview (Three.js)</h2>
+            <p>
+                <code>ScenePreviewPage.tsx</code> renders the devices in a level as a 3D scene using Three.js
+                with <code>OrbitControls</code>. Each device is placed at its real-world Unreal coordinate
+                extracted from its external actor transform.
+            </p>
+
+            <h4>Device representation</h4>
+            <ul>
+                <li>Each device type is assigned a deterministic colour — common types like <code>ItemSpawnerDevice</code>, <code>VendingMachineDevice</code>, <code>PlayerSpawnDevice</code>, etc. have explicit colour assignments</li>
+                <li>Unknown types get a hash-based HSL colour for visual differentiation</li>
+                <li>Hover state (<code>0xffffff</code>) and selected state (<code>0x00ffaa</code>) are visually distinct</li>
+                <li>Click on a device opens the property inspector panel</li>
+            </ul>
+
+            <h4>CUE4Parse integration (optional)</h4>
+            <p>
+                <code>AssetPreviewService</code> can extract textures and mesh data from Fortnite's
+                <code>Content/Paks</code> directory using CUE4Parse + SkiaSharp. Initialise via
+                <code>previewInit(fortnitePath)</code>. This is opt-in and requires a local Fortnite installation.
+                The texture is returned as a base64 PNG data URL.
+            </p>
+        </section>
+
+        <!-- ============================================================
+             SECTION 12 — VERSE TOOLS
+             ============================================================ -->
+        <section id="verse-tools">
+            <h2><span class="section-num">12</span> Verse Tools</h2>
+            <p>WellVersed provides several Verse-focused features across its pages and services:</p>
+
+            <h4>VerseFilesPage</h4>
+            <p>
+                Syntax-highlighted viewer for project .verse files. Parses and outlines:
+                classes (name, parent), functions (name, signature), <code>@editable</code> device references,
+                and <code>using</code> imports. Also surfaces any <code>persistable</code> structs inline.
+            </p>
+
+            <h4>PersistentDataPage</h4>
+            <p>
+                Dedicated view for persistent data structures. The client-side parser finds all
+                <code>:= class</code> / <code>:= struct</code> declarations in Verse files and identifies those
+                with the <code>persistable</code> modifier. Shows field names, types, defaults, and source lines.
+            </p>
+
+            <h4>VerseErrorExplainerPage</h4>
+            <p>
+                Paste a Verse compiler error message to get a pattern-matched explanation with cause, fix
+                instructions, and a before/after code example. Covers common errors including missing return
+                paths, type mismatches, failable expression context violations, and more.
+            </p>
+
+            <h4>VerseReferencePage</h4>
+            <p>
+                Browses the Verse reference library — Epic's Book of Verse chapters and the project's own
+                <code>ReferenceLibraryPath</code> .verse files. Read via <code>forgeReadVerse</code> /
+                <code>forgeListDirectory</code>.
+            </p>
+
+            <h4>.NET Verse services</h4>
+            <ul>
+                <li><code>VerseReferenceService</code> — reads .verse reference files for MCP context</li>
+                <li><code>VerseWidgetReference</code> — widget-to-Verse binding data</li>
+                <li><code>WidgetSpecVerseGenerator</code> — generates Verse controller code from a WidgetSpec</li>
+                <li><code>VerseGenTools</code> (MCP) — Verse code generation via Claude Code</li>
+                <li><code>VerseReferenceTools</code> (MCP) — query Verse reference types and examples</li>
+            </ul>
+
+            <h4>Zoom utility</h4>
+            <p>
+                <code>app/src/renderer/lib/zoom.ts</code> applies zoom via CSS <code>transform: scale()</code>
+                on the <code>#root</code> element. This avoids layout breakage that occurs with
+                <code>body.zoom</code> in some browsers.
+            </p>
+            <pre><code>import { applyZoom } from '../lib/zoom'
+applyZoom(1.25) // 125% zoom — sets width/height to 80% to compensate</code></pre>
+        </section>
+        <!-- Add new documentation sections above this line -->
+
+    </div><!-- /doc-content -->
+</div><!-- /doc-layout -->
+
+<script>
+// Scroll-spy for documentation sidebar
+(function() {
+    var sections = document.querySelectorAll('section[id]');
+    var tocItems = document.querySelectorAll('.toc-sidebar .toc-item');
+    if (!sections.length || !tocItems.length) return;
+
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            entry.target._isVisible = entry.isIntersecting;
+        });
+        var visible = [];
+        sections.forEach(function(s) { if (s._isVisible) visible.push(s); });
+        if (visible.length) {
+            tocItems.forEach(function(el) { el.classList.remove('toc-active'); });
+            var link = document.querySelector('.toc-sidebar .toc-item[href="#' + visible[0].id + '"]');
+            if (link) link.classList.add('toc-active');
+        }
+    }, { rootMargin: '-60px 0px -70% 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+})();
+</script>
+</body>
+</html>
