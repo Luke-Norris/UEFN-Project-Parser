@@ -484,6 +484,8 @@ public class Program
     private static SidecarLibraryManager? _sidecarLibraries;
     // CUE4Parse asset preview service (optional — only if Fortnite is installed)
     private static AssetPreviewService? _previewService;
+    // Mesh export service for GLB extraction from PAK files
+    private static MeshExportService? _meshExportService;
 
     private static Command BuildSidecarCommand()
     {
@@ -595,6 +597,8 @@ public class Program
                 "preview-search" => HandlePreviewSearch(req),
                 "preview-texture" => HandlePreviewTexture(req),
                 "preview-mesh-info" => HandlePreviewMeshInfo(req),
+                "preview-export-mesh" => HandlePreviewExportMesh(req),
+                "preview-export-mesh-batch" => HandlePreviewExportMeshBatch(req),
                 "preview-status" => HandlePreviewStatus(req),
                 _ => new SidecarResponse(req.Id, Error: new SidecarError("UNKNOWN_METHOD", $"Unknown method: {req.Method}"))
             };
@@ -1870,7 +1874,12 @@ static SidecarResponse HandlePreviewInit(SidecarRequest req)
     _previewService?.Dispose();
     _previewService = new AssetPreviewService(loggerFactory.CreateLogger<AssetPreviewService>());
     var task = _previewService.InitializeAsync(path); task.Wait();
-    if (task.Result) return new SidecarResponse(req.Id, new { initialized = true, fileCount = _previewService.GetFileCount(), gamePath = _previewService.GamePath });
+    if (task.Result)
+    {
+        // Create mesh export service alongside preview service
+        _meshExportService = new MeshExportService(_previewService, loggerFactory.CreateLogger<MeshExportService>());
+        return new SidecarResponse(req.Id, new { initialized = true, fileCount = _previewService.GetFileCount(), gamePath = _previewService.GamePath });
+    }
     return new SidecarResponse(req.Id, Error: new SidecarError("INIT_FAILED", $"Could not find Fortnite PAK files at: {path}"));
 }
 
@@ -1902,6 +1911,43 @@ static SidecarResponse HandlePreviewMeshInfo(SidecarRequest req)
     var info = _previewService.GetMeshInfo(assetPath);
     if (info == null) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Could not read mesh: {assetPath}"));
     return new SidecarResponse(req.Id, new { assetPath, vertexCount = info.VertexCount, triangleCount = info.TriangleCount, lodCount = info.LODCount, materialCount = info.MaterialCount });
+}
+
+static SidecarResponse HandlePreviewExportMesh(SidecarRequest req)
+{
+    if (_meshExportService == null) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INITIALIZED", "Preview service not initialized. Call preview-init first."));
+    var deviceClass = req.Params?.GetProperty("deviceClass").GetString() ?? throw new ArgumentException("Missing 'deviceClass'");
+    var result = _meshExportService.GetOrExportMesh(deviceClass);
+    if (result == null) return new SidecarResponse(req.Id, new { deviceClass, found = false });
+    return new SidecarResponse(req.Id, new { deviceClass, found = true, glbBase64 = Convert.ToBase64String(result.GlbData), vertexCount = result.VertexCount, cached = result.Cached, assetPath = result.AssetPath, sizeBytes = result.GlbData.Length });
+}
+
+static SidecarResponse HandlePreviewExportMeshBatch(SidecarRequest req)
+{
+    if (_meshExportService == null) return new SidecarResponse(req.Id, Error: new SidecarError("NOT_INITIALIZED", "Preview service not initialized. Call preview-init first."));
+    var classesElement = req.Params?.GetProperty("deviceClasses") ?? throw new ArgumentException("Missing 'deviceClasses'");
+    var deviceClasses = classesElement.EnumerateArray().Select(e => e.GetString()!).Distinct().ToList();
+    var results = new List<object>();
+    var exportedCount = 0;
+    foreach (var deviceClass in deviceClasses)
+    {
+        try
+        {
+            var result = _meshExportService.GetOrExportMesh(deviceClass);
+            if (result != null)
+            {
+                results.Add(new { deviceClass, found = true, glbBase64 = Convert.ToBase64String(result.GlbData), vertexCount = result.VertexCount, cached = result.Cached, sizeBytes = result.GlbData.Length });
+                exportedCount++;
+            }
+            else
+                results.Add(new { deviceClass, found = false, error = "No mesh found" });
+        }
+        catch (Exception ex)
+        {
+            results.Add(new { deviceClass, found = false, error = ex.Message });
+        }
+    }
+    return new SidecarResponse(req.Id, new { results, total = deviceClasses.Count, exported = exportedCount });
 }
 }
 

@@ -86,6 +86,8 @@ pub fn run() {
             commands::forge_preview_search,
             commands::forge_preview_texture,
             commands::forge_preview_mesh_info,
+            commands::forge_preview_export_mesh,
+            commands::forge_preview_export_mesh_batch,
             // Local file system commands
             commands::scan_assets,
             commands::get_asset_data,

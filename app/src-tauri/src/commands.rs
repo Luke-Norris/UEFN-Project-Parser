@@ -410,6 +410,28 @@ pub async fn forge_preview_mesh_info(
         .await
 }
 
+#[tauri::command]
+pub async fn forge_preview_export_mesh(
+    state: State<'_, AppState>,
+    device_class: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("preview-export-mesh", json!({"deviceClass": device_class}))
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_preview_export_mesh_batch(
+    state: State<'_, AppState>,
+    device_classes: Vec<String>,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("preview-export-mesh-batch", json!({"deviceClasses": device_classes}))
+        .await
+}
+
 // ─── Local file system commands (replace Electron fs/dialog handlers) ────────
 
 #[tauri::command]
