@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { ResizeHandle } from '../components/ResizeHandle'
 import type { DeviceEntry, DeviceInspectResult } from '../../shared/types'
+import { preloadMeshBatch, getCachedMeshClone, clearMeshCache, type MeshLoadProgress } from '../lib/meshCache'
 
 // ─── Device type → color mapping ─────────────────────────────────────────────
 
@@ -118,6 +119,8 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [hierarchySearch, setHierarchySearch] = useState('')
   const [flySpeed, setFlySpeed] = useState(2)
   const [fov, setFov] = useState(60)
+  const [showRealMeshes, setShowRealMeshes] = useState(false)
+  const [meshProgress, setMeshProgress] = useState<MeshLoadProgress | null>(null)
 
   // Fetch levels directly (bypass cache to get fresh data for active project)
   const [localLevels, setLocalLevels] = useState<Array<{ filePath: string; name: string }>>([])
@@ -417,7 +420,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       const color = getDeviceColor(device.deviceType)
       const type = device.deviceType.toLowerCase()
 
-      let geo = boxGeo
+      let geo: THREE.BufferGeometry = boxGeo
       if (type.includes('spawn') || type.includes('portal')) geo = sphereGeo
       else if (type.includes('trigger') || type.includes('volume')) geo = cylinderGeo
 
@@ -447,7 +450,60 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     }
 
     // Don't dispose shared geos — they're reused
-  }, [devices])
+
+    // ─── Real mesh preloading (when enabled) ──────────────────────────
+    if (showRealMeshes && devicesWithPos.length > 0) {
+      const uniqueClasses = [...new Set(devicesWithPos.map((d) => d.deviceType))]
+      let cancelled = false
+
+      preloadMeshBatch(uniqueClasses, (progress) => {
+        if (!cancelled) setMeshProgress({ ...progress })
+      }).then(() => {
+        if (cancelled) return
+        // Swap proxy shapes for real meshes
+        for (const mesh of deviceMeshesRef.current) {
+          const dev = mesh.userData.device as DeviceEntry
+          const realMesh = getCachedMeshClone(dev.deviceType)
+          if (realMesh && scene) {
+            // Transfer position/rotation/scale/userData
+            realMesh.position.copy(mesh.position)
+            realMesh.rotation.copy(mesh.rotation)
+            realMesh.userData = mesh.userData
+
+            // Apply device color as material tint on the real mesh
+            const color = getDeviceColor(dev.deviceType)
+            realMesh.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                child.material = new THREE.MeshLambertMaterial({
+                  color,
+                  transparent: true,
+                  opacity: 0.9,
+                })
+              }
+            })
+
+            // Swap in scene
+            scene.remove(mesh)
+            scene.add(realMesh)
+
+            // Replace in deviceMeshesRef for raycasting
+            const idx = deviceMeshesRef.current.indexOf(mesh)
+            if (idx >= 0) {
+              // Store original mesh data for raycasting
+              // The real mesh is a Group — we need its children to be raycastable
+              deviceMeshesRef.current[idx] = realMesh as any
+            }
+
+            // Clean up proxy
+            mesh.geometry.dispose()
+            ;(mesh.material as THREE.Material).dispose()
+          }
+        }
+      })
+
+      return () => { cancelled = true }
+    }
+  }, [devices, showRealMeshes])
 
   // ─── Mouse interaction ─────────────────────────────────────────────────
 
@@ -760,6 +816,22 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
           >
             Fog
           </button>
+
+          {/* Real Meshes toggle */}
+          <button
+            onClick={() => setShowRealMeshes(!showRealMeshes)}
+            className={`px-1.5 py-0.5 rounded transition-colors ${showRealMeshes ? 'text-white bg-white/10' : 'text-gray-600 hover:text-gray-400'}`}
+            title="Load real 3D meshes from Fortnite game files (requires CUE4Parse init)"
+          >
+            Meshes
+          </button>
+
+          {/* Mesh loading progress */}
+          {meshProgress && meshProgress.total > 0 && meshProgress.loaded + meshProgress.failed < meshProgress.total && (
+            <span className="text-[9px] text-blue-400 animate-pulse">
+              Loading meshes {meshProgress.loaded}/{meshProgress.total}
+            </span>
+          )}
 
           <div className="w-px h-4 bg-fn-border" />
 

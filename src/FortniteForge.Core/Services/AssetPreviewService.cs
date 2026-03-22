@@ -107,6 +107,26 @@ public class AssetPreviewService : IDisposable
     }
 
     /// <summary>
+    /// Load a UStaticMesh object for export. Returns null if not found or not a static mesh.
+    /// </summary>
+    public UStaticMesh? LoadStaticMesh(string assetPath)
+    {
+        if (!_initialized || _provider == null) return null;
+
+        try
+        {
+            var package = _provider.LoadPackage(assetPath);
+            var obj = package?.GetExports()?.FirstOrDefault();
+            return obj as UStaticMesh;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to load static mesh: {Path}", assetPath);
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Get mesh vertex count and basic info without full export.
     /// </summary>
     public MeshPreviewInfo? GetMeshInfo(string assetPath)

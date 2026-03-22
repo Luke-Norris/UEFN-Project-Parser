@@ -459,6 +459,29 @@ export async function previewMeshInfo(
   return invoke('forge_preview_mesh_info', { assetPath })
 }
 
+export interface MeshExportResult {
+  deviceClass: string
+  found: boolean
+  glbBase64?: string
+  vertexCount?: number
+  cached?: boolean
+  assetPath?: string
+  sizeBytes?: number
+  error?: string
+}
+
+export async function previewExportMesh(
+  deviceClass: string
+): Promise<MeshExportResult> {
+  return invoke('forge_preview_export_mesh', { deviceClass })
+}
+
+export async function previewExportMeshBatch(
+  deviceClasses: string[]
+): Promise<{ results: MeshExportResult[]; total: number; exported: number }> {
+  return invoke('forge_preview_export_mesh_batch', { deviceClasses })
+}
+
 // ─── Backward-compatible shim ────────────────────────────────────────────────
 // This allows existing code that calls window.electronAPI.* to work during
 // the migration. New code should import directly from this module.
@@ -519,6 +542,8 @@ const api = {
   previewSearch,
   previewTexture,
   previewMeshInfo,
+  previewExportMesh,
+  previewExportMeshBatch,
 }
 
 // ─── Verse LSP API ──────────────────────────────────────────────────────────
