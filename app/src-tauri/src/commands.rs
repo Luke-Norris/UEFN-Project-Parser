@@ -1,3 +1,4 @@
+use crate::lsp_bridge::LspBridge;
 use crate::sidecar::ForgeBridge;
 use serde_json::{json, Value};
 use std::fs;
@@ -7,6 +8,7 @@ use tauri::State;
 
 pub struct AppState {
     pub bridge: Arc<ForgeBridge>,
+    pub lsp: Arc<LspBridge>,
     pub assets_dir: PathBuf,
     pub fonts_dir: PathBuf,
 }
@@ -759,4 +761,127 @@ pub async fn list_directory(dir_path: String) -> Result<Value, String> {
         }
     }
     Ok(json!({"entries": entries}))
+}
+
+// ─── LSP Commands ───────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn lsp_status(state: State<'_, AppState>) -> Result<Value, String> {
+    let binary = LspBridge::find_lsp_binary();
+    Ok(json!({
+        "available": binary.is_some(),
+        "binaryPath": binary,
+        "ready": state.lsp.is_ready(),
+        "capabilities": state.lsp.capabilities(),
+    }))
+}
+
+#[tauri::command]
+pub async fn lsp_start(state: State<'_, AppState>, workspace_path: String) -> Result<Value, String> {
+    if state.lsp.is_ready() {
+        return Ok(json!({"status": "already_running"}));
+    }
+
+    let binary = LspBridge::find_lsp_binary()
+        .ok_or_else(|| "Epic's verse-lsp.exe not found. Install the Verse VS Code extension.".to_string())?;
+
+    state.lsp.start(&binary, &workspace_path)?;
+
+    Ok(json!({
+        "status": "started",
+        "capabilities": state.lsp.capabilities(),
+    }))
+}
+
+#[tauri::command]
+pub async fn lsp_stop(state: State<'_, AppState>) -> Result<Value, String> {
+    state.lsp.stop();
+    Ok(json!({"status": "stopped"}))
+}
+
+#[tauri::command]
+pub async fn lsp_did_open(state: State<'_, AppState>, uri: String, content: String) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    state.lsp.send_notification("textDocument/didOpen", json!({
+        "textDocument": {
+            "uri": uri,
+            "languageId": "verse",
+            "version": 1,
+            "text": content,
+        }
+    }))?;
+    Ok(json!({"ok": true}))
+}
+
+#[tauri::command]
+pub async fn lsp_did_change(state: State<'_, AppState>, uri: String, content: String, version: i32) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    state.lsp.send_notification("textDocument/didChange", json!({
+        "textDocument": { "uri": uri, "version": version },
+        "contentChanges": [{ "text": content }],
+    }))?;
+    Ok(json!({"ok": true}))
+}
+
+#[tauri::command]
+pub async fn lsp_completion(state: State<'_, AppState>, uri: String, line: u32, character: u32) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    let rx = state.lsp.send_request_async("textDocument/completion", json!({
+        "textDocument": { "uri": uri },
+        "position": { "line": line, "character": character },
+    }))?;
+    rx.await.map_err(|_| "LSP completion request cancelled".to_string())
+}
+
+#[tauri::command]
+pub async fn lsp_hover(state: State<'_, AppState>, uri: String, line: u32, character: u32) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    let rx = state.lsp.send_request_async("textDocument/hover", json!({
+        "textDocument": { "uri": uri },
+        "position": { "line": line, "character": character },
+    }))?;
+    rx.await.map_err(|_| "LSP hover request cancelled".to_string())
+}
+
+#[tauri::command]
+pub async fn lsp_definition(state: State<'_, AppState>, uri: String, line: u32, character: u32) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    let rx = state.lsp.send_request_async("textDocument/definition", json!({
+        "textDocument": { "uri": uri },
+        "position": { "line": line, "character": character },
+    }))?;
+    rx.await.map_err(|_| "LSP definition request cancelled".to_string())
+}
+
+#[tauri::command]
+pub async fn lsp_document_symbols(state: State<'_, AppState>, uri: String) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    let rx = state.lsp.send_request_async("textDocument/documentSymbol", json!({
+        "textDocument": { "uri": uri },
+    }))?;
+    rx.await.map_err(|_| "LSP symbols request cancelled".to_string())
+}
+
+#[tauri::command]
+pub async fn lsp_signature_help(state: State<'_, AppState>, uri: String, line: u32, character: u32) -> Result<Value, String> {
+    if !state.lsp.is_ready() {
+        return Err("LSP not running".to_string());
+    }
+    let rx = state.lsp.send_request_async("textDocument/signatureHelp", json!({
+        "textDocument": { "uri": uri },
+        "position": { "line": line, "character": character },
+    }))?;
+    rx.await.map_err(|_| "LSP signature help request cancelled".to_string())
 }

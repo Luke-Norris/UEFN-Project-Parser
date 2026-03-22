@@ -499,6 +499,48 @@ const api = {
   previewMeshInfo,
 }
 
+// ─── Verse LSP API ──────────────────────────────────────────────────────────
+
+export async function lspStatus() {
+  return invoke<{ available: boolean; binaryPath: string | null; ready: boolean; capabilities: any }>('lsp_status')
+}
+
+export async function lspStart(workspacePath: string) {
+  return invoke<{ status: string; capabilities?: any }>('lsp_start', { workspacePath })
+}
+
+export async function lspStop() {
+  return invoke<{ status: string }>('lsp_stop')
+}
+
+export async function lspDidOpen(uri: string, content: string) {
+  return invoke('lsp_did_open', { uri, content })
+}
+
+export async function lspDidChange(uri: string, content: string, version: number) {
+  return invoke('lsp_did_change', { uri, content, version: Math.floor(version) })
+}
+
+export async function lspCompletion(uri: string, line: number, character: number) {
+  return invoke('lsp_completion', { uri, line: Math.floor(line), character: Math.floor(character) })
+}
+
+export async function lspHover(uri: string, line: number, character: number) {
+  return invoke('lsp_hover', { uri, line: Math.floor(line), character: Math.floor(character) })
+}
+
+export async function lspDefinition(uri: string, line: number, character: number) {
+  return invoke('lsp_definition', { uri, line: Math.floor(line), character: Math.floor(character) })
+}
+
+export async function lspDocumentSymbols(uri: string) {
+  return invoke('lsp_document_symbols', { uri })
+}
+
+export async function lspSignatureHelp(uri: string, line: number, character: number) {
+  return invoke('lsp_signature_help', { uri, line: Math.floor(line), character: Math.floor(character) })
+}
+
 // Install the shim on window so existing code works without changes
 declare global {
   interface Window {

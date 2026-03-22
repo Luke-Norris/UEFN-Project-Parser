@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { VerseHighlighter } from '../components/VerseHighlighter'
+import { VerseEditor } from '../components/VerseEditor'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useVerseLsp } from '../hooks/useVerseLsp'
 import type { VerseFileContent } from '../../shared/types'
 
 interface TreeNode {
@@ -141,6 +142,14 @@ export function VerseFilesPage() {
   const verseEditorFontSize = useSettingsStore((s) => s.verseEditorFontSize)
   const [persistStructs, setPersistStructs] = useState<PersistStruct[]>([])
   const [showPersistence, setShowPersistence] = useState(false)
+  const lsp = useVerseLsp()
+
+  // Notify LSP when a file is opened
+  useEffect(() => {
+    if (lsp.ready && fileContent?.content && selectedFile) {
+      lsp.openFile(selectedFile, fileContent.content)
+    }
+  }, [lsp.ready, fileContent, selectedFile])
 
   // Build tree from recursive browse
   useEffect(() => {
@@ -484,12 +493,46 @@ export function VerseFilesPage() {
               <span className="text-[11px] font-semibold text-white">{fileContent.name}</span>
               <span className="text-[10px] text-gray-500">{fileContent.lineCount} lines</span>
               <span className="text-[9px] text-gray-600 font-mono truncate ml-auto">{selectedFile}</span>
+              {/* LSP status indicator */}
+              {lsp.available && (
+                <button
+                  onClick={() => !lsp.ready && !lsp.starting && lsp.start()}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${
+                    lsp.ready
+                      ? 'text-green-400 bg-green-400/10'
+                      : lsp.starting
+                        ? 'text-yellow-400 bg-yellow-400/10 cursor-wait'
+                        : 'text-gray-500 bg-white/[0.03] hover:text-gray-300 cursor-pointer'
+                  }`}
+                  title={lsp.ready ? 'Verse LSP connected' : lsp.starting ? 'Starting LSP...' : 'Click to start Verse LSP'}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    lsp.ready ? 'bg-green-400' : lsp.starting ? 'bg-yellow-400 animate-pulse' : 'bg-gray-600'
+                  }`} />
+                  {lsp.ready ? 'LSP' : lsp.starting ? 'Starting...' : 'LSP Off'}
+                </button>
+              )}
             </div>
-            <div className="flex-1 overflow-auto min-h-0">
-              <VerseHighlighter
+            <div className="flex-1 overflow-hidden min-h-0">
+              <VerseEditor
                 source={fileContent.content || '// Empty file'}
                 fontSize={verseEditorFontSize}
                 scrollToLine={scrollToLine}
+                readOnly={true}
+                filePath={selectedFile ?? undefined}
+                lspReady={lsp.ready}
+                onGotoDefinition={(uri, line) => {
+                  // Navigate to the target file and line
+                  const path = uri.replace(/^file:\/\/\/?/, '')
+                  const allFiles: TreeNode[] = []
+                  function walk(n: TreeNode) { if (!n.isDir) allFiles.push(n); n.children.forEach(walk) }
+                  if (tree) walk(tree)
+                  const target = allFiles.find(f => path.includes(f.name.replace('.verse', '')))
+                  if (target) {
+                    handleSelectFile(target)
+                    setTimeout(() => setScrollToLine(line), 300)
+                  }
+                }}
               />
             </div>
           </>

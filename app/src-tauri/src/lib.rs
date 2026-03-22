@@ -1,7 +1,9 @@
 mod commands;
+mod lsp_bridge;
 mod sidecar;
 
 use commands::AppState;
+use lsp_bridge::LspBridge;
 use sidecar::ForgeBridge;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -40,8 +42,11 @@ pub fn run() {
                 }
             });
 
+            let lsp = Arc::new(LspBridge::new());
+
             app.manage(AppState {
                 bridge,
+                lsp,
                 assets_dir,
                 fonts_dir,
             });
@@ -98,6 +103,17 @@ pub fn run() {
             commands::delete_asset,
             commands::read_text_file,
             commands::list_directory,
+            // Verse LSP commands
+            commands::lsp_status,
+            commands::lsp_start,
+            commands::lsp_stop,
+            commands::lsp_did_open,
+            commands::lsp_did_change,
+            commands::lsp_completion,
+            commands::lsp_hover,
+            commands::lsp_definition,
+            commands::lsp_document_symbols,
+            commands::lsp_signature_help,
         ])
         .run(tauri::generate_context!())
         .expect("error while running WellVersed");
