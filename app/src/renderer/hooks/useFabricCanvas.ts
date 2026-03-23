@@ -388,7 +388,8 @@ export function useFabricCanvas() {
 
       canvas.clear()
       canvas.setDimensions({ width: template.width, height: template.height })
-      canvas.backgroundColor = 'transparent'
+      // Dark background matching UEFN's editor — makes white text visible
+      canvas.backgroundColor = '#1a1a2e'
 
       for (const layer of template.layers) {
         await addLayerToCanvas(canvas, layer)
