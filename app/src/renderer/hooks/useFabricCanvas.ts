@@ -401,27 +401,36 @@ export function useFabricCanvas() {
         const viewW = viewportEl.clientWidth || 800
         const viewH = viewportEl.clientHeight || 600
 
-        // Find bounding box of all visible objects
+        // Find bounding box of visible, non-transparent objects
         const objects = canvas.getObjects()
-        let minX = 0, minY = 0, maxX = template.width, maxY = template.height
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
         for (const obj of objects) {
-          if (obj.opacity && obj.opacity > 0.1) {
-            const l = obj.left ?? 0
-            const t = obj.top ?? 0
-            const w = (obj.width ?? 0) * (obj.scaleX ?? 1)
-            const h = (obj.height ?? 0) * (obj.scaleY ?? 1)
-            if (l < minX) minX = l
-            if (t < minY) minY = t
-            if (l + w > maxX) maxX = l + w
-            if (t + h > maxY) maxY = t + h
-          }
+          const fill = typeof obj.fill === 'string' ? obj.fill : ''
+          // Skip transparent containers and near-invisible placeholders
+          if (fill === 'transparent' || fill.includes('0.05')) continue
+          if ((obj.opacity ?? 1) < 0.1) continue
+
+          const l = obj.left ?? 0
+          const t = obj.top ?? 0
+          const w = (obj.width ?? 0) * (obj.scaleX ?? 1)
+          const h = (obj.height ?? 0) * (obj.scaleY ?? 1)
+          if (l < minX) minX = l
+          if (t < minY) minY = t
+          if (l + w > maxX) maxX = l + w
+          if (t + h > maxY) maxY = t + h
         }
+
+        // Fallback to template dimensions if no visible objects
+        if (!isFinite(minX)) { minX = 0; minY = 0; maxX = template.width; maxY = template.height }
+
+        // Add padding
+        minX -= 10; minY -= 10; maxX += 10; maxY += 10
 
         const contentW = maxX - minX
         const contentH = maxY - minY
         const zoomX = viewW / contentW
         const zoomY = viewH / contentH
-        const zoom = Math.min(zoomX, zoomY, 2) * 0.85
+        const zoom = Math.min(zoomX, zoomY, 4) * 0.9
         canvas.setZoom(zoom)
         canvas.setDimensions({
           width: contentW * zoom,
