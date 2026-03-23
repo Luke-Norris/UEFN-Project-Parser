@@ -223,6 +223,10 @@ public class WidgetBlueprintParser
             Name = export.ObjectName?.ToString() ?? $"Widget_{exportIdx}"
         };
 
+        // Set orientation for box types based on class name
+        if (className == "HorizontalBox") node.Orientation = Orientation.Horizontal;
+        else if (className == "VerticalBox") node.Orientation = Orientation.Vertical;
+
         // Extract type-specific properties
         ExtractWidgetProperties(export, node, asset);
 
@@ -790,6 +794,11 @@ public class WidgetBlueprintParser
         "SizeBox" => WidgetType.SizeBox,
         "ScaleBox" => WidgetType.ScaleBox,
         "GridPanel" => WidgetType.GridPanel,
+        "UniformGridPanel" => WidgetType.GridPanel,
+        "HorizontalBox" => WidgetType.StackBox,
+        "VerticalBox" => WidgetType.StackBox,
+        "WrapBox" => WidgetType.StackBox,
+        "Border" => WidgetType.SizeBox,
         _ => null // Unknown widget type — skip
     };
 
