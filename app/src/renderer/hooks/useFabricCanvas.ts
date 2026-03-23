@@ -387,21 +387,43 @@ export function useFabricCanvas() {
         await addLayerToCanvas(canvas, layer)
       }
 
-      // Zoom to fit canvas within the available viewport
-      // Fabric wraps the canvas in .canvas-container — go up to the layout parent
+      // Zoom to fit content within the available viewport
       const fabricWrapper = canvas.getElement().parentElement
       const viewportEl = fabricWrapper?.parentElement
       if (viewportEl) {
         const viewW = viewportEl.clientWidth || 800
         const viewH = viewportEl.clientHeight || 600
-        const zoomX = viewW / template.width
-        const zoomY = viewH / template.height
-        const zoom = Math.min(zoomX, zoomY, 1) * 0.85
+
+        // Find bounding box of all visible objects
+        const objects = canvas.getObjects()
+        let minX = 0, minY = 0, maxX = template.width, maxY = template.height
+        for (const obj of objects) {
+          if (obj.opacity && obj.opacity > 0.1) {
+            const l = obj.left ?? 0
+            const t = obj.top ?? 0
+            const w = (obj.width ?? 0) * (obj.scaleX ?? 1)
+            const h = (obj.height ?? 0) * (obj.scaleY ?? 1)
+            if (l < minX) minX = l
+            if (t < minY) minY = t
+            if (l + w > maxX) maxX = l + w
+            if (t + h > maxY) maxY = t + h
+          }
+        }
+
+        const contentW = maxX - minX
+        const contentH = maxY - minY
+        const zoomX = viewW / contentW
+        const zoomY = viewH / contentH
+        const zoom = Math.min(zoomX, zoomY, 2) * 0.85
         canvas.setZoom(zoom)
         canvas.setDimensions({
-          width: template.width * zoom,
-          height: template.height * zoom,
+          width: contentW * zoom,
+          height: contentH * zoom,
         })
+        // Pan to show content origin
+        if (minX < 0 || minY < 0) {
+          canvas.absolutePan({ x: minX * zoom, y: minY * zoom })
+        }
       }
 
       canvas.renderAll()

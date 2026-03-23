@@ -211,7 +211,7 @@ impl ForgeBridge {
             }
         }
 
-        match tokio::time::timeout(std::time::Duration::from_secs(30), rx).await {
+        match tokio::time::timeout(std::time::Duration::from_secs(120), rx).await {
             Ok(Ok(Ok(value))) => Ok(value),
             Ok(Ok(Err(sidecar_err))) => Err(sidecar_err.message),
             Ok(Err(_)) => Err("Sidecar channel closed".to_string()),
