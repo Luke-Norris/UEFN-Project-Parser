@@ -83,6 +83,22 @@ export interface WidgetSpecNode {
   outlineSize?: number
   outlineColor?: string
 
+  // Image brush
+  imageWidth?: number
+  imageHeight?: number
+  drawAs?: string
+  cornerRadiusTL?: number
+  cornerRadiusTR?: number
+  cornerRadiusBL?: number
+  cornerRadiusBR?: number
+
+  // RenderTransform
+  translateX?: number
+  translateY?: number
+  angle?: number
+  scaleX?: number
+  scaleY?: number
+
   // Rendering
   renderOpacity?: number
 

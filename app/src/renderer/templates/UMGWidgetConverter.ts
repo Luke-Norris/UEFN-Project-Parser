@@ -212,9 +212,8 @@ function computeCanvasChildLayout(
     // offset.right = width (only if not auto-sized and explicitly set)
     if (!isAutoSize && oR > 0) {
       cw = oR
-    } else if (isAutoSize && child.type === 'Image' && child.texturePath) {
-      // autoSize images with textures: use parent size (we don't know texture dims)
-      cw = pw
+    } else if (child.imageWidth && child.imageWidth > 0) {
+      cw = child.imageWidth
     } else {
       cw = child.minWidth || estimateW(child, pw)
     }
@@ -230,8 +229,8 @@ function computeCanvasChildLayout(
     const anchorY = py + aMinY * ph
     if (!isAutoSize && oB > 0) {
       ch = oB
-    } else if (isAutoSize && child.type === 'Image' && child.texturePath) {
-      ch = ph
+    } else if (child.imageHeight && child.imageHeight > 0) {
+      ch = child.imageHeight
     } else {
       ch = child.minHeight || estimateH(child)
     }
@@ -405,16 +404,16 @@ function makeRectLayer(
 
 function makeImageLayer(node: WidgetSpecNode, x: number, y: number, w: number, h: number): TemplateLayer {
   const isBg = isBgFill(node)
-  const isIcon = !isBg && !node.texturePath
 
-  // Icons get a reasonable square size, centered in their space
-  let lx = x, ly = y, lw = w, lh = h
-  if (isIcon) {
-    const iconSize = Math.min(ICON_SIZE, w, h || ICON_SIZE)
-    lx = x + (w - iconSize) / 2
-    lw = iconSize
-    lh = iconSize
-  }
+  // Use Brush.ImageSize if available, otherwise use passed dimensions
+  let lw = node.imageWidth || w
+  let lh = node.imageHeight || h
+  let lx = x + (node.translateX ?? 0)
+  let ly = y + (node.translateY ?? 0)
+
+  // Average corner radius for Fabric.js (which uses a single cornerRadius)
+  const cr = Math.max(node.cornerRadiusTL ?? 0, node.cornerRadiusTR ?? 0,
+    node.cornerRadiusBL ?? 0, node.cornerRadiusBR ?? 0)
 
   return {
     id: node.name,
@@ -427,7 +426,8 @@ function makeImageLayer(node: WidgetSpecNode, x: number, y: number, w: number, h
     rectFill: node.tintColor || undefined,
     defaultAsset: node.texturePath || undefined,
     opacity: node.renderOpacity ?? 1,
-    cornerRadius: isBg ? 0 : 4,
+    cornerRadius: cr,
+    angle: node.angle ?? 0,
     editable: true,
     swappable: !isBg,
     locked: false

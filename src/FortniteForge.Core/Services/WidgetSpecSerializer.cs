@@ -172,6 +172,22 @@ public static class WidgetSpecSerializer
             OutlineSize = node.OutlineSize > 0 ? node.OutlineSize : null,
             OutlineColor = node.OutlineColor,
 
+            // Image brush
+            ImageWidth = node.ImageWidth > 0 ? node.ImageWidth : null,
+            ImageHeight = node.ImageHeight > 0 ? node.ImageHeight : null,
+            DrawAs = node.DrawAs,
+            CornerRadiusTL = node.CornerRadiusTL > 0 ? node.CornerRadiusTL : null,
+            CornerRadiusTR = node.CornerRadiusTR > 0 ? node.CornerRadiusTR : null,
+            CornerRadiusBL = node.CornerRadiusBL > 0 ? node.CornerRadiusBL : null,
+            CornerRadiusBR = node.CornerRadiusBR > 0 ? node.CornerRadiusBR : null,
+
+            // RenderTransform
+            TranslateX = node.TranslateX != 0 ? node.TranslateX : null,
+            TranslateY = node.TranslateY != 0 ? node.TranslateY : null,
+            Angle = node.Angle != 0 ? node.Angle : null,
+            ScaleX = node.ScaleX != 1f ? node.ScaleX : null,
+            ScaleY = node.ScaleY != 1f ? node.ScaleY : null,
+
             // Rendering
             RenderOpacity = node.RenderOpacity < 1f ? node.RenderOpacity : null,
 
@@ -274,6 +290,22 @@ public static class WidgetSpecSerializer
         public int? LetterSpacing { get; set; }
         public int? OutlineSize { get; set; }
         public string? OutlineColor { get; set; }
+
+        // Image brush
+        public float? ImageWidth { get; set; }
+        public float? ImageHeight { get; set; }
+        public string? DrawAs { get; set; }
+        public float? CornerRadiusTL { get; set; }
+        public float? CornerRadiusTR { get; set; }
+        public float? CornerRadiusBL { get; set; }
+        public float? CornerRadiusBR { get; set; }
+
+        // RenderTransform
+        public float? TranslateX { get; set; }
+        public float? TranslateY { get; set; }
+        public float? Angle { get; set; }
+        public float? ScaleX { get; set; }
+        public float? ScaleY { get; set; }
 
         // Rendering
         public float? RenderOpacity { get; set; }

@@ -337,6 +337,30 @@ public class WidgetBlueprintParser
         if (opacityProp != null)
             node.RenderOpacity = opacityProp.Value;
 
+        // RenderTransform (Translation, Angle, Scale)
+        var rtProp = FindProperty<StructPropertyData>(export.Data, "RenderTransform");
+        if (rtProp?.Value != null)
+        {
+            var translation = FindProperty<StructPropertyData>(rtProp.Value, "Translation");
+            if (translation?.Value != null)
+            {
+                var tx = FindFloatOrDouble(translation.Value, "X");
+                var ty = FindFloatOrDouble(translation.Value, "Y");
+                if (tx.HasValue) node.TranslateX = tx.Value;
+                if (ty.HasValue) node.TranslateY = ty.Value;
+            }
+            var angle = FindProperty<FloatPropertyData>(rtProp.Value, "Angle");
+            if (angle != null) node.Angle = angle.Value;
+            var scale = FindProperty<StructPropertyData>(rtProp.Value, "Scale");
+            if (scale?.Value != null)
+            {
+                var sx = FindFloatOrDouble(scale.Value, "X");
+                var sy = FindFloatOrDouble(scale.Value, "Y");
+                if (sx.HasValue) node.ScaleX = sx.Value;
+                if (sy.HasValue) node.ScaleY = sy.Value;
+            }
+        }
+
         // ── Text visual properties (TextBlock + Buttons) ──
         if (node.Type == WidgetType.TextBlock || node.Type == WidgetType.ButtonLoud
             || node.Type == WidgetType.ButtonQuiet || node.Type == WidgetType.ButtonRegular)
@@ -396,14 +420,26 @@ public class WidgetBlueprintParser
         var brushProp = FindProperty<StructPropertyData>(export.Data, "Brush");
         if (brushProp?.Value == null) return;
 
-        // Brush -> TintColor -> SpecifiedColor (LinearColor)
+        // Brush -> TintColor -> SpecifiedColor (may be nested struct or direct LinearColor)
         var tintColor = FindProperty<StructPropertyData>(brushProp.Value, "TintColor");
         if (tintColor?.Value != null)
         {
+            // Try direct LinearColor first
             var specifiedColor = FindProperty<LinearColorPropertyData>(tintColor.Value, "SpecifiedColor");
             if (specifiedColor != null)
             {
                 node.TintColor = LinearColorToHex(specifiedColor.Value);
+            }
+            else
+            {
+                // Nested: SpecifiedColor struct containing SpecifiedColor LinearColor
+                var specStruct = FindProperty<StructPropertyData>(tintColor.Value, "SpecifiedColor");
+                if (specStruct?.Value != null)
+                {
+                    var innerColor = specStruct.Value.OfType<LinearColorPropertyData>().FirstOrDefault();
+                    if (innerColor != null)
+                        node.TintColor = LinearColorToHex(innerColor.Value);
+                }
             }
         }
 
@@ -453,6 +489,65 @@ public class WidgetBlueprintParser
             var path = softObj.Value.AssetPath.PackageName?.ToString();
             if (!string.IsNullOrEmpty(path))
                 node.TexturePath = path;
+        }
+
+        // Brush -> ImageSize (intrinsic render dimensions)
+        var imgSizeProp = FindProperty<StructPropertyData>(brushProp.Value, "ImageSize");
+        if (imgSizeProp?.Value != null)
+        {
+            // DeprecateSlateVector2D stores as a single property with X,Y
+            var dsv = imgSizeProp.Value.FirstOrDefault();
+            if (dsv != null)
+            {
+                var str = dsv.ToString() ?? "";
+                // Format: "(X, Y)" — parse both values
+                var clean = str.Replace("(", "").Replace(")", "").Trim();
+                var parts = clean.Split(',');
+                if (parts.Length >= 2)
+                {
+                    if (float.TryParse(parts[0].Trim(), out var w)) node.ImageWidth = w;
+                    if (float.TryParse(parts[1].Trim(), out var h)) node.ImageHeight = h;
+                }
+            }
+        }
+
+        // Brush -> DrawAs (enum: Image=0, Box=1, Border=2, RoundedBox=3, NoDrawType=4)
+        var drawAsProp = FindProperty<BytePropertyData>(brushProp.Value, "DrawAs");
+        if (drawAsProp != null)
+        {
+            node.DrawAs = drawAsProp.Value switch
+            {
+                0 => "Image",
+                1 => "Box",
+                2 => "Border",
+                3 => "RoundedBox",
+                _ => null
+            };
+        }
+
+        // Brush -> OutlineSettings -> CornerRadii (Vector4: TL, TR, BL, BR)
+        var outlineSettings = FindProperty<StructPropertyData>(brushProp.Value, "OutlineSettings");
+        if (outlineSettings?.Value != null)
+        {
+            var cornerRadii = FindProperty<StructPropertyData>(outlineSettings.Value, "CornerRadii");
+            if (cornerRadii?.Value != null)
+            {
+                // Vector4 stored as a single property
+                var v4 = cornerRadii.Value.FirstOrDefault();
+                if (v4 != null)
+                {
+                    var str = v4.ToString() ?? "";
+                    var clean = str.Replace("(", "").Replace(")", "").Trim();
+                    var parts = clean.Split(',');
+                    if (parts.Length >= 4)
+                    {
+                        if (float.TryParse(parts[0].Trim(), out var tl)) node.CornerRadiusTL = tl;
+                        if (float.TryParse(parts[1].Trim(), out var tr)) node.CornerRadiusTR = tr;
+                        if (float.TryParse(parts[2].Trim(), out var bl)) node.CornerRadiusBL = bl;
+                        if (float.TryParse(parts[3].Trim(), out var br)) node.CornerRadiusBR = br;
+                    }
+                }
+            }
         }
     }
 

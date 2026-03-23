@@ -261,6 +261,22 @@ public class WidgetNode
     public int OutlineSize { get; set; }
     public string? OutlineColor { get; set; }       // hex
 
+    // Image brush properties
+    public float ImageWidth { get; set; }           // from Brush.ImageSize
+    public float ImageHeight { get; set; }          // from Brush.ImageSize
+    public string? DrawAs { get; set; }             // "Image", "Box", "RoundedBox", "NoDrawType"
+    public float CornerRadiusTL { get; set; }       // from Brush.OutlineSettings.CornerRadii
+    public float CornerRadiusTR { get; set; }
+    public float CornerRadiusBL { get; set; }
+    public float CornerRadiusBR { get; set; }
+
+    // RenderTransform
+    public float TranslateX { get; set; }           // from RenderTransform.Translation
+    public float TranslateY { get; set; }
+    public float Angle { get; set; }                // from RenderTransform.Angle
+    public float ScaleX { get; set; } = 1f;
+    public float ScaleY { get; set; } = 1f;
+
     // Rendering
     public float RenderOpacity { get; set; } = 1f;
 }
