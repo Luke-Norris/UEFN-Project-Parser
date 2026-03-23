@@ -341,23 +341,44 @@ public class WidgetBlueprintParser
         var rtProp = FindProperty<StructPropertyData>(export.Data, "RenderTransform");
         if (rtProp?.Value != null)
         {
+            // Translation: struct → Vector2D (may be nested)
             var translation = FindProperty<StructPropertyData>(rtProp.Value, "Translation");
             if (translation?.Value != null)
             {
-                var tx = FindFloatOrDouble(translation.Value, "X");
-                var ty = FindFloatOrDouble(translation.Value, "Y");
-                if (tx.HasValue) node.TranslateX = tx.Value;
-                if (ty.HasValue) node.TranslateY = ty.Value;
+                // Vector2D stored as Vector2DPropertyData inside the struct
+                var v2d = translation.Value.OfType<Vector2DPropertyData>().FirstOrDefault();
+                if (v2d != null)
+                {
+                    node.TranslateX = (float)v2d.Value.X;
+                    node.TranslateY = (float)v2d.Value.Y;
+                }
+                else
+                {
+                    // Fallback: try separate X/Y properties
+                    var tx = FindFloatOrDouble(translation.Value, "X");
+                    var ty = FindFloatOrDouble(translation.Value, "Y");
+                    if (tx.HasValue) node.TranslateX = tx.Value;
+                    if (ty.HasValue) node.TranslateY = ty.Value;
+                }
             }
             var angle = FindProperty<FloatPropertyData>(rtProp.Value, "Angle");
             if (angle != null) node.Angle = angle.Value;
             var scale = FindProperty<StructPropertyData>(rtProp.Value, "Scale");
             if (scale?.Value != null)
             {
-                var sx = FindFloatOrDouble(scale.Value, "X");
-                var sy = FindFloatOrDouble(scale.Value, "Y");
-                if (sx.HasValue) node.ScaleX = sx.Value;
-                if (sy.HasValue) node.ScaleY = sy.Value;
+                var v2d = scale.Value.OfType<Vector2DPropertyData>().FirstOrDefault();
+                if (v2d != null)
+                {
+                    node.ScaleX = (float)v2d.Value.X;
+                    node.ScaleY = (float)v2d.Value.Y;
+                }
+                else
+                {
+                    var sx = FindFloatOrDouble(scale.Value, "X");
+                    var sy = FindFloatOrDouble(scale.Value, "Y");
+                    if (sx.HasValue) node.ScaleX = sx.Value;
+                    if (sy.HasValue) node.ScaleY = sy.Value;
+                }
             }
         }
 

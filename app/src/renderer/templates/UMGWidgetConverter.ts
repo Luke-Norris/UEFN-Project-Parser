@@ -255,6 +255,9 @@ function flattenNode(
   parentId: string | undefined,
   depth: number
 ): void {
+  // Apply RenderTransform.Translation to position (affects all widget types)
+  x += node.translateX ?? 0
+  y += node.translateY ?? 0
   switch (node.type) {
     case 'CanvasPanel': {
       const myId = node.name
@@ -407,8 +410,8 @@ function makeImageLayer(node: WidgetSpecNode, x: number, y: number, w: number, h
   // Use Brush.ImageSize if available, otherwise use passed dimensions
   let lw = node.imageWidth || w
   let lh = node.imageHeight || h
-  let lx = x + (node.translateX ?? 0)
-  let ly = y + (node.translateY ?? 0)
+  let lx = x
+  let ly = y
 
   // Corner radius for Fabric.js
   const cr = Math.max(node.cornerRadiusTL ?? 0, node.cornerRadiusTR ?? 0,
