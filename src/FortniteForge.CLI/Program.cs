@@ -595,6 +595,7 @@ public class Program
                 // Widget parsing
                 "list-project-widgets" => HandleListProjectWidgets(req),
                 "parse-widget" => HandleParseWidget(req),
+                "widget-texture" => HandleWidgetTexture(req, config),
                 "list-library-widgets" => HandleListLibraryWidgets(req),
                 // CUE4Parse asset preview
                 "preview-init" => HandlePreviewInit(req),
@@ -1671,6 +1672,139 @@ public class Program
         var specJson = WidgetSpecSerializer.ToJson(spec);
 
         return new SidecarResponse(req.Id, new { spec = System.Text.Json.JsonDocument.Parse(specJson).RootElement });
+    }
+
+    private static SidecarResponse HandleWidgetTexture(SidecarRequest req, ForgeConfig config)
+    {
+        var texRef = req.Params?.GetProperty("texturePath").GetString()
+            ?? throw new ArgumentException("Missing 'texturePath' parameter");
+
+        var projectPath = config.ProjectPath;
+        if (string.IsNullOrEmpty(projectPath))
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        // Resolve texture reference to file path
+        // Format: /PluginName/path/to/texture.textureName  or  /path/to/texture.textureName
+        var parts = texRef.TrimStart('/').Split('.');
+        var assetPath = parts[0]; // e.g., "lwky_2v2v2/icons_imgs/CustomWidgetImgs/blueTeamIcon"
+
+        // Try multiple resolution strategies
+        var candidates = new[]
+        {
+            Path.Combine(projectPath, "Content", assetPath.Replace('/', Path.DirectorySeparatorChar) + ".uasset"),
+            Path.Combine(projectPath, "Plugins", assetPath.Replace('/', Path.DirectorySeparatorChar).Insert(assetPath.IndexOf('/'), "/Content") + ".uasset"),
+        };
+
+        string? foundPath = null;
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate)) { foundPath = candidate; break; }
+        }
+
+        if (foundPath == null)
+        {
+            // Try searching Content directory recursively for the asset name
+            var assetName = Path.GetFileName(assetPath) + ".uasset";
+            var contentDir = Path.Combine(projectPath, "Content");
+            if (Directory.Exists(contentDir))
+            {
+                var found = Directory.GetFiles(contentDir, assetName, SearchOption.AllDirectories).FirstOrDefault();
+                if (found != null) foundPath = found;
+            }
+        }
+
+        if (foundPath == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Texture not found: {texRef}"));
+
+        try
+        {
+            // Read the .uasset to find original source file path
+            var asset = new UAssetAPI.UAsset(foundPath, UAssetAPI.UnrealTypes.EngineVersion.VER_UE5_4);
+
+            // Check InterchangeAssetImportData for source file path
+            foreach (var export in asset.Exports)
+            {
+                if (export is not UAssetAPI.ExportTypes.NormalExport ne) continue;
+                var nodeId = ne.Data.FirstOrDefault(p => p.Name?.ToString() == "NodeUniqueID")
+                    as UAssetAPI.PropertyTypes.Objects.StrPropertyData;
+                if (nodeId?.Value != null)
+                {
+                    // Format: "Factory_C:/Users/Luke/Downloads/blueTeamIcon.png"
+                    var sourcePath = nodeId.Value.ToString().Replace("Factory_", "");
+                    if (File.Exists(sourcePath))
+                    {
+                        var bytes = File.ReadAllBytes(sourcePath);
+                        var ext = Path.GetExtension(sourcePath).ToLower();
+                        var mime = ext switch
+                        {
+                            ".png" => "image/png",
+                            ".jpg" or ".jpeg" => "image/jpeg",
+                            ".tga" => "image/tga",
+                            _ => "application/octet-stream"
+                        };
+
+                        // Check size — warn if > 5MB
+                        var dataUrl = $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
+                        return new SidecarResponse(req.Id, new
+                        {
+                            found = true,
+                            dataUrl,
+                            sourcePath,
+                            sizeBytes = bytes.Length,
+                            warning = bytes.Length > 5_000_000 ? $"Large texture: {bytes.Length / 1_000_000}MB" : (string?)null,
+                        });
+                    }
+                }
+            }
+
+            // Source file not found — check for PNG/JPG next to the .uasset
+            var dir = Path.GetDirectoryName(foundPath)!;
+            var baseName = Path.GetFileNameWithoutExtension(foundPath);
+            foreach (var ext in new[] { ".png", ".jpg", ".jpeg", ".tga" })
+            {
+                var imgPath = Path.Combine(dir, baseName + ext);
+                if (File.Exists(imgPath))
+                {
+                    var bytes = File.ReadAllBytes(imgPath);
+                    var mime = ext == ".png" ? "image/png" : "image/jpeg";
+                    return new SidecarResponse(req.Id, new
+                    {
+                        found = true,
+                        dataUrl = $"data:{mime};base64,{Convert.ToBase64String(bytes)}",
+                        sourcePath = imgPath,
+                        sizeBytes = bytes.Length,
+                    });
+                }
+            }
+
+            // No source image found — return dimensions from the Texture2D export
+            var tex2d = asset.Exports.FirstOrDefault(e => e.GetExportClassType()?.ToString() == "Texture2D") as UAssetAPI.ExportTypes.NormalExport;
+            int texW = 0, texH = 0;
+            if (tex2d != null)
+            {
+                var source = tex2d.Data.FirstOrDefault(p => p.Name?.ToString() == "Source") as UAssetAPI.PropertyTypes.Structs.StructPropertyData;
+                if (source?.Value != null)
+                {
+                    var sizeX = source.Value.FirstOrDefault(p => p.Name?.ToString() == "SizeX") as UAssetAPI.PropertyTypes.Objects.IntPropertyData;
+                    var sizeY = source.Value.FirstOrDefault(p => p.Name?.ToString() == "SizeY") as UAssetAPI.PropertyTypes.Objects.IntPropertyData;
+                    texW = sizeX?.Value ?? 0;
+                    texH = sizeY?.Value ?? 0;
+                }
+            }
+
+            return new SidecarResponse(req.Id, new
+            {
+                found = false,
+                assetPath = foundPath,
+                width = texW,
+                height = texH,
+                message = "Texture data is Oodle-compressed in .uasset; source image file not found",
+            });
+        }
+        catch (Exception ex)
+        {
+            return new SidecarResponse(req.Id, Error: new SidecarError("READ_FAILED", ex.Message));
+        }
     }
 
     private static SidecarResponse HandleListLibraryWidgets(SidecarRequest req)

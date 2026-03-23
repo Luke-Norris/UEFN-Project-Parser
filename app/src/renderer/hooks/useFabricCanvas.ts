@@ -524,6 +524,30 @@ async function addLayerToCanvas(canvas: Canvas, layer: TemplateLayer): Promise<v
     ;(text as any).widgetType = layer.widgetType
     canvas.add(text)
   } else if (layer.type === 'image' && layer.defaultAsset) {
+    // Try loading texture from project via widget-texture endpoint
+    try {
+      const texResult = await window.electronAPI.forgeWidgetTexture(layer.defaultAsset)
+      if (texResult?.found && texResult.dataUrl) {
+        const img = await FabricImage.fromURL(texResult.dataUrl)
+        img.set({
+          left: layer.left,
+          top: layer.top,
+          scaleX: layer.width / (img.width || layer.width),
+          scaleY: layer.height / (img.height || layer.height),
+          opacity: layer.opacity ?? 1,
+          angle: layer.angle || 0,
+          selectable: !layer.locked
+        })
+        ;(img as any).layerId = layer.id
+        ;(img as any).layerName = layer.name
+        ;(img as any).widgetType = layer.widgetType
+        canvas.add(img)
+        return
+      }
+    } catch {
+      // Fall through to existing asset loading
+    }
+    // Fallback: try existing asset loading
     try {
       const assetPath = findAssetPath(layer.assetCategory || '', layer.defaultAsset)
       if (assetPath) {

@@ -87,6 +87,7 @@ pub fn run() {
             // Widget parsing commands
             commands::forge_list_project_widgets,
             commands::forge_parse_widget,
+            commands::forge_widget_texture,
             commands::forge_list_library_widgets,
             commands::forge_list_libraries,
             commands::forge_add_library,

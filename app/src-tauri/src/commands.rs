@@ -278,6 +278,17 @@ pub async fn forge_parse_widget(
 }
 
 #[tauri::command]
+pub async fn forge_widget_texture(
+    state: State<'_, AppState>,
+    texture_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("widget-texture", json!({"texturePath": texture_path}))
+        .await
+}
+
+#[tauri::command]
 pub async fn forge_list_library_widgets(state: State<'_, AppState>) -> Result<Value, String> {
     state
         .bridge

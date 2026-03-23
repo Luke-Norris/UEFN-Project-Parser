@@ -241,6 +241,12 @@ export async function forgeParseWidget(path: string): Promise<{ spec: any }> {
   return invoke('forge_parse_widget', { path })
 }
 
+export async function forgeWidgetTexture(
+  texturePath: string
+): Promise<{ found: boolean; dataUrl?: string; width?: number; height?: number; warning?: string; message?: string }> {
+  return invoke('forge_widget_texture', { texturePath })
+}
+
 export async function forgeListLibraryWidgets(): Promise<{ widgets: WidgetSummary[] }> {
   return invoke('forge_list_library_widgets')
 }
@@ -503,6 +509,7 @@ const api = {
   forgeGenerateVerse,
   forgeListProjectWidgets,
   forgeParseWidget,
+  forgeWidgetTexture,
   forgeListLibraryWidgets,
   forgeStatus,
   forgeListProjects,
