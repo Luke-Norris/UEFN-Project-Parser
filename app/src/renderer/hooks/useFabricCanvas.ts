@@ -382,17 +382,21 @@ export function useFabricCanvas() {
       const canvas = fabricRef.current
       if (!canvas) return
 
-      // Prevent re-entrant loading of the same template
-      if (loadingTemplateRef.current === template.id) return
-      loadingTemplateRef.current = template.id
+      // Abort any in-progress load and start fresh
+      const loadId = Date.now().toString()
+      loadingTemplateRef.current = loadId
 
       canvas.clear()
       canvas.setDimensions({ width: template.width, height: template.height })
       canvas.backgroundColor = 'transparent'
 
       for (const layer of template.layers) {
+        // Abort if a newer load started
+        if (loadingTemplateRef.current !== loadId) return
         await addLayerToCanvas(canvas, layer)
       }
+      // Final abort check before zoom
+      if (loadingTemplateRef.current !== loadId) return
 
       // Zoom to fit content within the available viewport
       const fabricWrapper = canvas.getElement().parentElement
@@ -486,6 +490,11 @@ export function useFabricCanvas() {
 }
 
 async function addLayerToCanvas(canvas: Canvas, layer: TemplateLayer): Promise<void> {
+  // Skip invisible container rects (transparent fill = layout-only container)
+  if (layer.type === 'rect' && (!layer.rectFill || layer.rectFill === 'transparent')) {
+    return
+  }
+
   if (layer.type === 'rect') {
     const rect = new Rect({
       left: Math.round(layer.left),
