@@ -395,24 +395,44 @@ export function useFabricCanvas() {
         await addLayerToCanvas(canvas, layer)
       }
 
-      // Zoom to fit ALL content within the available viewport
+      // Zoom to fit visible content within the available viewport
       const fabricWrapper = canvas.getElement().parentElement
       const viewportEl = fabricWrapper?.parentElement
       if (viewportEl) {
         const viewW = viewportEl.clientWidth || 800
         const viewH = viewportEl.clientHeight || 600
 
-        // Use template dimensions as content bounds (the widget's design space)
-        const contentW = template.width
-        const contentH = template.height
+        // Find bounding box of ALL objects (including transparent ones for layout context)
+        const objects = canvas.getObjects()
+        let minX = 0, minY = 0, maxX = template.width, maxY = template.height
+        if (objects.length > 0) {
+          minX = Infinity; minY = Infinity; maxX = -Infinity; maxY = -Infinity
+          for (const obj of objects) {
+            const l = obj.left ?? 0
+            const t = obj.top ?? 0
+            const w = (obj.width ?? 0) * (obj.scaleX ?? 1)
+            const h = (obj.height ?? 0) * (obj.scaleY ?? 1)
+            if (l < minX) minX = l
+            if (t < minY) minY = t
+            if (l + w > maxX) maxX = l + w
+            if (t + h > maxY) maxY = t + h
+          }
+          // Padding
+          minX -= 20; minY -= 20; maxX += 20; maxY += 20
+        }
+
+        const contentW = Math.max(maxX - minX, 100)
+        const contentH = Math.max(maxY - minY, 100)
         const zoomX = viewW / contentW
         const zoomY = viewH / contentH
-        const zoom = Math.min(zoomX, zoomY, 4) * 0.9
+        const zoom = Math.min(zoomX, zoomY, 5) * 0.9
         canvas.setZoom(zoom)
         canvas.setDimensions({
-          width: contentW * zoom,
-          height: contentH * zoom,
+          width: viewW,
+          height: Math.min(contentH * zoom, viewH),
         })
+        // Pan so content starts at top-left of viewport
+        canvas.absolutePan({ x: minX * zoom, y: minY * zoom })
       }
 
       canvas.renderAll()
