@@ -130,7 +130,10 @@ function estimateW(node: WidgetSpecNode, parentW: number): number {
     case 'ButtonLoud':
     case 'ButtonQuiet':
     case 'ButtonRegular': return node.minWidth || 150
-    case 'Image': return isBgFill(node) ? parentW : ICON_SIZE
+    case 'Image':
+      // autoSize images with textures fill parent; plain tints fill parent; icons are small
+      if (node.texturePath || isBgFill(node)) return parentW
+      return ICON_SIZE
     default: return parentW
   }
 }
@@ -207,7 +210,14 @@ function computeCanvasChildLayout(
     // Point anchor: offset.left = position
     const anchorX = px + aMinX * pw
     // offset.right = width (only if not auto-sized and explicitly set)
-    cw = (!isAutoSize && oR > 0) ? oR : (child.minWidth || estimateW(child, pw))
+    if (!isAutoSize && oR > 0) {
+      cw = oR
+    } else if (isAutoSize && child.type === 'Image' && child.texturePath) {
+      // autoSize images with textures: use parent size (we don't know texture dims)
+      cw = pw
+    } else {
+      cw = child.minWidth || estimateW(child, pw)
+    }
     cx = anchorX + oL - alignX * cw
   }
 
@@ -218,7 +228,13 @@ function computeCanvasChildLayout(
     ch = Math.max(bottom - top, 10)
   } else {
     const anchorY = py + aMinY * ph
-    ch = (!isAutoSize && oB > 0) ? oB : (child.minHeight || estimateH(child))
+    if (!isAutoSize && oB > 0) {
+      ch = oB
+    } else if (isAutoSize && child.type === 'Image' && child.texturePath) {
+      ch = ph
+    } else {
+      ch = child.minHeight || estimateH(child)
+    }
     cy = anchorY + oT - alignY * ch
   }
 

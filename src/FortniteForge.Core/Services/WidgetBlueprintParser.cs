@@ -224,7 +224,7 @@ public class WidgetBlueprintParser
         };
 
         // Extract type-specific properties
-        ExtractWidgetProperties(export, node);
+        ExtractWidgetProperties(export, node, asset);
 
         // Find children via Slots array
         var slotsProp = FindProperty<ArrayPropertyData>(export.Data, "Slots");
@@ -271,7 +271,7 @@ public class WidgetBlueprintParser
         return node;
     }
 
-    private void ExtractWidgetProperties(NormalExport export, WidgetNode node)
+    private void ExtractWidgetProperties(NormalExport export, WidgetNode node, UAsset? asset = null)
     {
         switch (node.Type)
         {
@@ -284,7 +284,7 @@ public class WidgetBlueprintParser
                 break;
 
             case WidgetType.Image:
-                ExtractBrushProperties(export, node);
+                ExtractBrushProperties(export, node, asset);
                 break;
 
             case WidgetType.ButtonLoud:
@@ -391,7 +391,7 @@ public class WidgetBlueprintParser
         }
     }
 
-    private void ExtractBrushProperties(NormalExport export, WidgetNode node)
+    private void ExtractBrushProperties(NormalExport export, WidgetNode node, UAsset? asset = null)
     {
         var brushProp = FindProperty<StructPropertyData>(export.Data, "Brush");
         if (brushProp?.Value == null) return;
@@ -407,13 +407,43 @@ public class WidgetBlueprintParser
             }
         }
 
-        // Brush -> ResourceObject (texture path)
+        // Brush -> ResourceObject (texture path — resolve import references)
         var resourceObj = FindProperty<ObjectPropertyData>(brushProp.Value, "ResourceObject");
-        if (resourceObj != null)
+        if (resourceObj != null && resourceObj.Value.Index != 0)
         {
-            var texPath = resourceObj.Value?.ToString();
-            if (!string.IsNullOrEmpty(texPath))
-                node.TexturePath = texPath;
+            // Resolve import index to actual object path
+            var idx = resourceObj.Value.Index;
+            if (idx < 0)
+            {
+                // Negative = import reference, resolve via asset imports
+                var importIdx = -idx - 1;
+                if (importIdx < asset.Imports.Count)
+                {
+                    var import = asset.Imports[importIdx];
+                    var objName = import.ObjectName?.ToString() ?? "";
+                    // Walk up the import chain to build the full path
+                    var outerIdx = import.OuterIndex.Index;
+                    if (outerIdx < 0)
+                    {
+                        var outerImportIdx = -outerIdx - 1;
+                        if (outerImportIdx < asset.Imports.Count)
+                        {
+                            var outerName = asset.Imports[outerImportIdx].ObjectName?.ToString() ?? "";
+                            node.TexturePath = $"{outerName}.{objName}";
+                        }
+                        else
+                            node.TexturePath = objName;
+                    }
+                    else
+                        node.TexturePath = objName;
+                }
+            }
+            else
+            {
+                var texPath = resourceObj.Value.ToString();
+                if (!string.IsNullOrEmpty(texPath))
+                    node.TexturePath = texPath;
+            }
         }
 
         // Also check for SoftObjectProperty for texture reference
