@@ -459,13 +459,14 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 }
 
 function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const safeColor = value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000'
   return (
     <div className="flex items-center gap-1.5">
       <label className="text-[11px] text-gray-400 w-14 shrink-0">{label}</label>
       <input
         type="color"
         className="w-6 h-6 rounded cursor-pointer border border-fn-border bg-transparent p-0.5 shrink-0"
-        value={value}
+        value={safeColor}
         onChange={(e) => onChange(e.target.value)}
       />
       <input

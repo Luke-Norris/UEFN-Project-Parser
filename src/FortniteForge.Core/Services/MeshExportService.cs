@@ -127,7 +127,7 @@ public class MeshExportService
             {
                 MeshFormat = EMeshFormat.Gltf2,
                 LodFormat = ELodFormat.FirstLod,
-                ExportMaterials = false, // Skip materials for now — geometry only
+                ExportMaterials = true,
             };
 
             var exporter = new MeshExporter(staticMesh, options);
@@ -255,7 +255,8 @@ public class MeshExportService
 
     private static string GetCacheKey(string assetPath)
     {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(assetPath));
+        // v2 = with materials+textures (v1 was geometry-only)
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(assetPath + ":v2"));
         return Convert.ToHexString(hash)[..16].ToLowerInvariant();
     }
 }

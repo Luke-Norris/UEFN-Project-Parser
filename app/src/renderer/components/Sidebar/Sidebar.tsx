@@ -30,6 +30,8 @@ export type PageId =
   | 'project-verse-files'
   | 'projects'
   | 'staged'
+  | 'asset-search'
+  | 'blueprint-graph'
   | 'settings'
 
 interface NavItem {
@@ -298,6 +300,8 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
         { id: 'verse-errors', label: 'Error Explainer', icon: icons.verseErrors, indent: true },
         { id: 'device-wiring', label: 'Device Wiring', icon: icons.wiring, indent: true },
         { id: 'scene-preview', label: 'Scene Preview', icon: icons.levels, indent: true },
+        { id: 'asset-search', label: 'Asset Search', icon: icons.search, indent: true },
+        { id: 'blueprint-graph', label: 'Blueprint Graph', icon: icons.wiring, indent: true },
         { id: 'recipes', label: 'Device Recipes', icon: icons.devices, indent: true },
         { id: 'staged', label: 'Staged Changes', icon: icons.staged, indent: true },
       ]

@@ -122,6 +122,19 @@ function isLeaf(node: WidgetSpecNode): boolean {
   return !node.children || node.children.length === 0
 }
 
+/** Estimate intrinsic width of a node. */
+function estimateW(node: WidgetSpecNode, parentW: number): number {
+  if (node.minWidth) return node.minWidth
+  switch (node.type) {
+    case 'TextBlock': return Math.min(parentW, Math.max(100, (node.text?.length ?? 5) * 14))
+    case 'ButtonLoud':
+    case 'ButtonQuiet':
+    case 'ButtonRegular': return node.minWidth || 150
+    case 'Image': return isBgFill(node) ? parentW : ICON_SIZE
+    default: return parentW
+  }
+}
+
 /**
  * Estimate intrinsic height of a node (ignoring background fills).
  */
@@ -159,6 +172,60 @@ function estimateH(node: WidgetSpecNode): number {
 }
 
 /**
+ * Compute a CanvasPanel child's absolute position and size using UMG anchor semantics.
+ * Point anchor (min==max): offsets = (posX, posY, width, height)
+ * Stretch anchor (min!=max): offsets = (padLeft, padTop, padRight, padBottom)
+ */
+function computeCanvasChildLayout(
+  child: WidgetSpecNode, px: number, py: number, pw: number, ph: number
+): { cx: number; cy: number; cw: number; ch: number } {
+  const aMinX = child.anchorMinX ?? 0
+  const aMinY = child.anchorMinY ?? 0
+  const aMaxX = child.anchorMaxX ?? aMinX
+  const aMaxY = child.anchorMaxY ?? aMinY
+  const oL = child.offsetLeft ?? 0
+  const oT = child.offsetTop ?? 0
+  const oR = child.offsetRight ?? 0
+  const oB = child.offsetBottom ?? 0
+  const alignX = child.alignmentX ?? 0
+  const alignY = child.alignmentY ?? 0
+
+  const isStretchX = Math.abs(aMaxX - aMinX) > 0.001
+  const isStretchY = Math.abs(aMaxY - aMinY) > 0.001
+
+  let cx: number, cy: number, cw: number, ch: number
+
+  const isAutoSize = child.autoSize === true
+
+  if (isStretchX) {
+    // Stretch horizontally: offsets are padding from anchor edges
+    const left = px + aMinX * pw + oL
+    const right = px + aMaxX * pw - oR
+    cx = left
+    cw = Math.max(right - left, 10)
+  } else {
+    // Point anchor: offset.left = position
+    const anchorX = px + aMinX * pw
+    // offset.right = width (only if not auto-sized and explicitly set)
+    cw = (!isAutoSize && oR > 0) ? oR : (child.minWidth || estimateW(child, pw))
+    cx = anchorX + oL - alignX * cw
+  }
+
+  if (isStretchY) {
+    const top = py + aMinY * ph + oT
+    const bottom = py + aMaxY * ph - oB
+    cy = top
+    ch = Math.max(bottom - top, 10)
+  } else {
+    const anchorY = py + aMinY * ph
+    ch = (!isAutoSize && oB > 0) ? oB : (child.minHeight || estimateH(child))
+    cy = anchorY + oT - alignY * ch
+  }
+
+  return { cx: Math.round(cx), cy: Math.round(cy), cw: Math.max(Math.round(cw), 1), ch: Math.max(Math.round(ch), 1) }
+}
+
+/**
  * Recursively flatten a WidgetSpecNode tree into positioned TemplateLayer[].
  * Tracks parentId and depth for hierarchy display in the Layers panel.
  */
@@ -182,27 +249,12 @@ function flattenNode(
         l.widgetType = 'CanvasPanel'
         l.isContainer = true
         layers.push(l)
-      } else {
-        // Root doesn't get a visual layer but is the hierarchy root
       }
 
       const children = node.children || []
-      const bgs = children.filter(isBgFill)
-      const content = children.filter((c) => !isBgFill(c))
-
-      for (const bg of bgs) {
-        const l = makeImageLayer(bg, x, y, w, h)
-        l.parentId = myId
-        l.depth = depth + 1
-        l.widgetType = 'Image'
-        layers.push(l)
-      }
-
-      let cy = y + PAD
-      for (const child of content) {
-        const ch = estimateH(child)
-        flattenNode(child, x + PAD, cy, w - PAD * 2, ch, layers, myId, depth + 1)
-        cy += ch + GAP
+      for (const child of children) {
+        const { cx, cy, cw, ch } = computeCanvasChildLayout(child, x, y, w, h)
+        flattenNode(child, cx, cy, cw, ch, layers, myId, depth + 1)
       }
       break
     }
@@ -249,24 +301,11 @@ function flattenNode(
       l.isContainer = true
       layers.push(l)
 
-      const children = node.children || []
-      const bgs = children.filter(isBgFill)
-      const content = children.filter((c) => !isBgFill(c))
-
-      for (const bg of bgs) {
-        const bl = makeImageLayer(bg, x, y, w, h)
-        bl.parentId = myId
-        bl.depth = depth + 1
-        bl.widgetType = 'Image'
-        layers.push(bl)
-      }
-
-      const innerPad = 6
-      let cy = y + innerPad
-      for (const child of content) {
-        const ch = estimateH(child)
-        flattenNode(child, x + innerPad, cy, w - innerPad * 2, ch, layers, myId, depth + 1)
-        cy += ch + 4
+      // Overlay: all children occupy the same space (stacked by z-order)
+      for (const child of node.children || []) {
+        const ch = child.minHeight || h
+        const cw = child.minWidth || w
+        flattenNode(child, x, y, cw, ch, layers, myId, depth + 1)
       }
       break
     }
@@ -290,7 +329,7 @@ function flattenNode(
     }
 
     case 'TextBlock': {
-      const l = makeTextLayer(node, x, y, w)
+      const l = makeTextLayer(node, x, y, w, h)
       l.parentId = parentId
       l.depth = depth
       l.widgetType = 'TextBlock'
@@ -303,6 +342,24 @@ function flattenNode(
     case 'ButtonRegular':
       makeButtonLayers(node, x, y, w, layers, parentId, depth)
       break
+
+    default: {
+      // Generic container fallback for unknown widget types
+      const defChildren = node.children || []
+      const dl = makeRectLayer(node, x, y, w, h, 'transparent')
+      dl.parentId = parentId
+      dl.depth = depth
+      dl.widgetType = node.type
+      dl.isContainer = defChildren.length > 0
+      layers.push(dl)
+      let dcy = y
+      const dch = defChildren.length > 0 ? h / defChildren.length : h
+      for (const child of defChildren) {
+        flattenNode(child, x, dcy, w, dch, layers, node.name, depth + 1)
+        dcy += dch
+      }
+      break
+    }
   }
 }
 
@@ -353,7 +410,7 @@ function makeImageLayer(node: WidgetSpecNode, x: number, y: number, w: number, h
     height: Math.round(lh || 100),
     rectFill: node.tintColor || undefined,
     defaultAsset: node.texturePath || undefined,
-    opacity: 1,
+    opacity: node.renderOpacity ?? 1,
     cornerRadius: isBg ? 0 : 4,
     editable: true,
     swappable: !isBg,
@@ -361,21 +418,30 @@ function makeImageLayer(node: WidgetSpecNode, x: number, y: number, w: number, h
   }
 }
 
-function makeTextLayer(node: WidgetSpecNode, x: number, y: number, w: number): TemplateLayer {
-  // textAlign 'center' uses originX 'center' in Fabric, so left must be the midpoint
+function makeTextLayer(node: WidgetSpecNode, x: number, y: number, w: number, h?: number): TemplateLayer {
+  const textContent = node.text || node.name || ''
+  // Use actual font size from .uasset, or estimate from available height
+  const fontSize = node.fontSize && node.fontSize > 0
+    ? Math.round(node.fontSize)
+    : (h && h > 10 ? Math.min(Math.max(Math.round(h * 0.7), 10), 72) : DEFAULT_TEXT_SIZE)
+  const textAlign = (node.justification?.toLowerCase() || 'left') as 'left' | 'center' | 'right'
+  const textColor = node.textColor || DEFAULT_TEXT_COLOR
+  const opacity = node.renderOpacity ?? 1
+
   return {
     id: node.name,
     type: 'text',
     name: node.name,
-    left: Math.round(x + w / 2),
+    left: Math.round(x),
     top: Math.round(y),
     width: Math.round(w || 200),
-    height: TEXT_H,
-    text: node.text || '',
+    height: Math.round(h || TEXT_H),
+    text: textContent,
     fontFamily: DEFAULT_FONT,
-    fontSize: DEFAULT_TEXT_SIZE,
-    fill: DEFAULT_TEXT_COLOR,
-    textAlign: 'center',
+    fontSize,
+    fill: textColor,
+    textAlign,
+    opacity,
     editable: true,
     swappable: false,
     locked: false

@@ -227,6 +227,20 @@ public class WidgetNode
     public float AlignmentY { get; set; }
     public bool AutoSize { get; set; }
 
+    // Raw anchor values (0-1, for stretch vs point-anchor computation)
+    public float AnchorMinX { get; set; }
+    public float AnchorMinY { get; set; }
+    public float AnchorMaxX { get; set; }
+    public float AnchorMaxY { get; set; }
+
+    // Slot alignment (for Overlay/StackBox slots)
+    public string? SlotHAlign { get; set; }  // "Left", "Center", "Right", "Fill"
+    public string? SlotVAlign { get; set; }  // "Top", "Center", "Bottom", "Fill"
+    public float SlotPadLeft { get; set; }
+    public float SlotPadTop { get; set; }
+    public float SlotPadRight { get; set; }
+    public float SlotPadBottom { get; set; }
+
     // Visual properties
     public string? TintColor { get; set; }         // hex color for Image brush
     public string? Text { get; set; }               // for TextBlock
@@ -237,6 +251,18 @@ public class WidgetNode
     public Orientation Orientation { get; set; } = Orientation.Vertical;
     public float Padding { get; set; }
     public string? Visibility { get; set; }         // "Visible", "Collapsed", "Hidden"
+
+    // Text visual properties
+    public float FontSize { get; set; }             // from Font.Size (0 = default)
+    public string? FontWeight { get; set; }         // from Font.TypefaceFontName ("Bold", etc.)
+    public string? TextColor { get; set; }          // hex from ColorAndOpacity
+    public string? Justification { get; set; }      // "Left", "Center", "Right"
+    public int LetterSpacing { get; set; }
+    public int OutlineSize { get; set; }
+    public string? OutlineColor { get; set; }       // hex
+
+    // Rendering
+    public float RenderOpacity { get; set; } = 1f;
 }
 
 public enum WidgetType

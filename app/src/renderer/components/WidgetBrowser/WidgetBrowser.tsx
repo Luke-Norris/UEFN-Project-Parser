@@ -123,9 +123,9 @@ function WidgetSection({
 
       {!collapsed && (
         <div>
-          {widgets.map((widget) => (
+          {widgets.map((widget, idx) => (
             <button
-              key={widget.path}
+              key={widget.path || `widget-${idx}`}
               onClick={() => onSelect(widget.path)}
               className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors ${
                 activeWidget === widget.path

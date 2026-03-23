@@ -19,7 +19,7 @@ pub struct LspBridge {
     request_id: AtomicI64,
     stdin: Mutex<Option<std::process::ChildStdin>>,
     initialized: Arc<std::sync::atomic::AtomicBool>,
-    server_capabilities: Mutex<Option<Value>>,
+    server_capabilities: Arc<Mutex<Option<Value>>>,
     on_notification: NotificationCallback,
 }
 
@@ -31,7 +31,7 @@ impl LspBridge {
             request_id: AtomicI64::new(1),
             stdin: Mutex::new(None),
             initialized: Arc::new(std::sync::atomic::AtomicBool::new(false)),
-            server_capabilities: Mutex::new(None),
+            server_capabilities: Arc::new(Mutex::new(None)),
             on_notification: Arc::new(Mutex::new(None)),
         }
     }
@@ -110,7 +110,7 @@ impl LspBridge {
 
         // Spawn stdout reader (LSP responses)
         let pending = Arc::clone(&self.pending);
-        let capabilities = self.server_capabilities.clone();
+        let capabilities = Arc::clone(&self.server_capabilities);
         let initialized = Arc::clone(&self.initialized);
         let on_notification = Arc::clone(&self.on_notification);
         std::thread::spawn(move || {

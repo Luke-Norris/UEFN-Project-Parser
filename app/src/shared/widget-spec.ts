@@ -59,5 +59,32 @@ export interface WidgetSpecNode {
   orientation?: 'Horizontal' | 'Vertical'
   padding?: number
   visibility?: string
+
+  // Raw anchor values (0-1)
+  anchorMinX?: number
+  anchorMinY?: number
+  anchorMaxX?: number
+  anchorMaxY?: number
+
+  // Slot alignment
+  slotHAlign?: string
+  slotVAlign?: string
+  slotPadLeft?: number
+  slotPadTop?: number
+  slotPadRight?: number
+  slotPadBottom?: number
+
+  // Text visuals
+  fontSize?: number
+  fontWeight?: string
+  textColor?: string
+  justification?: string
+  letterSpacing?: number
+  outlineSize?: number
+  outlineColor?: string
+
+  // Rendering
+  renderOpacity?: number
+
   children?: WidgetSpecNode[]
 }

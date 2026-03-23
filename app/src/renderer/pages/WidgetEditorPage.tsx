@@ -8,6 +8,7 @@ import { WidgetBrowser } from '../components/WidgetBrowser/WidgetBrowser'
 import { Toolbar } from '../components/Toolbar/Toolbar'
 import { useCanvasStore } from '../stores/canvasStore'
 import { useWidgetStore } from '../stores/widgetStore'
+import { useTemplateStore } from '../stores/templateStore'
 import { widgetSpecToTemplate } from '../templates/UMGWidgetConverter'
 
 type LeftTab = 'widgets' | 'layers'
@@ -30,6 +31,7 @@ export function WidgetEditorPage({
   const [rightTab, setRightTab] = useState<RightTab>('design')
   const { canvas, selectedObjectId } = useCanvasStore()
   const { loadWidget, parseLoading, parseError } = useWidgetStore()
+  const { setActiveTemplate } = useTemplateStore()
 
   // Resizable panel widths
   const [leftWidth, setLeftWidth] = useState(LEFT_DEFAULT)
@@ -63,19 +65,15 @@ export function WidgetEditorPage({
   // Handle widget selection from browser
   const handleWidgetSelect = useCallback(async (path: string) => {
     const spec = await loadWidget(path)
-    if (spec && canvas) {
+    if (spec) {
       try {
         const template = widgetSpecToTemplate(spec)
-        // Clear canvas and load the new template
-        canvas.clear()
-        // TODO: Load template layers onto canvas via existing CanvasEditor methods
-        // For now, the spec is available in widgetStore for the property panel
-        canvas.renderAll()
+        setActiveTemplate(template)
       } catch (e) {
         console.error('Failed to convert widget to canvas:', e)
       }
     }
-  }, [canvas, loadWidget])
+  }, [loadWidget, setActiveTemplate])
 
   const leftTabs: Array<{ id: LeftTab; label: string }> = [
     { id: 'widgets', label: 'Widgets' },

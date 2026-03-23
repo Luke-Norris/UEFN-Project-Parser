@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { VerseEditor } from '../components/VerseEditor'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useVerseLsp } from '../hooks/useVerseLsp'
+import { lspDocumentSymbols } from '../lib/api'
+import { filePathToUri } from '../verse-language/verse-lsp-extensions'
 import type { VerseFileContent } from '../../shared/types'
 
 interface TreeNode {
@@ -114,6 +116,52 @@ function parsePersistentStructs(content: string, sourceFile: string): PersistStr
   return structs
 }
 
+// ─── LSP Document Symbols ────────────────────────────────────────────────────
+
+const LSP_SK = {
+  Module: 2, Class: 5, Method: 6, Property: 7, Field: 8,
+  Function: 12, Variable: 13, Struct: 23,
+} as const
+
+interface LspDocSymbol {
+  name: string
+  detail?: string
+  kind: number
+  range: { start: { line: number; character: number }; end: { line: number; character: number } }
+  selectionRange: { start: { line: number; character: number }; end: { line: number; character: number } }
+  children?: LspDocSymbol[]
+}
+
+function mapLspSymbols(symbols: LspDocSymbol[], source: string): ReturnType<typeof parseVerseSource> {
+  const classes: ParsedClass[] = []
+  const functions: ParsedFunction[] = []
+  const imports: ParsedImport[] = []
+
+  function walk(syms: LspDocSymbol[]) {
+    for (const s of syms) {
+      const line = s.range.start.line + 1 // LSP is 0-indexed
+      if (s.kind === LSP_SK.Class || s.kind === LSP_SK.Struct) {
+        classes.push({ name: s.name, parent: s.detail || undefined, startLine: line })
+      } else if (s.kind === LSP_SK.Function || s.kind === LSP_SK.Method) {
+        functions.push({ name: s.name, signature: s.detail || s.name, startLine: line })
+      } else if (s.kind === LSP_SK.Module) {
+        imports.push({ module: s.name, line })
+      }
+      if (s.children) walk(s.children)
+    }
+  }
+  walk(symbols)
+
+  // @editable device refs — LSP doesn't surface decorators, so use targeted regex
+  const devices: ParsedDevice[] = []
+  for (const [i, l] of source.split('\n').entries()) {
+    const m = l.trim().match(/^@editable\s+(\w+)\s*:\s*(\w+)/)
+    if (m) devices.push({ name: m[1], type: m[2], line: i + 1 })
+  }
+
+  return { classes, functions, devices, imports }
+}
+
 function CollapsibleSection({ title, count, color, children }: { title: string; count: number; color: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true)
   return (
@@ -144,11 +192,25 @@ export function VerseFilesPage() {
   const [showPersistence, setShowPersistence] = useState(false)
   const lsp = useVerseLsp()
 
-  // Notify LSP when a file is opened
+  // Open file with LSP and fetch document symbols for analysis panel
+  const [lspSymbols, setLspSymbols] = useState<LspDocSymbol[] | null>(null)
   useEffect(() => {
-    if (lsp.ready && fileContent?.content && selectedFile) {
-      lsp.openFile(selectedFile, fileContent.content)
+    if (!lsp.ready || !fileContent?.content || !selectedFile) {
+      setLspSymbols(null)
+      return
     }
+    let cancelled = false
+    ;(async () => {
+      await lsp.openFile(selectedFile, fileContent.content)
+      try {
+        const uri = filePathToUri(selectedFile)
+        const symbols = await lspDocumentSymbols(uri)
+        if (!cancelled) setLspSymbols(Array.isArray(symbols) ? symbols : null)
+      } catch {
+        if (!cancelled) setLspSymbols(null)
+      }
+    })()
+    return () => { cancelled = true }
   }, [lsp.ready, fileContent, selectedFile])
 
   // Build tree from recursive browse
@@ -283,11 +345,12 @@ export function VerseFilesPage() {
     }
   }, [])
 
-  // Parse analysis from current file
+  // Parse analysis — LSP primary, regex fallback
   const parsed = useMemo(() => {
     if (!fileContent?.content) return null
+    if (lspSymbols) return mapLspSymbols(lspSymbols, fileContent.content)
     return parseVerseSource(fileContent.content)
-  }, [fileContent])
+  }, [fileContent, lspSymbols])
 
   const [scrollToLine, setScrollToLine] = useState<number | undefined>(undefined)
 
@@ -369,7 +432,7 @@ export function VerseFilesPage() {
   return (
     <div className="flex-1 flex bg-fn-darker overflow-hidden min-h-0">
       {/* Left: File Tree */}
-      <div className="w-[280px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 min-h-0">
+      <div className="w-[280px] flex flex-col border-r border-fn-border bg-fn-dark shrink-0 min-h-0 overflow-hidden">
         <div className="px-3 py-2 border-b border-fn-border shrink-0">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-semibold text-white">Verse Files</span>
@@ -551,8 +614,9 @@ export function VerseFilesPage() {
       {/* Right: Analysis Panel */}
       {fileContent && parsed && (
         <div className="w-[260px] border-l border-fn-border bg-fn-dark flex flex-col shrink-0 overflow-hidden min-h-0">
-          <div className="px-2 py-1.5 border-b border-fn-border shrink-0">
+          <div className="px-2 py-1.5 border-b border-fn-border shrink-0 flex items-center justify-between">
             <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Analysis</span>
+            {lspSymbols && <span className="text-[8px] text-green-400/60 bg-green-400/10 px-1.5 py-0.5 rounded">LSP</span>}
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <CollapsibleSection title="Classes" count={parsed.classes.length} color="text-blue-400 bg-blue-400/10">

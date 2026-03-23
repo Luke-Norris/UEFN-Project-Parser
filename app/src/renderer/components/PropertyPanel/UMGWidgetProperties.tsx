@@ -731,7 +731,7 @@ function UMGColorInput({
       <input
         type="color"
         className="w-7 h-7 rounded cursor-pointer border border-fn-border bg-transparent p-0.5"
-        value={value}
+        value={value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000'}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
       />

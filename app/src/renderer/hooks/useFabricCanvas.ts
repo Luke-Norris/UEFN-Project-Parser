@@ -383,6 +383,21 @@ export function useFabricCanvas() {
         await addLayerToCanvas(canvas, layer)
       }
 
+      // Zoom to fit all content in the viewport
+      const containerEl = canvas.getElement().parentElement
+      if (containerEl) {
+        const viewW = containerEl.clientWidth || 800
+        const viewH = containerEl.clientHeight || 600
+        const zoomX = viewW / template.width
+        const zoomY = viewH / template.height
+        const zoom = Math.min(zoomX, zoomY, 1) * 0.9
+        canvas.setZoom(zoom)
+        canvas.setDimensions({
+          width: template.width * zoom,
+          height: template.height * zoom,
+        })
+      }
+
       canvas.renderAll()
       pushHistory(JSON.stringify(canvas.toJSON(['layerId', 'layerName', 'widgetType'])))
     },

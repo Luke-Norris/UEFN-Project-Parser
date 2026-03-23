@@ -28,6 +28,47 @@ public class WidgetBlueprintParser
     /// <summary>
     /// Parse a Widget Blueprint from an already-loaded UAsset.
     /// </summary>
+    /// <summary>
+    /// Diagnostic parse — returns error string if parsing fails, null on success.
+    /// </summary>
+    public string? DiagnoseParseFailure(UAsset asset)
+    {
+        if (!IsWidgetBlueprint(asset))
+            return "Not a widget blueprint (no WidgetTree export)";
+
+        NormalExport? widgetTreeExport = null;
+        for (int i = 0; i < asset.Exports.Count; i++)
+        {
+            if (asset.Exports[i].GetExportClassType()?.ToString() == "WidgetTree"
+                && asset.Exports[i] is NormalExport ne)
+            { widgetTreeExport = ne; break; }
+        }
+        if (widgetTreeExport == null)
+            return "WidgetTree export found by IsWidgetBlueprint but not as NormalExport";
+
+        var rootWidgetProp = FindProperty<ObjectPropertyData>(widgetTreeExport.Data, "RootWidget");
+        if (rootWidgetProp == null)
+        {
+            // Check if this is a Verse-generated stub
+            bool isVerseStub = asset.Exports.Any(e =>
+                e.GetExportClassType()?.ToString() == "VerseTypeEditorClassSettings");
+            if (isVerseStub)
+                return "Verse-generated widget class — no visual tree defined. Create the widget layout in UEFN's Widget Designer first.";
+
+            var propNames = string.Join(", ", widgetTreeExport.Data.Select(p => p.Name?.ToString() ?? "?").Take(10));
+            return $"WidgetTree has no RootWidget property. Properties: [{propNames}]";
+        }
+
+        var rootExportIdx = rootWidgetProp.Value.Index - 1;
+        if (rootExportIdx < 0 || rootExportIdx >= asset.Exports.Count)
+            return $"RootWidget index {rootExportIdx} out of range (0..{asset.Exports.Count - 1})";
+
+        if (asset.Exports[rootExportIdx] is not NormalExport)
+            return $"RootWidget export [{rootExportIdx}] is {asset.Exports[rootExportIdx].GetType().Name}, not NormalExport";
+
+        return null; // No diagnosable issue — ParseWidgetExport likely failed on widget structure
+    }
+
     public WidgetSpec? ParseFromAsset(UAsset asset, string? name = null)
     {
         if (!IsWidgetBlueprint(asset))
@@ -121,6 +162,15 @@ public class WidgetBlueprintParser
 
         string name = "Unknown";
         int widgetCount = 0;
+        bool hasRootWidget = false;
+
+        // Infrastructure export types to skip when counting widgets
+        var infraTypes = new HashSet<string> {
+            "WidgetTree", "WidgetBlueprint", "WidgetBlueprintGeneratedClass",
+            "EdGraph", "MVVMBlueprintView", "MVVMBlueprintViewSettings",
+            "MVVMWidgetBlueprintExtension_View", "VerseTypeEditorClassSettings",
+            "VerseTypeEditorWidgetExtension"
+        };
 
         foreach (var export in asset.Exports)
         {
@@ -129,13 +179,24 @@ public class WidgetBlueprintParser
             if (cls == "WidgetBlueprint")
                 name = export.ObjectName?.ToString() ?? name;
 
-            // Count widget exports (not slots, not infrastructure)
-            if (cls != "WidgetTree" && cls != "WidgetBlueprint" && cls != "WidgetBlueprintGeneratedClass"
-                && !cls.All(char.IsDigit) && !cls.EndsWith("Slot"))
+            // Check if WidgetTree has a RootWidget (non-empty tree)
+            if (cls == "WidgetTree" && export is NormalExport ne)
+            {
+                if (ne.Data.Any(p => p.Name?.ToString() == "RootWidget"))
+                    hasRootWidget = true;
+            }
+
+            // Count actual widget exports
+            if (!infraTypes.Contains(cls) && !cls.All(char.IsDigit) && !cls.EndsWith("Slot")
+                && !cls.StartsWith("Default__"))
             {
                 widgetCount++;
             }
         }
+
+        // Skip empty Verse class stubs that have no visual tree
+        if (!hasRootWidget)
+            return null;
 
         // Divide by 2 because of dual-tree (editor + runtime copies)
         widgetCount = Math.Max(1, widgetCount / 2);
@@ -260,14 +321,73 @@ public class WidgetBlueprintParser
                 break;
         }
 
-        // Visibility (all types)
+        // ── Common properties (all types) ──
+
+        // Visibility
         var visProp = FindProperty<EnumPropertyData>(export.Data, "Visibility");
         if (visProp != null)
         {
             var visVal = visProp.Value?.ToString() ?? "";
-            // Strip enum prefix: "ESlateVisibility::Collapsed" -> "Collapsed"
             var colonIdx = visVal.LastIndexOf("::", StringComparison.Ordinal);
             node.Visibility = colonIdx >= 0 ? visVal[(colonIdx + 2)..] : visVal;
+        }
+
+        // RenderOpacity
+        var opacityProp = FindProperty<FloatPropertyData>(export.Data, "RenderOpacity");
+        if (opacityProp != null)
+            node.RenderOpacity = opacityProp.Value;
+
+        // ── Text visual properties (TextBlock + Buttons) ──
+        if (node.Type == WidgetType.TextBlock || node.Type == WidgetType.ButtonLoud
+            || node.Type == WidgetType.ButtonQuiet || node.Type == WidgetType.ButtonRegular)
+        {
+            ExtractTextVisualProperties(export, node);
+        }
+    }
+
+    private void ExtractTextVisualProperties(NormalExport export, WidgetNode node)
+    {
+        // ColorAndOpacity → SpecifiedColor (text foreground color)
+        var colorProp = FindProperty<StructPropertyData>(export.Data, "ColorAndOpacity");
+        if (colorProp?.Value != null)
+        {
+            var specColor = FindProperty<LinearColorPropertyData>(colorProp.Value, "SpecifiedColor");
+            if (specColor != null)
+                node.TextColor = LinearColorToHex(specColor.Value);
+        }
+
+        // Font struct → Size, TypefaceFontName, LetterSpacing, OutlineSettings
+        var fontProp = FindProperty<StructPropertyData>(export.Data, "Font");
+        if (fontProp?.Value != null)
+        {
+            var sizeProp = FindProperty<FloatPropertyData>(fontProp.Value, "Size");
+            if (sizeProp != null) node.FontSize = sizeProp.Value;
+
+            var faceProp = FindProperty<NamePropertyData>(fontProp.Value, "TypefaceFontName");
+            if (faceProp != null) node.FontWeight = faceProp.Value?.ToString();
+
+            var letterProp = FindProperty<IntPropertyData>(fontProp.Value, "LetterSpacing");
+            if (letterProp != null) node.LetterSpacing = letterProp.Value;
+
+            var outlineProp = FindProperty<StructPropertyData>(fontProp.Value, "OutlineSettings");
+            if (outlineProp?.Value != null)
+            {
+                var outSizeProp = FindProperty<IntPropertyData>(outlineProp.Value, "OutlineSize");
+                if (outSizeProp != null) node.OutlineSize = outSizeProp.Value;
+
+                var outColorProp = FindProperty<LinearColorPropertyData>(outlineProp.Value, "OutlineColor");
+                if (outColorProp != null) node.OutlineColor = LinearColorToHex(outColorProp.Value);
+            }
+        }
+
+        // Justification (text alignment)
+        var justProp = FindProperty<BytePropertyData>(export.Data, "Justification");
+        if (justProp != null)
+        {
+            var justVal = justProp.EnumValue?.ToString() ?? justProp.Value.ToString();
+            if (justVal.Contains("Center")) node.Justification = "Center";
+            else if (justVal.Contains("Right")) node.Justification = "Right";
+            else node.Justification = "Left";
         }
     }
 
@@ -316,7 +436,15 @@ public class WidgetBlueprintParser
         {
             ExtractStackBoxSlotLayout(slotExport, childNode);
         }
-        // OverlaySlot, SizeBoxSlot, ScaleBoxSlot, GridSlot — no positional layout data needed for WidgetSpec
+        else if (parentType == WidgetType.Overlay)
+        {
+            ExtractOverlaySlotLayout(slotExport, childNode);
+        }
+        // SizeBoxSlot, ScaleBoxSlot, GridSlot — extract alignment if available
+        else
+        {
+            ExtractSlotAlignment(slotExport, childNode);
+        }
     }
 
     private void ExtractCanvasPanelSlotLayout(NormalExport slotExport, WidgetNode childNode)
@@ -366,6 +494,10 @@ public class WidgetBlueprintParser
             }
 
             childNode.Anchor = DetectAnchorPreset(minX, minY, maxX, maxY);
+            childNode.AnchorMinX = minX;
+            childNode.AnchorMinY = minY;
+            childNode.AnchorMaxX = maxX;
+            childNode.AnchorMaxY = maxY;
         }
 
         // Alignment
@@ -385,12 +517,52 @@ public class WidgetBlueprintParser
 
     private void ExtractStackBoxSlotLayout(NormalExport slotExport, WidgetNode childNode)
     {
+        ExtractSlotPadding(slotExport, childNode);
+        ExtractSlotAlignment(slotExport, childNode);
+    }
+
+    private void ExtractOverlaySlotLayout(NormalExport slotExport, WidgetNode childNode)
+    {
+        ExtractSlotPadding(slotExport, childNode);
+        ExtractSlotAlignment(slotExport, childNode);
+    }
+
+    private void ExtractSlotPadding(NormalExport slotExport, WidgetNode childNode)
+    {
         var padding = FindProperty<StructPropertyData>(slotExport.Data, "Padding");
         if (padding?.Value != null)
         {
-            // Use the Left value as uniform padding (matching builder's pattern)
             var left = FindProperty<FloatPropertyData>(padding.Value, "Left");
-            if (left != null) childNode.Padding = left.Value;
+            var top = FindProperty<FloatPropertyData>(padding.Value, "Top");
+            var right = FindProperty<FloatPropertyData>(padding.Value, "Right");
+            var bottom = FindProperty<FloatPropertyData>(padding.Value, "Bottom");
+            if (left != null) { childNode.Padding = left.Value; childNode.SlotPadLeft = left.Value; }
+            if (top != null) childNode.SlotPadTop = top.Value;
+            if (right != null) childNode.SlotPadRight = right.Value;
+            if (bottom != null) childNode.SlotPadBottom = bottom.Value;
+        }
+    }
+
+    private static void ExtractSlotAlignment(NormalExport slotExport, WidgetNode childNode)
+    {
+        var hAlign = FindProperty<BytePropertyData>(slotExport.Data, "HorizontalAlignment");
+        if (hAlign != null)
+        {
+            var val = hAlign.EnumValue?.ToString() ?? hAlign.Value.ToString();
+            if (val.Contains("Fill")) childNode.SlotHAlign = "Fill";
+            else if (val.Contains("Center")) childNode.SlotHAlign = "Center";
+            else if (val.Contains("Right")) childNode.SlotHAlign = "Right";
+            else childNode.SlotHAlign = "Left";
+        }
+
+        var vAlign = FindProperty<BytePropertyData>(slotExport.Data, "VerticalAlignment");
+        if (vAlign != null)
+        {
+            var val = vAlign.EnumValue?.ToString() ?? vAlign.Value.ToString();
+            if (val.Contains("Fill")) childNode.SlotVAlign = "Fill";
+            else if (val.Contains("Center")) childNode.SlotVAlign = "Center";
+            else if (val.Contains("Bottom")) childNode.SlotVAlign = "Bottom";
+            else childNode.SlotVAlign = "Top";
         }
     }
 

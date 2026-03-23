@@ -117,7 +117,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
   const [showHierarchy, setShowHierarchy] = useState(true)
   const [hierarchyWidth, setHierarchyWidth] = useState(260)
   const [hierarchySearch, setHierarchySearch] = useState('')
-  const [flySpeed, setFlySpeed] = useState(2)
+  const [flySpeed, setFlySpeed] = useState(10)
   const [fov, setFov] = useState(60)
   const [showRealMeshes, setShowRealMeshes] = useState(false)
   const [meshProgress, setMeshProgress] = useState<MeshLoadProgress | null>(null)
@@ -188,7 +188,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     if (!scene) return
     if (showFog) {
       const bgColor = cssColorToHex('--fn-viewport', '#08081a')
-      scene.fog = new THREE.Fog(bgColor, 500, 2000)
+      scene.fog = new THREE.Fog(bgColor, 5000, 200000)
     } else {
       scene.fog = null
     }
@@ -215,11 +215,11 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     const gridColor = cssColorToHex('--fn-grid', '#1a1a3a')
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(bgColor)
-    scene.fog = new THREE.Fog(bgColor, 500, 2000)
+    scene.fog = new THREE.Fog(bgColor, 5000, 200000)
     sceneRef.current = scene
 
     // Camera
-    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000)
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 500000)
     camera.position.set(50, 80, 50)
     cameraRef.current = camera
 
@@ -234,7 +234,7 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = 0.1
-    controls.maxDistance = 2000
+    controls.maxDistance = 500000
     controls.minDistance = 5
     controls.mouseButtons = { LEFT: THREE.MOUSE.LEFT, MIDDLE: THREE.MOUSE.MIDDLE, RIGHT: THREE.MOUSE.RIGHT }
     controlsRef.current = controls
@@ -245,58 +245,46 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
 
     const onMouseDown = (e: MouseEvent) => {
       if (e.button === 2) {
+        e.preventDefault()
         flyingRef.current = true
         controls.enabled = false
-        renderer.domElement.requestPointerLock()
+        renderer.domElement.style.cursor = 'move'
       }
     }
     const onMouseUp = (e: MouseEvent) => {
-      if (e.button === 2) {
+      if (e.button === 2 && flyingRef.current) {
         flyingRef.current = false
+        const forward = new THREE.Vector3()
+        camera.getWorldDirection(forward)
+        controls.target.copy(camera.position).addScaledVector(forward, 50)
         controls.enabled = true
-        if (document.pointerLockElement) document.exitPointerLock()
+        renderer.domElement.style.cursor = ''
       }
     }
     const onMouseMoveFly = (e: MouseEvent) => {
       if (!flyingRef.current) return
       const euler = new THREE.Euler(0, 0, 0, 'YXZ')
       euler.setFromQuaternion(camera.quaternion)
-      euler.y -= e.movementX * 0.002
-      euler.x -= e.movementY * 0.002
+      euler.y -= e.movementX * 0.003
+      euler.x -= e.movementY * 0.003
       euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x))
       camera.quaternion.setFromEuler(euler)
     }
     renderer.domElement.addEventListener('mousedown', onMouseDown)
-    renderer.domElement.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('mouseup', onMouseUp)
     document.addEventListener('mousemove', onMouseMoveFly)
 
-    // Release pointer lock if lost focus
-    const onPointerLockChange = () => {
-      if (!document.pointerLockElement && flyingRef.current) {
+    // Release fly mode if window loses focus
+    const onBlur = () => {
+      if (flyingRef.current) {
         flyingRef.current = false
         controls.enabled = true
       }
     }
-    document.addEventListener('pointerlockchange', onPointerLockChange)
+    window.addEventListener('blur', onBlur)
 
     const onKeyDown = (e: KeyboardEvent) => {
       keysRef.current.add(e.key.toLowerCase())
-      // F key — focus selected device
-      if (e.key.toLowerCase() === 'f') {
-        const selected = deviceMeshesRef.current.find((m) => {
-          const mat = m.material as THREE.MeshLambertMaterial
-          return mat.color.getHex() === SELECTED_COLOR
-        })
-        if (selected) {
-          const pos = selected.position.clone()
-          const dist = 20
-          const dir = new THREE.Vector3()
-          camera.getWorldDirection(dir)
-          controls.target.copy(pos)
-          camera.position.copy(pos).addScaledVector(dir, -dist)
-          controls.update()
-        }
-      }
     }
     const onKeyUp = (e: KeyboardEvent) => keysRef.current.delete(e.key.toLowerCase())
     document.addEventListener('keydown', onKeyDown)
@@ -323,22 +311,27 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     scene.add(directional2)
 
     // Ground grid
-    const gridHelper = new THREE.GridHelper(1000, 100, gridColor, gridColor)
+    const gridHelper = new THREE.GridHelper(100000, 200, gridColor, gridColor)
     gridHelper.material.opacity = 0.3
     gridHelper.material.transparent = true
     scene.add(gridHelper)
 
     // Ground plane (subtle)
-    const groundGeo = new THREE.PlaneGeometry(2000, 2000)
+    const groundGeo = new THREE.PlaneGeometry(200000, 200000)
     const groundMat = new THREE.MeshLambertMaterial({ color: bgColor, transparent: true, opacity: 0.5 })
     const ground = new THREE.Mesh(groundGeo, groundMat)
     ground.rotation.x = -Math.PI / 2
     ground.position.y = -0.1
     scene.add(ground)
 
-    // Animation loop with WASD fly
-    function animate() {
+    // Animation loop with WASD fly — throttled to yield to other JS tasks
+    let lastFrame = 0
+    function animate(time: number = 0) {
       animFrameRef.current = requestAnimationFrame(animate)
+
+      // Throttle to ~30fps to leave headroom for MCP bridge and UI
+      if (time - lastFrame < 33) return
+      lastFrame = time
 
       // WASD fly movement when right-click held
       if (flyingRef.current) {
@@ -380,12 +373,11 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
       renderer.dispose()
       renderer.domElement.removeEventListener('contextmenu', onContextMenu)
       renderer.domElement.removeEventListener('mousedown', onMouseDown)
-      renderer.domElement.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('mouseup', onMouseUp)
       document.removeEventListener('mousemove', onMouseMoveFly)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
-      document.removeEventListener('pointerlockchange', onPointerLockChange)
-      if (document.pointerLockElement) document.exitPointerLock()
+      window.removeEventListener('blur', onBlur)
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement)
       }
@@ -398,55 +390,81 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     const scene = sceneRef.current
     if (!scene) return
 
-    // Remove old meshes
-    for (const mesh of deviceMeshesRef.current) {
-      scene.remove(mesh)
-      mesh.geometry.dispose()
-      ;(mesh.material as THREE.Material).dispose()
+    // Remove old device objects (markers + instanced meshes)
+    for (const obj of deviceMeshesRef.current) {
+      scene.remove(obj)
+    }
+    // Remove any InstancedMesh from previous render
+    const toRemove: THREE.Object3D[] = []
+    scene.traverse((child) => {
+      if (child instanceof THREE.InstancedMesh) toRemove.push(child)
+    })
+    for (const obj of toRemove) {
+      scene.remove(obj)
+      if (obj instanceof THREE.InstancedMesh) {
+        obj.geometry?.dispose()
+        ;(obj.material as THREE.Material)?.dispose()
+      }
     }
     deviceMeshesRef.current = []
 
     const devicesWithPos = devices.filter((d) => d.position)
     if (devicesWithPos.length === 0) return
 
-    // Shared geometries
+    // ── InstancedMesh approach: 1 draw call per geometry type ──
     const boxGeo = new THREE.BoxGeometry(1.5, 2, 1.5)
-    const sphereGeo = new THREE.SphereGeometry(1, 12, 8)
-    const cylinderGeo = new THREE.CylinderGeometry(0.8, 0.8, 2, 12)
 
-    const meshes: THREE.Mesh[] = []
+    // Group devices by color for instancing
+    const mat = new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.85 })
+    const instancedMesh = new THREE.InstancedMesh(boxGeo, mat, devicesWithPos.length)
+    instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
 
-    for (const device of devicesWithPos) {
-      const color = getDeviceColor(device.deviceType)
-      const type = device.deviceType.toLowerCase()
+    // Per-instance color
+    const colorAttr = new Float32Array(devicesWithPos.length * 3)
 
-      let geo: THREE.BufferGeometry = boxGeo
-      if (type.includes('spawn') || type.includes('portal')) geo = sphereGeo
-      else if (type.includes('trigger') || type.includes('volume')) geo = cylinderGeo
+    const dummy = new THREE.Object3D()
+    const tmpColor = new THREE.Color()
 
-      const mesh = createDeviceMesh(device, geo, color)
-      scene.add(mesh)
-      meshes.push(mesh)
+    // Also keep individual invisible markers for raycasting
+    const markers: THREE.Mesh[] = []
+    const markerGeo = new THREE.BoxGeometry(1.5, 2, 1.5)
+    const markerMat = new THREE.MeshBasicMaterial({ visible: false })
+
+    for (let i = 0; i < devicesWithPos.length; i++) {
+      const device = devicesWithPos[i]
+      const pos = device.position!
+
+      dummy.position.set(pos.x / 100, pos.z / 100, -pos.y / 100)
+      dummy.updateMatrix()
+      instancedMesh.setMatrixAt(i, dummy.matrix)
+
+      const hex = getDeviceColor(device.deviceType)
+      tmpColor.setHex(hex)
+      colorAttr[i * 3] = tmpColor.r
+      colorAttr[i * 3 + 1] = tmpColor.g
+      colorAttr[i * 3 + 2] = tmpColor.b
+
+      // Invisible marker for raycasting/selection
+      const marker = new THREE.Mesh(markerGeo, markerMat)
+      marker.position.set(pos.x / 100, pos.z / 100, -pos.y / 100)
+      marker.userData = { device }
+      scene.add(marker)
+      markers.push(marker)
     }
 
-    deviceMeshesRef.current = meshes
+    instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(colorAttr, 3)
+    instancedMesh.instanceMatrix.needsUpdate = true
+    scene.add(instancedMesh)
 
-    // Auto-frame: center camera on all devices
-    if (meshes.length > 0) {
-      const box = new THREE.Box3()
-      for (const m of meshes) box.expandByObject(m)
-      const center = box.getCenter(new THREE.Vector3())
-      const size = box.getSize(new THREE.Vector3())
-      const maxDim = Math.max(size.x, size.y, size.z)
-      const dist = Math.max(maxDim * 1.5, 50)
+    deviceMeshesRef.current = markers
 
-      const camera = cameraRef.current
-      const controls = controlsRef.current
-      if (camera && controls) {
-        controls.target.copy(center)
-        camera.position.set(center.x + dist * 0.5, center.y + dist * 0.7, center.z + dist * 0.5)
-        controls.update()
-      }
+    // Camera at origin
+    const camera = cameraRef.current
+    const controls = controlsRef.current
+    if (camera && controls) {
+      controls.target.set(0, 0, 0)
+      camera.position.set(0, 50, 100)
+      controls.update()
     }
 
     // Don't dispose shared geos — they're reused
@@ -521,25 +539,9 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     raycasterRef.current.setFromCamera(mouseRef.current, camera)
     const intersects = raycasterRef.current.intersectObjects(deviceMeshesRef.current)
 
-    // Reset all hovered
-    for (const mesh of deviceMeshesRef.current) {
-      const dev = mesh.userData.device as DeviceEntry
-      const isSelected = selectedDevice && dev.filePath === selectedDevice.filePath
-      const mat = mesh.material as THREE.MeshLambertMaterial
-      if (!isSelected) {
-        mat.color.setHex(getDeviceColor(dev.deviceType))
-        mat.emissive.setHex(0x000000)
-      }
-    }
-
     if (intersects.length > 0) {
       const mesh = intersects[0].object as THREE.Mesh
       const dev = mesh.userData.device as DeviceEntry
-      const isSelected = selectedDevice && dev.filePath === selectedDevice.filePath
-      if (!isSelected) {
-        const mat = mesh.material as THREE.MeshLambertMaterial
-        mat.emissive.setHex(0x222244)
-      }
       setHoveredDevice(dev)
 
       // Position label
@@ -559,22 +561,9 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     raycasterRef.current.setFromCamera(mouseRef.current, camera)
     const intersects = raycasterRef.current.intersectObjects(deviceMeshesRef.current)
 
-    // Deselect previous
-    for (const mesh of deviceMeshesRef.current) {
-      const mat = mesh.material as THREE.MeshLambertMaterial
-      const dev = mesh.userData.device as DeviceEntry
-      mat.color.setHex(getDeviceColor(dev.deviceType))
-      mat.emissive.setHex(0x000000)
-      mesh.scale.set(1, 1, 1)
-    }
-
     if (intersects.length > 0) {
       const mesh = intersects[0].object as THREE.Mesh
       const dev = mesh.userData.device as DeviceEntry
-      const mat = mesh.material as THREE.MeshLambertMaterial
-      mat.color.setHex(SELECTED_COLOR)
-      mat.emissive.setHex(0x003322)
-      mesh.scale.set(1.3, 1.3, 1.3)
       setSelectedDevice(dev)
     } else {
       setSelectedDevice(null)
@@ -596,22 +585,6 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
 
   // Select device from hierarchy
   const selectDeviceFromHierarchy = useCallback((device: DeviceEntry) => {
-    // Deselect all
-    for (const mesh of deviceMeshesRef.current) {
-      const mat = mesh.material as THREE.MeshLambertMaterial
-      const dev = mesh.userData.device as DeviceEntry
-      mat.color.setHex(getDeviceColor(dev.deviceType))
-      mat.emissive.setHex(0x000000)
-      mesh.scale.set(1, 1, 1)
-    }
-    // Select this one
-    const mesh = deviceMeshesRef.current.find((m) => m.userData.device === device)
-    if (mesh) {
-      const mat = mesh.material as THREE.MeshLambertMaterial
-      mat.color.setHex(SELECTED_COLOR)
-      mat.emissive.setHex(0x003322)
-      mesh.scale.set(1.3, 1.3, 1.3)
-    }
     setSelectedDevice(device)
   }, [])
 
@@ -624,8 +597,23 @@ export function ScenePreviewPage({ selectedLevel }: ScenePreviewPageProps) {
     )
   }, [devices, hierarchySearch])
 
-  // Collapse state for hierarchy groups
+  // Collapse state for hierarchy groups — auto-collapse large groups
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const autoCollapsedRef = useRef(false)
+  useEffect(() => {
+    if (autoCollapsedRef.current || devices.length === 0) return
+    autoCollapsedRef.current = true
+    const groups = new Map<string, number>()
+    for (const d of devices) {
+      const t = d.deviceType || 'Unknown'
+      groups.set(t, (groups.get(t) || 0) + 1)
+    }
+    const largeGroups = new Set<string>()
+    for (const [type, count] of groups) {
+      if (count > 50) largeGroups.add(type)
+    }
+    if (largeGroups.size > 0) setCollapsedGroups(largeGroups)
+  }, [devices])
 
   // Clean device display name
   const cleanDeviceName = useCallback((dev: DeviceEntry, index: number) => {

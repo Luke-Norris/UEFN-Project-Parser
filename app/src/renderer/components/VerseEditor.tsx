@@ -228,7 +228,7 @@ export function VerseEditor({
   return (
     <div
       ref={containerRef}
-      className="verse-editor h-full overflow-hidden"
+      className="verse-editor h-full overflow-hidden [&>.cm-editor]:h-full [&>.cm-editor>.cm-scroller]:overflow-auto"
       style={{ '--fn-darker': '#0d1117', '--fn-dark': '#161b22' } as React.CSSProperties}
     />
   )

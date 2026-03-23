@@ -148,6 +148,33 @@ public static class WidgetSpecSerializer
             Orientation = node.Type == WidgetType.StackBox ? node.Orientation.ToString() : null,
             Padding = node.Padding > 0 ? node.Padding : null,
             Visibility = node.Visibility,
+
+            // Raw anchors (only if non-default)
+            AnchorMinX = node.AnchorMinX != 0 ? node.AnchorMinX : null,
+            AnchorMinY = node.AnchorMinY != 0 ? node.AnchorMinY : null,
+            AnchorMaxX = node.AnchorMaxX != 0 ? node.AnchorMaxX : null,
+            AnchorMaxY = node.AnchorMaxY != 0 ? node.AnchorMaxY : null,
+
+            // Slot alignment
+            SlotHAlign = node.SlotHAlign,
+            SlotVAlign = node.SlotVAlign,
+            SlotPadLeft = node.SlotPadLeft != 0 ? node.SlotPadLeft : null,
+            SlotPadTop = node.SlotPadTop != 0 ? node.SlotPadTop : null,
+            SlotPadRight = node.SlotPadRight != 0 ? node.SlotPadRight : null,
+            SlotPadBottom = node.SlotPadBottom != 0 ? node.SlotPadBottom : null,
+
+            // Text visuals
+            FontSize = node.FontSize > 0 ? node.FontSize : null,
+            FontWeight = node.FontWeight,
+            TextColor = node.TextColor,
+            Justification = node.Justification,
+            LetterSpacing = node.LetterSpacing != 0 ? node.LetterSpacing : null,
+            OutlineSize = node.OutlineSize > 0 ? node.OutlineSize : null,
+            OutlineColor = node.OutlineColor,
+
+            // Rendering
+            RenderOpacity = node.RenderOpacity < 1f ? node.RenderOpacity : null,
+
             Children = node.Children.Count > 0
                 ? node.Children.Select(SerializeNode).ToList()
                 : null
@@ -224,6 +251,33 @@ public static class WidgetSpecSerializer
         public string? Orientation { get; set; }
         public float? Padding { get; set; }
         public string? Visibility { get; set; }
+
+        // Raw anchor values
+        public float? AnchorMinX { get; set; }
+        public float? AnchorMinY { get; set; }
+        public float? AnchorMaxX { get; set; }
+        public float? AnchorMaxY { get; set; }
+
+        // Slot alignment
+        public string? SlotHAlign { get; set; }
+        public string? SlotVAlign { get; set; }
+        public float? SlotPadLeft { get; set; }
+        public float? SlotPadTop { get; set; }
+        public float? SlotPadRight { get; set; }
+        public float? SlotPadBottom { get; set; }
+
+        // Text visuals
+        public float? FontSize { get; set; }
+        public string? FontWeight { get; set; }
+        public string? TextColor { get; set; }
+        public string? Justification { get; set; }
+        public int? LetterSpacing { get; set; }
+        public int? OutlineSize { get; set; }
+        public string? OutlineColor { get; set; }
+
+        // Rendering
+        public float? RenderOpacity { get; set; }
+
         public List<NodeDto>? Children { get; set; }
     }
 }

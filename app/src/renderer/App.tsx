@@ -26,6 +26,8 @@ import { LibraryDeviceConfigsPage } from './pages/LibraryDeviceConfigsPage'
 import { DeviceWiringPage } from './pages/DeviceWiringPage'
 import { ScenePreviewPage } from './pages/ScenePreviewPage'
 import { RecipesPage } from './pages/RecipesPage'
+import { AssetSearchPage } from './pages/AssetSearchPage'
+import { BlueprintGraphPage } from './pages/BlueprintGraphPage'
 import { PersistentDataPage } from './pages/PersistentDataPage'
 import { VerseReferencePage } from './pages/VerseReferencePage'
 import { VerseErrorExplainerPage } from './pages/VerseErrorExplainerPage'
@@ -115,6 +117,10 @@ export default function App() {
         return <DeviceWiringPage selectedLevel={selectedLevel} onNavigate={handleNavigate} />
       case 'scene-preview':
         return <ScenePreviewPage selectedLevel={selectedLevel} />
+      case 'asset-search':
+        return <AssetSearchPage />
+      case 'blueprint-graph':
+        return <BlueprintGraphPage selectedLevel={selectedLevel} />
       case 'recipes':
         return <RecipesPage />
       case 'levels':

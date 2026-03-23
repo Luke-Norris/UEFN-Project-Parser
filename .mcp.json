@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "tauri-mcp": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@hypothesi/tauri-mcp-server"]
+    },
+    "chrome-devtools": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "chrome-devtools-mcp@latest", "--no-usage-statistics", "--browser-url=http://127.0.0.1:9222"]
+    },
+    "rust-mcp-server": {
+      "command": "rust-mcp-server",
+      "args": ["--workspace", "C:/Users/Luke/dev/UEFN-Project-Parser/app/src-tauri"]
+    },
+    "eslint": {
+      "command": "cmd",
+      "args": ["/c", "npx", "@eslint/mcp@latest"]
+    },
+    "git-mcp-server": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@cyanheads/git-mcp-server@latest"],
+      "env": {
+        "GIT_BASE_DIR": "C:/Users/Luke/dev/UEFN-Project-Parser"
+      }
+    },
+    "tailwindcss": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "tailwindcss-mcp-server"]
+    }
+  }
+}

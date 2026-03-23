@@ -1,4 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
+import { useVerseLsp } from '../hooks/useVerseLsp'
+import { lspDocumentSymbols, lspDidOpen } from '../lib/api'
+import { filePathToUri } from '../verse-language/verse-lsp-extensions'
 
 interface PersistField {
   name: string
@@ -91,6 +94,17 @@ function typeBadgeColor(type: string): string {
   return 'bg-gray-400/10 text-gray-400 border-gray-400/20'
 }
 
+// LSP symbol kinds for struct/class detection
+const LSP_SK = { Class: 5, Struct: 23 } as const
+
+interface LspDocSymbol {
+  name: string
+  detail?: string
+  kind: number
+  range: { start: { line: number; character: number }; end: { line: number; character: number } }
+  children?: LspDocSymbol[]
+}
+
 interface Props {
   onNavigate?: (page: string) => void
 }
@@ -102,8 +116,17 @@ export function PersistentDataPage({ onNavigate }: Props = {}) {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'fields' | 'file'>('name')
   const [sortReversed, setSortReversed] = useState(false)
+  const [persistableOnly, setPersistableOnly] = useState(false)
+  const lsp = useVerseLsp()
+  const [lspActive, setLspActive] = useState(false)
 
+  // Phase 1: regex scan on mount
   useEffect(() => { scanForSchemas() }, [])
+
+  // Phase 2: re-scan with LSP when ready
+  useEffect(() => {
+    if (lsp.ready) scanWithLsp()
+  }, [lsp.ready])
 
   async function scanForSchemas() {
     setLoading(true)
@@ -133,8 +156,83 @@ export function PersistentDataPage({ onNavigate }: Props = {}) {
     setLoading(false)
   }
 
+  async function scanWithLsp() {
+    setLoading(true)
+    try {
+      const allSchemas: PersistSchema[] = []
+      async function scanDir(path?: string) {
+        const result = await window.electronAPI.forgeBrowseContent(path)
+        for (const entry of result?.entries ?? []) {
+          const isDir = entry.isDirectory || (entry as any).type === 'folder'
+          if (isDir) {
+            if (entry.name?.startsWith('__')) continue
+            await scanDir(entry.path || entry.relativePath)
+          } else if (entry.name?.endsWith('.verse') || (entry as any).type === 'verse') {
+            const filePath = entry.path || entry.relativePath
+            try {
+              const r = await window.electronAPI.forgeReadVerse(filePath) as any
+              const source = r?.content ?? r?.source ?? ''
+              if (!source) continue
+
+              const uri = filePathToUri(filePath)
+              // didOpen is idempotent in our bridge
+              await lspDidOpen(uri, source)
+              const symbols = await lspDocumentSymbols(uri) as LspDocSymbol[]
+              if (!Array.isArray(symbols)) continue
+
+              const lines = source.split('\n')
+              for (const sym of symbols) {
+                if (sym.kind !== LSP_SK.Class && sym.kind !== LSP_SK.Struct) continue
+                const startLine = sym.range.start.line
+                const endLine = sym.range.end.line
+                const defLine = lines[startLine]?.trim() || ''
+
+                // Extract modifiers from definition line
+                const modMatch = defLine.match(/<([^>]+)>/)
+                const allMods = modMatch ? modMatch[1].split(',').map((s: string) => s.trim()) : []
+                const parentMatch = defLine.match(/\((\w+)\)/)
+                const isPersistable = allMods.includes('persistable') || defLine.includes('persistable')
+
+                // Extract fields within LSP-identified range
+                const fields: PersistField[] = []
+                for (let i = startLine + 1; i <= endLine && i < lines.length; i++) {
+                  const trimmed = lines[i].trim()
+                  const fm = trimmed.match(/^(?:@editable\s+)?(\w+)(?:<[^>]*>)?\s*:\s*(\S+)\s*=\s*([^#]+?)(?:\s*#\s*(.*))?$/)
+                  if (fm) {
+                    fields.push({
+                      name: fm[1], type: fm[2].replace(/,$/, ''),
+                      defaultValue: fm[3].trim(), comment: fm[4]?.trim() || '', line: i + 1,
+                    })
+                  }
+                }
+
+                if (fields.length > 0) {
+                  allSchemas.push({
+                    name: sym.name,
+                    kind: isPersistable ? 'persistable' : sym.kind === LSP_SK.Struct ? 'struct' : 'class',
+                    parent: parentMatch?.[1],
+                    modifiers: allMods,
+                    fields,
+                    sourceFile: filePath,
+                    relativePath: filePath.split(/[/\\]/).slice(-2).join('/'),
+                    startLine: startLine + 1,
+                  })
+                }
+              }
+            } catch { /* skip */ }
+          }
+        }
+      }
+      await scanDir()
+      setSchemas(allSchemas)
+      setLspActive(true)
+    } catch { }
+    setLoading(false)
+  }
+
   const filtered = useMemo(() => {
     let list = schemas
+    if (persistableOnly) list = list.filter(s => s.kind === 'persistable')
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(s =>
@@ -151,7 +249,7 @@ export function PersistentDataPage({ onNavigate }: Props = {}) {
     })
     if (sortReversed) list.reverse()
     return list
-  }, [schemas, search, sortBy, sortReversed])
+  }, [schemas, search, sortBy, sortReversed, persistableOnly])
 
   const persistable = useMemo(() => filtered.filter(s => s.kind === 'persistable'), [filtered])
   const structs = useMemo(() => filtered.filter(s => s.kind !== 'persistable'), [filtered])
@@ -184,7 +282,21 @@ export function PersistentDataPage({ onNavigate }: Props = {}) {
             <h1 className="text-[14px] font-bold text-white">Persistent Data</h1>
             <p className="text-[10px] text-gray-500">{persistable.length} persistable classes, {structs.length} structs, {schemas.reduce((a, s) => a + s.fields.length, 0)} total fields</p>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={() => setPersistableOnly(!persistableOnly)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-medium transition-colors border ${
+                persistableOnly
+                  ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30'
+                  : 'text-gray-500 bg-transparent border-fn-border hover:text-gray-300 hover:border-fn-border/80'
+              }`}
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Persistable Only
+            </button>
+            {lspActive && <span className="text-[8px] text-green-400/60 bg-green-400/10 px-1.5 py-0.5 rounded">LSP</span>}
             <input
               type="text"
               value={search}

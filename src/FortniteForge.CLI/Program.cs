@@ -1615,11 +1615,58 @@ public class Program
         using var fileAccess = new SafeFileAccess(config, detector,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<SafeFileAccess>.Instance);
 
+        // Try parsing with detailed error reporting
+        UAssetAPI.UAsset asset;
+        try
+        {
+            asset = fileAccess.OpenForRead(path);
+        }
+        catch (Exception ex)
+        {
+            return new SidecarResponse(req.Id, Error: new SidecarError("READ_FAILED",
+                $"Could not read .uasset: {ex.Message}"));
+        }
+
         var parser = new WidgetBlueprintParser();
-        var spec = parser.Parse(path, fileAccess);
+
+        // Check if it's actually a widget blueprint
+        if (!WidgetBlueprintParser.IsWidgetBlueprint(asset))
+        {
+            var exportTypes = string.Join(", ",
+                asset.Exports.Select(e => e.GetExportClassType()?.ToString() ?? "null").Distinct().Take(10));
+            return new SidecarResponse(req.Id, Error: new SidecarError("NOT_WIDGET",
+                $"Not a widget blueprint. Export types: [{exportTypes}]"));
+        }
+
+        var spec = parser.ParseFromAsset(asset, Path.GetFileNameWithoutExtension(path));
 
         if (spec == null)
-            return new SidecarResponse(req.Id, Error: new SidecarError("PARSE_FAILED", "Could not parse widget blueprint"));
+        {
+            var diagnosis = parser.DiagnoseParseFailure(asset) ?? "ParseWidgetExport returned null";
+
+            // Dump export info for debugging
+            var exportDump = new List<object>();
+            for (int i = 0; i < asset.Exports.Count; i++)
+            {
+                var exp = asset.Exports[i];
+                var ne = exp as UAssetAPI.ExportTypes.NormalExport;
+                exportDump.Add(new {
+                    index = i,
+                    type = exp.GetExportClassType()?.ToString() ?? "null",
+                    name = exp.ObjectName?.ToString() ?? "null",
+                    serialOffset = exp.SerialOffset,
+                    serialSize = exp.SerialSize,
+                    scriptStart = ne?.ScriptSerializationStartOffset ?? -1,
+                    scriptEnd = ne?.ScriptSerializationEndOffset ?? -1,
+                    propertyCount = ne?.Data?.Count ?? -1,
+                    isNormalExport = ne != null,
+                });
+            }
+
+            return new SidecarResponse(req.Id, Error: new SidecarError("PARSE_FAILED",
+                $"Parse failed: {diagnosis}",
+                new { exports = exportDump }));
+        }
 
         var specJson = WidgetSpecSerializer.ToJson(spec);
 
