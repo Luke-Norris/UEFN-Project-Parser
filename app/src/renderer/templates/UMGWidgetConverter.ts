@@ -270,7 +270,14 @@ function flattenNode(
         layers.push(l)
       }
 
-      const children = node.children || []
+      // Sort children: tint-only backgrounds first (z-bottom), then content (z-top)
+      const children = [...(node.children || [])].sort((a, b) => {
+        const aIsBg = a.type === 'Image' && !!a.tintColor && !a.texturePath
+        const bIsBg = b.type === 'Image' && !!b.tintColor && !b.texturePath
+        if (aIsBg && !bIsBg) return -1
+        if (!aIsBg && bIsBg) return 1
+        return 0
+      })
       for (const child of children) {
         const { cx, cy, cw, ch } = computeCanvasChildLayout(child, x, y, w, h)
         flattenNode(child, cx, cy, cw, ch, layers, myId, depth + 1)
@@ -294,18 +301,28 @@ function flattenNode(
       if (children.length === 0) break
 
       if (isH) {
-        const childW = (w - GAP * (children.length - 1)) / children.length
+        // Horizontal: distribute children left-to-right
+        // Use imageWidth if available, otherwise divide equally
+        const hasExplicitSizes = children.some(c => c.imageWidth || c.minWidth)
         let cx = x
         for (const child of children) {
-          flattenNode(child, cx, y, childW, h, layers, myId, depth + 1)
-          cx += childW + GAP
+          const pad = child.slotPadLeft ?? child.padding ?? 0
+          cx += pad
+          const childW = child.imageWidth || child.minWidth || ((w - pad * children.length) / children.length)
+          const childH = child.imageHeight || child.minHeight || h
+          flattenNode(child, cx, y, childW, childH, layers, myId, depth + 1)
+          cx += childW + (child.slotPadRight ?? GAP)
         }
       } else {
+        // Vertical: stack children top-to-bottom
         let cy = y
         for (const child of children) {
-          const ch = estimateH(child)
-          flattenNode(child, x, cy, w, ch, layers, myId, depth + 1)
-          cy += ch + GAP
+          const pad = child.slotPadTop ?? child.padding ?? 0
+          cy += pad
+          const ch = child.imageHeight || child.minHeight || estimateH(child)
+          const cw = child.imageWidth || child.minWidth || w
+          flattenNode(child, x, cy, cw, ch, layers, myId, depth + 1)
+          cy += ch + (child.slotPadBottom ?? GAP)
         }
       }
       break
@@ -321,9 +338,17 @@ function flattenNode(
       layers.push(l)
 
       // Overlay: all children occupy the same space (stacked by z-order)
-      for (const child of node.children || []) {
-        const ch = child.minHeight || h
-        const cw = child.minWidth || w
+      // Sort: tint-only backgrounds first, content on top
+      const ovChildren = [...(node.children || [])].sort((a, b) => {
+        const aIsBg = a.type === 'Image' && !!a.tintColor && !a.texturePath
+        const bIsBg = b.type === 'Image' && !!b.tintColor && !b.texturePath
+        if (aIsBg && !bIsBg) return -1
+        if (!aIsBg && bIsBg) return 1
+        return 0
+      })
+      for (const child of ovChildren) {
+        const ch = child.imageHeight || child.minHeight || h
+        const cw = child.imageWidth || child.minWidth || w
         flattenNode(child, x, y, cw, ch, layers, myId, depth + 1)
       }
       break
@@ -363,7 +388,7 @@ function flattenNode(
       break
 
     default: {
-      // Generic container fallback for unknown widget types
+      // Generic container fallback — handles GridPanel, UniformGridPanel, ScaleBox, etc.
       const defChildren = node.children || []
       const dl = makeRectLayer(node, x, y, w, h, 'transparent')
       dl.parentId = parentId
@@ -371,11 +396,27 @@ function flattenNode(
       dl.widgetType = node.type
       dl.isContainer = defChildren.length > 0
       layers.push(dl)
-      let dcy = y
-      const dch = defChildren.length > 0 ? h / defChildren.length : h
-      for (const child of defChildren) {
-        flattenNode(child, x, dcy, w, dch, layers, node.name, depth + 1)
-        dcy += dch
+
+      // Grid/UniformGrid: distribute horizontally
+      const isGrid = node.type.includes('Grid')
+      if (isGrid && defChildren.length > 0) {
+        const childW = w / defChildren.length
+        let dcx = x
+        for (const child of defChildren) {
+          const cw = child.imageWidth || child.minWidth || childW
+          const ch = child.imageHeight || child.minHeight || h
+          flattenNode(child, dcx, y, cw, ch, layers, node.name, depth + 1)
+          dcx += childW
+        }
+      } else {
+        // Default: stack vertically
+        let dcy = y
+        for (const child of defChildren) {
+          const ch = child.imageHeight || child.minHeight || (defChildren.length > 0 ? h / defChildren.length : h)
+          const cw = child.imageWidth || child.minWidth || w
+          flattenNode(child, x, dcy, cw, ch, layers, node.name, depth + 1)
+          dcy += ch
+        }
       }
       break
     }
