@@ -373,30 +373,19 @@ export function useFabricCanvas() {
     fabricRef.current.renderAll()
   }, [templateWidth, templateHeight])
 
-  // Guard against re-entrant loads
-  const loadingTemplateRef = useRef<string | null>(null)
-
   // Load a template onto the canvas
   const loadTemplate = useCallback(
     async (template: ComponentTemplate) => {
       const canvas = fabricRef.current
       if (!canvas) return
 
-      // Abort any in-progress load and start fresh
-      const loadId = Date.now().toString()
-      loadingTemplateRef.current = loadId
-
       canvas.clear()
       canvas.setDimensions({ width: template.width, height: template.height })
       canvas.backgroundColor = 'transparent'
 
       for (const layer of template.layers) {
-        // Abort if a newer load started
-        if (loadingTemplateRef.current !== loadId) return
         await addLayerToCanvas(canvas, layer)
       }
-      // Final abort check before zoom
-      if (loadingTemplateRef.current !== loadId) return
 
       // Zoom to fit ALL content within the available viewport
       const fabricWrapper = canvas.getElement().parentElement
@@ -420,7 +409,6 @@ export function useFabricCanvas() {
 
       canvas.renderAll()
       pushHistory(JSON.stringify(canvas.toJSON(['layerId', 'layerName', 'widgetType'])))
-      loadingTemplateRef.current = null
     },
     [pushHistory]
   )
