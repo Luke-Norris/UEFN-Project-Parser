@@ -118,7 +118,7 @@ export function CanvasEditor({ fontsLoaded }: Props) {
     if (activeTemplate && fontsLoaded) {
       loadTemplate(activeTemplate)
     }
-  }, [activeTemplate, fontsLoaded, loadTemplate])
+  }, [activeTemplate, fontsLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle zoom with mouse wheel - zoom to cursor position
   const handleWheel = useCallback(

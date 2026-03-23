@@ -112,9 +112,10 @@ const TEXT_H = 36
 const BUTTON_H = 48
 const ICON_SIZE = 80
 
-/** Is this node a background fill? (tinted image, no texture, no children) */
+/** Is this node a full-size background fill? Only if it's a tinted image with no texture AND no explicit size */
 function isBgFill(node: WidgetSpecNode): boolean {
   return node.type === 'Image' && !!node.tintColor && !node.texturePath
+    && !node.imageWidth && !node.imageHeight
 }
 
 /** Is this node a content leaf (not a container)? */
@@ -403,33 +404,40 @@ function makeRectLayer(
 }
 
 function makeImageLayer(node: WidgetSpecNode, x: number, y: number, w: number, h: number): TemplateLayer {
-  const isBg = isBgFill(node)
-
   // Use Brush.ImageSize if available, otherwise use passed dimensions
   let lw = node.imageWidth || w
   let lh = node.imageHeight || h
   let lx = x + (node.translateX ?? 0)
   let ly = y + (node.translateY ?? 0)
 
-  // Average corner radius for Fabric.js (which uses a single cornerRadius)
+  // Corner radius for Fabric.js
   const cr = Math.max(node.cornerRadiusTL ?? 0, node.cornerRadiusTR ?? 0,
     node.cornerRadiusBL ?? 0, node.cornerRadiusBR ?? 0)
 
+  // Determine render type:
+  // - Has texture path → 'image' (will load texture or show placeholder)
+  // - Has tint color → 'rect' with that color fill
+  // - Neither → 'rect' with light placeholder
+  const hasTexture = !!node.texturePath
+  const hasTint = !!node.tintColor
+  const layerType = hasTexture ? 'image' : 'rect'
+  const fill = hasTint ? node.tintColor : (hasTexture ? undefined : 'rgba(128,128,128,0.15)')
+
   return {
     id: node.name,
-    type: isBg ? 'rect' : 'image',
+    type: layerType,
     name: node.name,
     left: Math.round(lx),
     top: Math.round(ly),
     width: Math.round(lw || 100),
     height: Math.round(lh || 100),
-    rectFill: node.tintColor || undefined,
+    rectFill: fill,
     defaultAsset: node.texturePath || undefined,
     opacity: node.renderOpacity ?? 1,
     cornerRadius: cr,
     angle: node.angle ?? 0,
     editable: true,
-    swappable: !isBg,
+    swappable: hasTexture,
     locked: false
   }
 }

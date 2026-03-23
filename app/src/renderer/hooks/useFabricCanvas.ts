@@ -373,11 +373,18 @@ export function useFabricCanvas() {
     fabricRef.current.renderAll()
   }, [templateWidth, templateHeight])
 
+  // Guard against re-entrant loads
+  const loadingTemplateRef = useRef<string | null>(null)
+
   // Load a template onto the canvas
   const loadTemplate = useCallback(
     async (template: ComponentTemplate) => {
       const canvas = fabricRef.current
       if (!canvas) return
+
+      // Prevent re-entrant loading of the same template
+      if (loadingTemplateRef.current === template.id) return
+      loadingTemplateRef.current = template.id
 
       canvas.clear()
       canvas.setDimensions({ width: template.width, height: template.height })
@@ -428,6 +435,7 @@ export function useFabricCanvas() {
 
       canvas.renderAll()
       pushHistory(JSON.stringify(canvas.toJSON(['layerId', 'layerName', 'widgetType'])))
+      loadingTemplateRef.current = null
     },
     [pushHistory]
   )
@@ -531,6 +539,26 @@ async function addLayerToCanvas(canvas: Canvas, layer: TemplateLayer): Promise<v
       // Fall through to placeholder
     }
     addPlaceholder(canvas, layer)
+  } else if (layer.rectFill) {
+    // Image with tint color but no texture — render as solid colored rect
+    const rect = new Rect({
+      left: Math.round(layer.left),
+      top: Math.round(layer.top),
+      width: Math.round(layer.width),
+      height: Math.round(layer.height),
+      fill: layer.rectFill,
+      stroke: null,
+      strokeWidth: 0,
+      rx: layer.cornerRadius || 0,
+      ry: layer.cornerRadius || 0,
+      opacity: layer.opacity ?? 1,
+      angle: layer.angle || 0,
+      selectable: !layer.locked,
+    })
+    ;(rect as any).layerId = layer.id
+    ;(rect as any).layerName = layer.name
+    ;(rect as any).widgetType = layer.widgetType
+    canvas.add(rect)
   } else {
     addPlaceholder(canvas, layer)
   }
