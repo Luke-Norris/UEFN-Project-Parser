@@ -320,8 +320,13 @@ function flattenNode(
           const pad = child.slotPadTop ?? child.padding ?? 0
           cy += pad
           const ch = child.imageHeight || child.minHeight || estimateH(child)
-          const cw = child.imageWidth || child.minWidth || w
-          flattenNode(child, x, cy, cw, ch, layers, myId, depth + 1)
+          // slotHAlign: Fill = full width, Center = centered, etc.
+          const fillH = child.slotHAlign === 'Fill' || !child.slotHAlign
+          const cw = fillH ? w : (child.imageWidth || child.minWidth || estimateW(child, w))
+          let cx = x
+          if (!fillH && child.slotHAlign === 'Center') cx = x + (w - cw) / 2
+          else if (!fillH && child.slotHAlign === 'Right') cx = x + w - cw
+          flattenNode(child, cx, cy, cw, ch, layers, myId, depth + 1)
           cy += ch + (child.slotPadBottom ?? GAP)
         }
       }
@@ -347,9 +352,18 @@ function flattenNode(
         return 0
       })
       for (const child of ovChildren) {
-        const ch = child.imageHeight || child.minHeight || h
-        const cw = child.imageWidth || child.minWidth || w
-        flattenNode(child, x, y, cw, ch, layers, myId, depth + 1)
+        // Slot alignment: Fill = use parent size, otherwise use child's own size
+        const fillH = child.slotHAlign === 'Fill'
+        const fillV = child.slotVAlign === 'Fill'
+        const cw = fillH ? w : (child.imageWidth || child.minWidth || w)
+        const ch = fillV ? h : (child.imageHeight || child.minHeight || h)
+        let cx = x, cy = y
+        // Center/Right alignment
+        if (!fillH && child.slotHAlign === 'Center') cx = x + (w - cw) / 2
+        else if (!fillH && child.slotHAlign === 'Right') cx = x + w - cw
+        if (!fillV && child.slotVAlign === 'Center') cy = y + (h - ch) / 2
+        else if (!fillV && child.slotVAlign === 'Bottom') cy = y + h - ch
+        flattenNode(child, cx, cy, cw, ch, layers, myId, depth + 1)
       }
       break
     }
