@@ -5,6 +5,7 @@ import { useTemplateStore } from '../stores/templateStore'
 import { useAssetStore } from '../stores/assetStore'
 import type { ComponentTemplate, TemplateLayer } from '../templates/types'
 
+// Debug: expose canvas globally for MCP inspection
 // Ensure Fabric uses the real device pixel ratio for crisp rendering
 fabricConfig.devicePixelRatio = window.devicePixelRatio || 1
 
@@ -65,6 +66,9 @@ export function useFabricCanvas() {
       enableRetinaScaling: true,
       imageSmoothingEnabled: false
     })
+
+    // Expose for debugging
+    ;(window as any).__fabricCanvas = canvas
 
     canvas.on('selection:created', (e) => {
       const obj = e.selected?.[0]
@@ -383,14 +387,16 @@ export function useFabricCanvas() {
         await addLayerToCanvas(canvas, layer)
       }
 
-      // Zoom to fit all content in the viewport
-      const containerEl = canvas.getElement().parentElement
-      if (containerEl) {
-        const viewW = containerEl.clientWidth || 800
-        const viewH = containerEl.clientHeight || 600
+      // Zoom to fit canvas within the available viewport
+      // Fabric wraps the canvas in .canvas-container — go up to the layout parent
+      const fabricWrapper = canvas.getElement().parentElement
+      const viewportEl = fabricWrapper?.parentElement
+      if (viewportEl) {
+        const viewW = viewportEl.clientWidth || 800
+        const viewH = viewportEl.clientHeight || 600
         const zoomX = viewW / template.width
         const zoomY = viewH / template.height
-        const zoom = Math.min(zoomX, zoomY, 1) * 0.9
+        const zoom = Math.min(zoomX, zoomY, 1) * 0.85
         canvas.setZoom(zoom)
         canvas.setDimensions({
           width: template.width * zoom,
