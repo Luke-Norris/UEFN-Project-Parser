@@ -373,11 +373,18 @@ export function useFabricCanvas() {
     fabricRef.current.renderAll()
   }, [templateWidth, templateHeight])
 
+  const lastLoadedRef = useRef<string>('')
+
   // Load a template onto the canvas
   const loadTemplate = useCallback(
     async (template: ComponentTemplate) => {
       const canvas = fabricRef.current
       if (!canvas) return
+
+      // Skip if already loaded (StrictMode double-invocation guard)
+      const templateKey = `${template.name}-${template.layers.length}`
+      if (lastLoadedRef.current === templateKey && canvas.getObjects().length > 0) return
+      lastLoadedRef.current = templateKey
 
       canvas.clear()
       canvas.setDimensions({ width: template.width, height: template.height })
