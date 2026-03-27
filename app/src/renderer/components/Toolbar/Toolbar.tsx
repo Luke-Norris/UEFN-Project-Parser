@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { applyZoom } from '../../lib/zoom'
 import { useCanvasStore } from '../../stores/canvasStore'
 import { useTemplateStore } from '../../stores/templateStore'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { templateToWidgetSpec } from '../../templates/UMGWidgetConverter'
+import { forgeBuildUasset, forgeGenerateVerse, selectDirectory } from '../../lib/api'
 
 export function Toolbar() {
   const {
@@ -26,11 +29,61 @@ export function Toolbar() {
     resetRotation,
     selectedObjectId
   } = useCanvasStore()
-  const { activeTemplate } = useTemplateStore()
+  const { activeTemplate, variableValues } = useTemplateStore()
 
   const hasSelection = !!selectedObjectId
 
   const canvasBgColor = useCanvasStore((s) => s.canvasBgColor)
+
+  // Export .uasset / Generate Verse state
+  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const handleExportUasset = async () => {
+    if (!activeTemplate) {
+      setExportStatus({ type: 'error', message: 'No widget template loaded' })
+      setTimeout(() => setExportStatus(null), 3000)
+      return
+    }
+    try {
+      const spec = templateToWidgetSpec(activeTemplate, variableValues)
+      const specJson = JSON.stringify(spec)
+      const outputDir = await selectDirectory()
+      if (!outputDir) return
+      setExportStatus({ type: 'success', message: 'Building .uasset...' })
+      const result = await forgeBuildUasset(specJson, outputDir)
+      if (result.success) {
+        setExportStatus({ type: 'success', message: `Exported: ${result.uassetPath?.split(/[/\\]/).pop() ?? 'widget.uasset'}` })
+      } else {
+        setExportStatus({ type: 'error', message: result.error ?? 'Build failed' })
+      }
+    } catch (err) {
+      setExportStatus({ type: 'error', message: err instanceof Error ? err.message : 'Export failed' })
+    }
+    setTimeout(() => setExportStatus(null), 4000)
+  }
+
+  const handleGenerateVerse = async () => {
+    if (!activeTemplate) {
+      setExportStatus({ type: 'error', message: 'No widget template loaded' })
+      setTimeout(() => setExportStatus(null), 3000)
+      return
+    }
+    try {
+      const spec = templateToWidgetSpec(activeTemplate, variableValues)
+      const specJson = JSON.stringify(spec)
+      setExportStatus({ type: 'success', message: 'Generating Verse...' })
+      const result = await forgeGenerateVerse(specJson)
+      if (result.code) {
+        await navigator.clipboard.writeText(result.code)
+        setExportStatus({ type: 'success', message: 'Verse code copied to clipboard' })
+      } else {
+        setExportStatus({ type: 'error', message: 'No code generated' })
+      }
+    } catch (err) {
+      setExportStatus({ type: 'error', message: err instanceof Error ? err.message : 'Generation failed' })
+    }
+    setTimeout(() => setExportStatus(null), 4000)
+  }
 
   const handleExport = async () => {
     if (!canvas) return
@@ -56,7 +109,7 @@ export function Toolbar() {
   }
 
   return (
-    <div className="h-10 bg-fn-dark border-b border-fn-border flex items-center px-3 gap-0.5 shrink-0">
+    <div className="h-10 bg-fn-dark border-b border-fn-border flex items-center px-3 gap-0.5 shrink-0 relative">
       {/* Brand */}
       <span className="text-xs font-bold text-fn-rare tracking-wider mr-2 select-none">WellVersed</span>
 
@@ -173,12 +226,43 @@ export function Toolbar() {
 
       <Divider />
 
+      {/* Export buttons */}
       <button
-        className="px-4 py-1.5 text-xs bg-fn-rare text-white rounded-md hover:bg-fn-rare/80 font-medium transition-colors"
+        className="px-3 py-1.5 text-[10px] text-gray-300 bg-fn-panel border border-fn-border rounded-md hover:bg-white/[0.06] font-medium transition-colors"
         onClick={handleExport}
+        title="Export canvas as PNG image"
       >
         Export PNG
       </button>
+
+      <button
+        className="px-3 py-1.5 text-[10px] text-white bg-fn-rare rounded-md hover:bg-fn-rare/80 font-medium transition-colors disabled:opacity-50"
+        onClick={handleExportUasset}
+        disabled={!activeTemplate}
+        title="Build .uasset widget blueprint from current template"
+      >
+        Export .uasset
+      </button>
+
+      <button
+        className="px-3 py-1.5 text-[10px] text-fn-rare bg-fn-rare/10 border border-fn-rare/30 rounded-md hover:bg-fn-rare/20 font-medium transition-colors disabled:opacity-50"
+        onClick={handleGenerateVerse}
+        disabled={!activeTemplate}
+        title="Generate Verse controller code and copy to clipboard"
+      >
+        Gen Verse
+      </button>
+
+      {/* Export status toast */}
+      {exportStatus && (
+        <div className={`absolute top-12 right-4 px-3 py-1.5 rounded text-[10px] font-medium z-50 shadow-lg ${
+          exportStatus.type === 'success'
+            ? 'bg-green-900/90 text-green-300 border border-green-700/50'
+            : 'bg-red-900/90 text-red-300 border border-red-700/50'
+        }`}>
+          {exportStatus.message}
+        </div>
+      )}
     </div>
   )
 }

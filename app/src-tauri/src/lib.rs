@@ -150,6 +150,8 @@ pub fn run() {
             commands::start_file_watcher,
             commands::stop_file_watcher,
             commands::file_watcher_status,
+            // Game Designer commands
+            commands::forge_design_game,
             // UEFN Bridge commands
             commands::forge_bridge_connect,
             commands::forge_bridge_status,

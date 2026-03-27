@@ -630,6 +630,8 @@ public class Program
                 // Device Behavior Simulator
                 "simulate-game-loop" => HandleSimulateGameLoop(req),
                 "simulate-event" => HandleSimulateEvent(req),
+                // Game Designer
+                "design-game" => HandleDesignGame(req),
                 _ => new SidecarResponse(req.Id, Error: new SidecarError("UNKNOWN_METHOD", $"Unknown method: {req.Method}"))
             };
         }
@@ -2871,6 +2873,70 @@ static SidecarResponse HandleSimulateEvent(SidecarRequest req)
     finally
     {
         fileAccess.Dispose();
+    }
+}
+
+// ========= Game Designer Handlers =========
+
+static SidecarResponse HandleDesignGame(SidecarRequest req)
+{
+    try
+    {
+        var description = req.Params?.GetProperty("description").GetString()
+            ?? throw new ArgumentException("Missing 'description'");
+
+        int? playerCount = null;
+        int? teamCount = null;
+        try { playerCount = req.Params?.GetProperty("playerCount").GetInt32(); } catch { }
+        try { teamCount = req.Params?.GetProperty("teamCount").GetInt32(); } catch { }
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var designer = new GameDesigner(loggerFactory.CreateLogger<GameDesigner>());
+
+        var gameDesign = designer.DesignGame(description, playerCount, teamCount);
+        var plan = designer.DesignToDevicePlan(gameDesign);
+
+        return new SidecarResponse(req.Id, new
+        {
+            name = gameDesign.Name,
+            description = gameDesign.Description,
+            category = gameDesign.GameMode.ToString(),
+            playerCount = gameDesign.PlayerCount,
+            teamCount = gameDesign.TeamCount,
+            devices = plan.Devices.Select(d => new
+            {
+                role = d.Role,
+                type = d.Type,
+                deviceClass = d.DeviceClass,
+                offset = new { x = d.Offset.X, y = d.Offset.Y, z = d.Offset.Z }
+            }),
+            wiring = plan.Wiring.Select(w => new
+            {
+                from = w.SourceRole,
+                @event = w.OutputEvent,
+                to = w.TargetRole,
+                action = w.InputAction
+            }),
+            verseCode = plan.VerseCode,
+            verseFileName = $"{plan.SystemName?.Replace(" ", "_").ToLower() ?? "generated"}_device.verse",
+            scoring = gameDesign.Scoring == null ? null : new
+            {
+                winCondition = gameDesign.Scoring.WinCondition,
+                winScore = gameDesign.Scoring.WinScore,
+                trackKills = gameDesign.Scoring.TrackKills,
+                trackObjectives = gameDesign.Scoring.TrackObjectives
+            },
+            rounds = gameDesign.Rounds == null ? null : new
+            {
+                roundCount = gameDesign.Rounds.RoundCount,
+                roundDuration = gameDesign.Rounds.RoundDurationSeconds,
+                warmup = gameDesign.Rounds.WarmupSeconds
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        return new SidecarResponse(req.Id, Error: new SidecarError("DESIGN_GAME_ERROR", ex.Message));
     }
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { prettifyAssetName } from '../lib/assetNames'
 import type { ContentBrowseResult, ContentEntry, AssetInspectResult, VerseFileContent } from '../../shared/types'
 
 function formatDate(iso: string): string {
@@ -378,6 +379,8 @@ export function ContentBrowserPage() {
               </div>
               {sortedEntries.map((entry) => {
                 const tooltip = getTooltipText(entry)
+                const isAsset = !entry.isDirectory && (entry.extension === '.uasset' || entry.extension === '.umap')
+                const displayName = isAsset ? prettifyAssetName(entry.name) : entry.name
                 return (
                   <button
                     key={entry.path}
@@ -385,9 +388,14 @@ export function ContentBrowserPage() {
                     className="w-full flex items-center gap-3 px-4 py-2 border-b border-fn-border/20 hover:bg-white/[0.02] transition-colors text-left"
                   >
                     {getFileIcon(entry)}
-                    <div className="min-w-0 flex-1 flex items-center">
-                      <span className="text-[11px] text-white truncate">{entry.name}</span>
-                      {tooltip && <InfoTooltip text={tooltip} />}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center">
+                        <span className={`text-[11px] text-white truncate ${isAsset ? 'font-medium' : ''}`}>{displayName}</span>
+                        {tooltip && <InfoTooltip text={tooltip} />}
+                      </div>
+                      {isAsset && displayName !== entry.name && (
+                        <div className="text-[9px] text-gray-600 truncate mt-0.5">{entry.name}</div>
+                      )}
                     </div>
                     {getTypeBadge(entry)}
                     {!entry.isDirectory && entry.size != null && (
@@ -411,6 +419,8 @@ export function ContentBrowserPage() {
               {sortedEntries.map((entry) => {
                 const tooltip = getTooltipText(entry)
                 const isFolder = entry.isDirectory
+                const isAsset = !isFolder && (entry.extension === '.uasset' || entry.extension === '.umap')
+                const gridDisplayName = isAsset ? prettifyAssetName(entry.name) : entry.name
                 return (
                   <button
                     key={entry.path}
@@ -420,10 +430,11 @@ export function ContentBrowserPage() {
                         ? 'bg-fn-dark/50 border-dashed border-fn-border/40 hover:bg-fn-panel hover:border-fn-border'
                         : 'bg-fn-darker border-fn-border/20 hover:bg-fn-panel hover:border-fn-border'
                     }`}
+                    title={entry.name}
                   >
                     {getFileIcon(entry, true)}
                     <div className="w-full flex items-center justify-center">
-                      <span className="text-[10px] text-white truncate max-w-full">{entry.name}</span>
+                      <span className={`text-[10px] text-white truncate max-w-full ${isAsset ? 'font-medium' : ''}`}>{gridDisplayName}</span>
                       {tooltip && <InfoTooltip text={tooltip} />}
                     </div>
                     {getTypeBadge(entry)}

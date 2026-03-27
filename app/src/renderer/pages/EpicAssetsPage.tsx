@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useForgeStore } from '../stores/forgeStore'
+import { prettifyAssetName } from '../lib/assetNames'
 import type {
   EpicAssetTypeEntry,
   EpicAssetListResult,
@@ -8,14 +9,6 @@ import type {
 } from '../../shared/types'
 
 type SortField = 'name' | 'count' | 'kind'
-
-function cleanDisplayName(raw: string): string {
-  // Remove _C suffix, replace underscores with spaces
-  let name = raw.replace(/_C$/, '').replace(/_/g, ' ')
-  // Insert spaces before capital letters in PascalCase
-  name = name.replace(/([a-z])([A-Z])/g, '$1 $2')
-  return name.trim()
-}
 
 function getKindLabel(entry: EpicAssetTypeEntry): string {
   if (entry.isDevice) return 'Device'
@@ -236,7 +229,7 @@ export function EpicAssetsPage() {
               const isSelected = selectedType?.typeName === type.typeName
               const isExpanded = expandedType === typeKey
               const kind = getKindLabel(type)
-              const friendlyName = cleanDisplayName(type.displayName || type.typeName)
+              const friendlyName = prettifyAssetName(type.displayName || type.typeName)
               return (
                 <div key={typeKey}>
                   <button
@@ -283,7 +276,7 @@ export function EpicAssetsPage() {
                       {type.samplePaths.map((path, idx) => {
                         // Show as "Instance 1", "Instance 2" etc. since filenames are hashes
                         // The actual actor label comes from inspecting the file
-                        const friendlyLabel = `${cleanDisplayName(type.displayName || type.typeName)} #${idx + 1}`
+                        const friendlyLabel = `${prettifyAssetName(type.displayName || type.typeName)} #${idx + 1}`
                         return (
                           <button
                             key={path}
@@ -337,7 +330,7 @@ export function EpicAssetsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold text-white">
-                  {cleanDisplayName(selectedType.typeName)}
+                  {prettifyAssetName(selectedType.typeName)}
                 </h2>
                 <div className="flex items-center gap-3 mt-0.5">
                   <KindBadge kind={getKindLabel(selectedType)} />

@@ -1156,6 +1156,25 @@ pub async fn file_watcher_status(state: State<'_, AppState>) -> Result<Value, St
     }
 }
 
+// ─── Game Designer commands ──────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_design_game(
+    state: State<'_, AppState>,
+    description: String,
+    player_count: Option<i32>,
+    team_count: Option<i32>,
+) -> Result<Value, String> {
+    let mut params = json!({"description": description});
+    if let Some(pc) = player_count {
+        params["playerCount"] = json!(pc);
+    }
+    if let Some(tc) = team_count {
+        params["teamCount"] = json!(tc);
+    }
+    state.bridge.call("design-game", params).await
+}
+
 // ─── UEFN Bridge commands ────────────────────────────────────────────────────
 
 #[tauri::command]

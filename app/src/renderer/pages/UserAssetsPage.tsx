@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { prettifyAssetName, categorizeAsset, formatFileSize } from '../lib/assetNames'
 import type {
   UserAssetEntry,
   AssetInspectResult,
@@ -8,12 +9,6 @@ import type {
 } from '../../shared/types'
 
 type SortField = 'name' | 'class' | 'size'
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 export function UserAssetsPage() {
   const data = useForgeStore((s) => s.userAssets)
@@ -69,17 +64,18 @@ export function UserAssetsPage() {
     return normalizedAssets.filter(
       (a) =>
         a.name.toLowerCase().includes(q) ||
+        prettifyAssetName(a.name).toLowerCase().includes(q) ||
         a.assetClass.toLowerCase().includes(q)
     )
   }, [normalizedAssets, search])
 
   const groupedAndSorted = useMemo(() => {
-    // Group by asset class
+    // Group by category (human-readable) instead of raw class
     const groups = new Map<string, UserAssetEntry[]>()
     for (const asset of filteredAssets) {
-      const cls = asset.assetClass || 'Unknown'
-      if (!groups.has(cls)) groups.set(cls, [])
-      groups.get(cls)!.push(asset)
+      const category = categorizeAsset(asset.assetClass, asset.name)
+      if (!groups.has(category)) groups.set(category, [])
+      groups.get(category)!.push(asset)
     }
 
     // Sort assets within each group
@@ -307,17 +303,20 @@ export function UserAssetsPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-white truncate">
-                              {asset.name}
+                            <span className="text-[11px] text-white truncate font-medium">
+                              {prettifyAssetName(asset.name)}
                             </span>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="text-[9px] text-gray-600 tabular-nums">
-                                {formatSize(asset.size)}
+                                {formatFileSize(asset.size)}
                               </span>
-                              <span className="inline-block px-1 py-0.5 rounded text-[8px] font-medium text-fn-rare bg-fn-rare/10 border border-fn-rare/20">
-                                {asset.assetClass}
+                              <span className="inline-block px-1 py-0.5 rounded text-[8px] font-medium text-fn-rare/80 bg-fn-rare/10 border border-fn-rare/20">
+                                .uasset
                               </span>
                             </div>
+                          </div>
+                          <div className="text-[9px] text-gray-600 mt-0.5 truncate">
+                            {asset.name}
                           </div>
                         </button>
                       )
@@ -353,14 +352,20 @@ export function UserAssetsPage() {
             {/* === Asset Header === */}
             <div>
               <h2 className="text-lg font-semibold text-white">
-                {selectedAsset.name}
+                {prettifyAssetName(selectedAsset.name)}
               </h2>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="text-[10px] text-gray-600 font-mono mt-0.5">
+                {selectedAsset.name}
+              </div>
+              <div className="flex items-center gap-3 mt-1.5">
                 <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-medium border text-fn-rare bg-fn-rare/10 border-fn-rare/20">
                   {selectedAsset.assetClass}
                 </span>
+                <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-medium border text-fn-rare/60 bg-fn-rare/5 border-fn-rare/15">
+                  .uasset
+                </span>
                 <span className="text-[10px] text-gray-500">
-                  {formatSize(selectedAsset.size)}
+                  {formatFileSize(selectedAsset.size)}
                 </span>
                 <span className="text-[9px] text-gray-600 font-mono truncate">
                   {selectedAsset.relativePath}
