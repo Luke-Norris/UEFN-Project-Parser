@@ -1,11 +1,11 @@
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services.MapGeneration;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services.MapGeneration;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// MCP tools for procedural map generation.

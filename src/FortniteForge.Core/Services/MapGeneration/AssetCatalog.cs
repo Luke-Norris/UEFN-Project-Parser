@@ -1,5 +1,5 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -7,7 +7,7 @@ using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services.MapGeneration;
+namespace WellVersed.Core.Services.MapGeneration;
 
 /// <summary>
 /// Scans a "seed level" (.umap) and catalogs every placed actor by type.
@@ -24,14 +24,14 @@ namespace FortniteForge.Core.Services.MapGeneration;
 /// </summary>
 public class AssetCatalog
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<AssetCatalog> _logger;
 
     public Dictionary<string, CatalogEntry> Entries { get; private set; } = new();
     public string? SeedLevelPath { get; private set; }
     public bool IsLoaded { get; private set; }
 
-    public AssetCatalog(ForgeConfig config, ILogger<AssetCatalog> logger)
+    public AssetCatalog(WellVersedConfig config, ILogger<AssetCatalog> logger)
     {
         _config = config;
         _logger = logger;

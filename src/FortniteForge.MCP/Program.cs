@@ -1,13 +1,13 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
-using FortniteForge.Core.Services.MapGeneration;
-using FortniteForge.Core.Services.VerseGeneration;
+using WellVersed.Core.Config;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
+using WellVersed.Core.Services.MapGeneration;
+using WellVersed.Core.Services.VerseGeneration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.MCP;
+namespace WellVersed.MCP;
 
 /// <summary>
 /// WellVersed MCP Server — AI-powered UEFN project management
@@ -20,13 +20,13 @@ namespace FortniteForge.MCP;
 /// through the WellVersed app before they are applied to project source files.
 ///
 /// Setup in Claude Code:
-///   claude mcp add wellversed -- dotnet run --project path/to/FortniteForge.MCP
+///   claude mcp add wellversed -- dotnet run --project path/to/WellVersed.MCP
 ///
 /// Or in .claude/settings.json:
 ///   "mcpServers": {
 ///     "wellversed": {
 ///       "command": "dotnet",
-///       "args": ["run", "--project", "path/to/FortniteForge.MCP"]
+///       "args": ["run", "--project", "path/to/WellVersed.MCP"]
 ///     }
 ///   }
 /// </summary>
@@ -38,7 +38,7 @@ public class Program
         var configPath = args.Length > 0
             ? args[0]
             : Environment.GetEnvironmentVariable("WELLVERSED_CONFIG")
-              ?? Environment.GetEnvironmentVariable("FORTNITEFORGE_CONFIG")
+              ?? Environment.GetEnvironmentVariable("WELLVERSED_CONFIG")
               ?? FindConfigFile();
 
         var builder = Host.CreateApplicationBuilder(args);
@@ -49,17 +49,17 @@ public class Program
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
         // Load config
-        ForgeConfig config;
+        WellVersedConfig config;
         if (configPath != null && File.Exists(configPath))
         {
-            config = ForgeConfig.Load(configPath);
+            config = WellVersedConfig.Load(configPath);
         }
         else
         {
-            config = new ForgeConfig();
+            config = new WellVersedConfig();
             // Try to find project path from environment
             var projectPath = Environment.GetEnvironmentVariable("WELLVERSED_PROJECT")
-                ?? Environment.GetEnvironmentVariable("FORTNITEFORGE_PROJECT");
+                ?? Environment.GetEnvironmentVariable("WELLVERSED_PROJECT");
             if (!string.IsNullOrEmpty(projectPath))
                 config.ProjectPath = projectPath;
         }
@@ -70,6 +70,7 @@ public class Program
         builder.Services.AddSingleton<SafeFileAccess>();
         builder.Services.AddSingleton<AssetGuard>();
         builder.Services.AddSingleton<AssetService>();
+        builder.Services.AddSingleton<AssetValidator>();
         builder.Services.AddSingleton<BackupService>();
         builder.Services.AddSingleton<DigestService>();
         builder.Services.AddSingleton<DeviceService>();
@@ -83,7 +84,21 @@ public class Program
         builder.Services.AddSingleton<VerseDeviceGenerator>();
         builder.Services.AddSingleton<LevelAnalyticsService>();
         builder.Services.AddSingleton<VerseReferenceService>();
+        builder.Services.AddSingleton<SystemExtractor>();
+        builder.Services.AddSingleton<SystemImporter>();
         builder.Services.AddSingleton<LibraryIndexer>();
+        builder.Services.AddSingleton<DeviceEncyclopedia>();
+        builder.Services.AddSingleton<ProjectDiffService>();
+        builder.Services.AddSingleton<VerseIntelligence>();
+        builder.Services.AddSingleton<VerseErrorTranslator>();
+        builder.Services.AddSingleton<LogicTracer>();
+        builder.Services.AddSingleton<SmartTemplateService>();
+        builder.Services.AddSingleton<DeviceSimulator>();
+        builder.Services.AddSingleton<GameDesigner>();
+        builder.Services.AddSingleton<ProjectAssembler>();
+        builder.Services.AddSingleton<GameBalanceAnalyzer>();
+        builder.Services.AddSingleton<MapAnalytics>();
+        builder.Services.AddSingleton<UefnBridge>();
 
         // Register MCP server with stdio transport
         builder.Services

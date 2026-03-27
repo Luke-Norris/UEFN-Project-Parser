@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Comprehensive reference for UEFN's Verse widget API.

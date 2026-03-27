@@ -1,4 +1,4 @@
-namespace FortniteForge.Core.Models;
+namespace WellVersed.Core.Models;
 
 /// <summary>
 /// Static containment rules for UEFN UMG widgets.

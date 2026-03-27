@@ -1,28 +1,28 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
-using FortniteForge.Core.Services.MapGeneration;
+using WellVersed.Core.Config;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
+using WellVersed.Core.Services.MapGeneration;
 
-namespace FortniteForge.Web;
+namespace WellVersed.Web;
 
 public class Program
 {
     public static void Main(string[] args)
     {
         var configPath = args.FirstOrDefault(a => !a.StartsWith("--") && File.Exists(a))
-            ?? Environment.GetEnvironmentVariable("FORTNITEFORGE_CONFIG")
+            ?? Environment.GetEnvironmentVariable("WELLVERSED_CONFIG")
             ?? FindConfigFile();
 
         var builder = WebApplication.CreateBuilder();
 
         // Load initial config (can be overridden by project switching)
-        ForgeConfig config;
+        WellVersedConfig config;
         if (configPath != null && File.Exists(configPath))
-            config = ForgeConfig.Load(configPath);
+            config = WellVersedConfig.Load(configPath);
         else
-            config = new ForgeConfig();
+            config = new WellVersedConfig();
 
         // Project manager — persistent across sessions
         var projectManager = new ProjectManager();
@@ -148,7 +148,7 @@ public class Program
                 if (string.IsNullOrEmpty(path))
                     return Results.Ok(new { path = "", cancelled = true });
 
-                var cfg = new ForgeConfig { ProjectPath = path };
+                var cfg = new WellVersedConfig { ProjectPath = path };
                 return Results.Ok(new { path, cancelled = false, isUefnProject = cfg.IsUefnProject, projectName = cfg.ProjectName });
             }
             catch (Exception ex)
@@ -263,7 +263,7 @@ public class Program
             try
             {
                 var project = pm.ListProjects().FirstOrDefault(p => path.StartsWith(p.ProjectPath, StringComparison.OrdinalIgnoreCase));
-                var cfg = project != null ? pm.BuildConfig(project) : new ForgeConfig();
+                var cfg = project != null ? pm.BuildConfig(project) : new WellVersedConfig();
                 var contents = DeviceClassifier.ClassifyLevel(path, cfg);
                 return Results.Ok(new
                 {
@@ -290,7 +290,7 @@ public class Program
             try
             {
                 var project = pm.ListProjects().FirstOrDefault(p => levelPath.StartsWith(p.ProjectPath, StringComparison.OrdinalIgnoreCase));
-                var cfg = project != null ? pm.BuildConfig(project) : new ForgeConfig();
+                var cfg = project != null ? pm.BuildConfig(project) : new WellVersedConfig();
                 var contents = DeviceClassifier.ClassifyLevel(levelPath, cfg);
 
                 var allActors = contents.Devices.Concat(contents.StaticActors);
@@ -434,7 +434,7 @@ public class Program
             try
             {
                 var project = pm.GetActiveProject();
-                var cfg = project != null ? pm.BuildConfig(project) : new ForgeConfig();
+                var cfg = project != null ? pm.BuildConfig(project) : new WellVersedConfig();
                 var (assetSvc, _, _, _, fileAccess) = BuildProjectServices(cfg, lf);
                 var result = assetSvc.InspectAsset(path);
                 fileAccess.Dispose();
@@ -540,7 +540,7 @@ public class Program
                     }
 
                     // Apply the value change
-                    FortniteForge.Core.Services.PropertyValueSetter.SetPropertyValue(asset, prop, change.NewValue);
+                    WellVersed.Core.Services.PropertyValueSetter.SetPropertyValue(asset, prop, change.NewValue);
                     asset.Write(writePath);
 
                     results.Add(new { change.PropertyName, success = true, writePath });
@@ -565,7 +565,7 @@ public class Program
             if (!Directory.Exists(path)) return Results.BadRequest("Directory not found");
 
             var index = indexer.BuildIndex(path);
-            var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+            var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wellversed", "library-index.json");
             indexer.SaveIndex(savePath);
 
             return Results.Ok(new { index.TotalVerseFiles, index.TotalAssets, index.TotalDeviceTypes, ProjectCount = index.Projects.Count, savedTo = savePath });
@@ -577,7 +577,7 @@ public class Program
             if (idx == null)
             {
                 // Try to load from disk
-                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wellversed", "library-index.json");
                 idx = indexer.LoadIndex(savePath);
             }
             if (idx == null) return Results.Ok(new { indexed = false });
@@ -588,7 +588,7 @@ public class Program
         {
             if (indexer.Index == null)
             {
-                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wellversed", "library-index.json");
                 indexer.LoadIndex(savePath);
             }
             return Results.Ok(indexer.Search(q));
@@ -598,7 +598,7 @@ public class Program
         {
             if (indexer.Index == null)
             {
-                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wellversed", "library-index.json");
                 indexer.LoadIndex(savePath);
             }
             var files = indexer.GetVerseFiles(filter);
@@ -626,7 +626,7 @@ public class Program
         {
             if (indexer.Index == null)
             {
-                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "library-index.json");
+                var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wellversed", "library-index.json");
                 indexer.LoadIndex(savePath);
             }
             var mats = indexer.GetMaterials();
@@ -666,7 +666,7 @@ public class Program
         });
 
         // ========= Favorites =========
-        var favoritesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fortniteforge", "favorites.json");
+        var favoritesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wellversed", "favorites.json");
         var favorites = new HashSet<string>();
         if (File.Exists(favoritesPath))
         {
@@ -762,7 +762,7 @@ public class Program
 
         var url = "http://0.0.0.0:5120";
         var activeProject = projectManager.GetActiveProject();
-        Console.Error.WriteLine($"\n  FortniteForge Web Dashboard");
+        Console.Error.WriteLine($"\n  WellVersed Web Dashboard");
         Console.Error.WriteLine($"  Project: {activeProject?.Name ?? "None"}");
         Console.Error.WriteLine($"  Projects: {projectManager.ListProjects().Count} loaded");
         Console.Error.WriteLine($"  Open: http://localhost:5120\n");
@@ -774,7 +774,7 @@ public class Program
     /// Builds a fresh set of services for a specific project config.
     /// Used when the active project changes — avoids stale DI singletons.
     /// </summary>
-    private static (AssetService Asset, DeviceService Device, AuditService Audit, DigestService Digest, SafeFileAccess FileAccess) BuildProjectServices(ForgeConfig config, ILoggerFactory lf)
+    private static (AssetService Asset, DeviceService Device, AuditService Audit, DigestService Digest, SafeFileAccess FileAccess) BuildProjectServices(WellVersedConfig config, ILoggerFactory lf)
     {
         var detector = new UefnDetector(config, lf.CreateLogger<UefnDetector>());
         var fileAccess = new SafeFileAccess(config, detector, lf.CreateLogger<SafeFileAccess>());
@@ -814,4 +814,4 @@ public class PendingChange
     public string DeviceName { get; set; } = "";
 }
 
-// PropertyValueSetter is now in FortniteForge.Core.Services
+// PropertyValueSetter is now in WellVersed.Core.Services

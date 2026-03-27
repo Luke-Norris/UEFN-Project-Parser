@@ -528,7 +528,7 @@ export function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-gray-400">Backend</span>
-              <span className="text-[11px] text-white">FortniteForge (.NET 8)</span>
+              <span className="text-[11px] text-white">WellVersed (.NET 8)</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-gray-400">Asset Parser</span>

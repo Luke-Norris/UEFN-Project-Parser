@@ -1,13 +1,14 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Safety;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Safety;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.PropertyTypes.Objects;
+using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Handles all asset modifications with mandatory safety checks, dry-run support, and backups.
@@ -21,26 +22,28 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class ModificationService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly AssetService _assetService;
     private readonly BackupService _backupService;
     private readonly AssetGuard _guard;
     private readonly SafeFileAccess _fileAccess;
     private readonly DigestService _digestService;
     private readonly ActorPlacementService _placementService;
+    private readonly AssetValidator _validator;
     private readonly ILogger<ModificationService> _logger;
 
     // Pending previews awaiting approval
     private readonly Dictionary<string, (ModificationRequest Request, ModificationPreview Preview)> _pendingPreviews = new();
 
     public ModificationService(
-        ForgeConfig config,
+        WellVersedConfig config,
         AssetService assetService,
         BackupService backupService,
         AssetGuard guard,
         SafeFileAccess fileAccess,
         DigestService digestService,
         ActorPlacementService placementService,
+        AssetValidator validator,
         ILogger<ModificationService> logger)
     {
         _config = config;
@@ -50,6 +53,7 @@ public class ModificationService
         _fileAccess = fileAccess;
         _digestService = digestService;
         _placementService = placementService;
+        _validator = validator;
         _logger = logger;
     }
 
@@ -400,8 +404,12 @@ public class ModificationService
             }
         }
 
+        var snapshot = _validator.CaptureSnapshot(asset, $"SetProperty:{request.PropertyName}");
         asset.Write(writePath);
-        _logger.LogInformation("Wrote modified asset to: {Path}", writePath);
+        var validation = _validator.Validate(writePath, snapshot);
+        if (!validation.IsValid)
+            throw new InvalidOperationException($"Post-write validation failed: {string.Join("; ", validation.Errors)}");
+        _logger.LogInformation("Wrote and validated modified asset: {Path}", writePath);
     }
 
     private void ApplyAddDevice(ModificationRequest request)
@@ -414,7 +422,7 @@ public class ModificationService
             throw new InvalidOperationException(
                 "AddDevice requires a 'SourceDevice' — an existing actor in the level to clone from. " +
                 "Place one instance of the device manually in UEFN, then reference it as the source. " +
-                "FortniteForge will clone it with your specified properties and location.");
+                "WellVersed will clone it with your specified properties and location.");
         }
 
         var result = _placementService.CloneActor(
@@ -456,6 +464,8 @@ public class ModificationService
         var levelExport = asset.Exports.OfType<LevelExport>().FirstOrDefault();
         levelExport?.Actors.Remove(targetRef);
 
+        var snapshot = _validator.CaptureSnapshot(asset, $"RemoveDevice:{request.TargetObject}");
+
         // Remove exports in reverse order to preserve indices during removal
         var toRemove = new List<int> { targetIndex };
         toRemove.AddRange(childIndices);
@@ -465,20 +475,164 @@ public class ModificationService
         }
 
         asset.Write(writePath);
-        _logger.LogInformation("Wrote modified asset to: {Path}", writePath);
+        var validation = _validator.Validate(writePath, snapshot);
+        if (!validation.IsValid)
+            throw new InvalidOperationException($"Post-write validation failed: {string.Join("; ", validation.Errors)}");
+        _logger.LogInformation("Wrote and validated modified asset: {Path}", writePath);
     }
 
     private void ApplyWireDevices(ModificationRequest request)
     {
-        // Wiring implementation depends on the specific device type's signal system
-        throw new NotImplementedException(
-            "Device wiring requires understanding the specific signal/event system used by each device type. " +
-            "This feature is in development.");
+        if (string.IsNullOrEmpty(request.SourceDevice) || string.IsNullOrEmpty(request.TargetDevice))
+            throw new InvalidOperationException("SourceDevice and TargetDevice are required for wiring.");
+        if (string.IsNullOrEmpty(request.OutputEvent) || string.IsNullOrEmpty(request.InputAction))
+            throw new InvalidOperationException("OutputEvent and InputAction are required for wiring.");
+
+        var (asset, writePath) = _assetService.OpenAssetForWrite(request.AssetPath);
+
+        // Find source and target device exports
+        var sourceExport = FindExport(asset, request.SourceDevice)
+            ?? throw new InvalidOperationException($"Source device '{request.SourceDevice}' not found.");
+        var targetExport = FindExport(asset, request.TargetDevice)
+            ?? throw new InvalidOperationException($"Target device '{request.TargetDevice}' not found.");
+
+        int targetIndex = -1;
+        for (int i = 0; i < asset.Exports.Count; i++)
+        {
+            if (asset.Exports[i].ObjectName?.ToString() == request.TargetDevice)
+            { targetIndex = i; break; }
+        }
+
+        // Find or create the binding array property on the source device
+        var bindingArrayName = FindBindingArrayProperty(sourceExport);
+        ArrayPropertyData? bindingArray = null;
+
+        if (bindingArrayName != null)
+        {
+            bindingArray = sourceExport.Data
+                .OfType<ArrayPropertyData>()
+                .FirstOrDefault(a => a.Name?.ToString() == bindingArrayName);
+        }
+
+        if (bindingArray == null)
+        {
+            // Create a new binding array — use "EventBindings" as default
+            var arrayName = bindingArrayName ?? "EventBindings";
+            bindingArray = new ArrayPropertyData(FName.FromString(asset, arrayName))
+            {
+                ArrayType = FName.FromString(asset, "StructProperty"),
+                Value = Array.Empty<PropertyData>()
+            };
+            sourceExport.Data.Add(bindingArray);
+        }
+
+        // Build the wiring struct entry
+        var wiringEntry = new StructPropertyData(FName.FromString(asset, "EventBindings"))
+        {
+            StructType = FName.FromString(asset, "DeviceEventBinding"),
+            Value = new List<PropertyData>
+            {
+                new NamePropertyData(FName.FromString(asset, "OutputEvent"))
+                    { Value = FName.FromString(asset, request.OutputEvent) },
+                new ObjectPropertyData(FName.FromString(asset, "TargetDevice"))
+                    { Value = FPackageIndex.FromExport(targetIndex) },
+                new NamePropertyData(FName.FromString(asset, "InputAction"))
+                    { Value = FName.FromString(asset, request.InputAction) },
+            }
+        };
+
+        // Add to the array
+        var existing = bindingArray.Value?.ToList() ?? new List<PropertyData>();
+        existing.Add(wiringEntry);
+        bindingArray.Value = existing.ToArray();
+
+        var snapshot = _validator.CaptureSnapshot(asset, $"WireDevices:{request.SourceDevice}→{request.TargetDevice}");
+        asset.Write(writePath);
+        var validation = _validator.Validate(writePath, snapshot);
+        if (!validation.IsValid)
+            throw new InvalidOperationException($"Post-write validation failed: {string.Join("; ", validation.Errors)}");
+        _logger.LogInformation("Wired {Source}.{Event} → {Target}.{Action}",
+            request.SourceDevice, request.OutputEvent, request.TargetDevice, request.InputAction);
     }
 
     private void ApplyUnwireDevices(ModificationRequest request)
     {
-        throw new NotImplementedException("Device unwiring is in development.");
+        if (string.IsNullOrEmpty(request.SourceDevice) || string.IsNullOrEmpty(request.TargetDevice))
+            throw new InvalidOperationException("SourceDevice and TargetDevice are required.");
+
+        var (asset, writePath) = _assetService.OpenAssetForWrite(request.AssetPath);
+        var sourceExport = FindExport(asset, request.SourceDevice)
+            ?? throw new InvalidOperationException($"Source device '{request.SourceDevice}' not found.");
+
+        // Find the binding array
+        var bindingArrayName = FindBindingArrayProperty(sourceExport);
+        if (bindingArrayName == null)
+            throw new InvalidOperationException($"No binding properties found on '{request.SourceDevice}'.");
+
+        var bindingArray = sourceExport.Data
+            .OfType<ArrayPropertyData>()
+            .FirstOrDefault(a => a.Name?.ToString() == bindingArrayName);
+
+        if (bindingArray?.Value == null || bindingArray.Value.Length == 0)
+            throw new InvalidOperationException("No wiring entries to remove.");
+
+        // Find target export index
+        int targetIndex = -1;
+        for (int i = 0; i < asset.Exports.Count; i++)
+        {
+            if (asset.Exports[i].ObjectName?.ToString() == request.TargetDevice)
+            { targetIndex = i; break; }
+        }
+
+        // Remove entries that match the target device
+        var remaining = bindingArray.Value.Where(entry =>
+        {
+            if (entry is StructPropertyData structEntry)
+            {
+                foreach (var prop in structEntry.Value)
+                {
+                    if (prop is ObjectPropertyData objProp && objProp.Value.IsExport())
+                    {
+                        if (objProp.Value.Index - 1 == targetIndex)
+                            return false; // Remove this entry
+                    }
+                }
+            }
+            return true;
+        }).ToArray();
+
+        if (remaining.Length == bindingArray.Value.Length)
+            throw new InvalidOperationException($"No wiring found from '{request.SourceDevice}' to '{request.TargetDevice}'.");
+
+        bindingArray.Value = remaining;
+
+        var snapshot = _validator.CaptureSnapshot(asset, $"UnwireDevices:{request.SourceDevice}→{request.TargetDevice}");
+        asset.Write(writePath);
+        var validation = _validator.Validate(writePath, snapshot);
+        if (!validation.IsValid)
+            throw new InvalidOperationException($"Post-write validation failed: {string.Join("; ", validation.Errors)}");
+        _logger.LogInformation("Unwired {Source} → {Target}", request.SourceDevice, request.TargetDevice);
+    }
+
+    private static string? FindBindingArrayProperty(NormalExport export)
+    {
+        // Search for existing array properties that look like wiring containers
+        foreach (var prop in export.Data)
+        {
+            if (prop is ArrayPropertyData)
+            {
+                var name = prop.Name?.ToString() ?? "";
+                if (name.Contains("Binding", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Connection", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Wire", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Link", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Event", StringComparison.OrdinalIgnoreCase))
+                {
+                    return name;
+                }
+            }
+        }
+        return null;
     }
 
     private void ApplyDuplicateDevice(ModificationRequest request)

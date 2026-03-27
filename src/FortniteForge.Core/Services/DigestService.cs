@@ -1,8 +1,8 @@
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Parses the .digest Verse files (fortnite.digest, verse.digest, unreal.digest)
@@ -14,12 +14,12 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class DigestService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<DigestService> _logger;
     private Dictionary<string, DeviceSchema>? _deviceSchemas;
     private bool _loaded;
 
-    public DigestService(ForgeConfig config, ILogger<DigestService> logger)
+    public DigestService(WellVersedConfig config, ILogger<DigestService> logger)
     {
         _config = config;
         _logger = logger;

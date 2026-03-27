@@ -1,4 +1,4 @@
-# FortniteForge
+# WellVersed
 
 **A UEFN project management studio — for humans and Claude.**
 
@@ -8,8 +8,8 @@ MCP server + CLI + Web dashboard for reading, auditing, configuring, and managin
 
 ```
 FortniteForge.sln
-├── src/FortniteForge.Core/          # Business logic (no UI)
-│   ├── Config/ForgeConfig.cs        # Config loader, project discovery, UEFN layout detection
+├── src/FortniteForge.Core/          # Business logic (no UI), namespace: WellVersed.Core
+│   ├── Config/ForgeConfig.cs        # WellVersedConfig class — config loader, project discovery, UEFN layout detection
 │   ├── Models/                      # AssetInfo, DeviceInfo, AuditResult, Vector3Info, etc.
 │   ├── Safety/AssetGuard.cs         # Cooked detection + path validation + operation mode
 │   └── Services/
@@ -24,18 +24,20 @@ FortniteForge.sln
 │       ├── BuildService.cs          # UEFN build triggering
 │       ├── DigestService.cs         # .digest schema parsing
 │       └── MapGeneration/           # Procedural map generation
-├── src/FortniteForge.MCP/           # MCP Server (Claude Code interface)
+├── src/FortniteForge.MCP/           # MCP Server (Claude Code interface), namespace: WellVersed.MCP
 │   ├── Program.cs                   # stdio transport, DI setup
 │   └── Tools/                       # 30+ MCP tool definitions
-├── src/FortniteForge.CLI/           # CLI with status line + --config flag
-├── src/FortniteForge.Web/           # Web dashboard (localhost SPA)
+├── src/FortniteForge.CLI/           # CLI with status line + --config flag, namespace: WellVersed.CLI
+├── src/FortniteForge.Web/           # Web dashboard (localhost SPA), namespace: WellVersed.Web
 │   ├── Program.cs                   # Minimal API + project management + browse/pick-folder
 │   ├── ProjectManager.cs            # Persistent multi-project with safety tiers
 │   ├── DeviceClassifier.cs          # Device vs prop classification + property extraction
 │   ├── SpatialExtractor.cs          # Actor position extraction for spatial views
 │   └── wwwroot/                     # Vanilla JS SPA, dark theme
-└── tests/FortniteForge.Tests/       # Unit + integration + sandbox tests
+└── tests/FortniteForge.Tests/       # Unit + integration + sandbox tests, namespace: WellVersed.Tests
 ```
+
+Note: Directory names on disk still use `FortniteForge.*` but all namespaces, assembly names, and branding use `WellVersed.*`.
 
 ## UEFN Asset Structure
 
@@ -47,7 +49,7 @@ Understanding what's in a UEFN project:
 | `Content/__ExternalActors__/<Level>/*.uasset` | **Placed instances** — each file is one actor in the level with transform + property overrides | Override properties only |
 | `Content/__ExternalObjects__/<Level>/*.uasset` | **Non-actor objects** — data assets referenced by level (rare) | Read-only |
 | `Content/*.umap` | **Level metadata** — world settings, HLOD, partitioning | Read-only |
-| `Content/*.verse` | **Verse source** — gameplay logic scripts | Via FortniteForge (verse generation planned) |
+| `Content/*.verse` | **Verse source** — gameplay logic scripts | Via WellVersed (verse generation planned) |
 
 External actors only store **non-default property overrides**. If a property is present in an external actor file, it means the creator explicitly changed it from Epic's default.
 
@@ -61,7 +63,7 @@ External actors only store **non-default property overrides**. If a property is 
 | Mode | When | Reads | Writes |
 |------|------|-------|--------|
 | **Read-Only** | `readOnly: true` or Library project | Copy-on-read | Blocked |
-| **Staged** | UEFN running or URC active | Copy-on-read | To `.fortniteforge/staged/` |
+| **Staged** | UEFN running or URC active | Copy-on-read | To `.wellversed/staged/` |
 | **Direct** | UEFN not running, My Project | Copy-on-read | To source (with backup) |
 
 ### Key Rules
@@ -99,9 +101,9 @@ dotnet run --project src/FortniteForge.CLI -- -c forge.config.json audit
 # MCP Server (for Claude Code)
 dotnet run --project src/FortniteForge.MCP -- path/to/forge.config.json
 
-# Tests (sandbox requires FORTNITEFORGE_SANDBOX env var)
+# Tests (sandbox requires WELLVERSED_SANDBOX env var)
 dotnet test
-FORTNITEFORGE_SANDBOX="Z:/UEFN_Resources/mapContent/map_resources" dotnet test --filter SandboxTests
+WELLVERSED_SANDBOX="Z:/UEFN_Resources/mapContent/map_resources" dotnet test --filter SandboxTests
 ```
 
 ## Web Dashboard Features
@@ -118,15 +120,15 @@ FORTNITEFORGE_SANDBOX="Z:/UEFN_Resources/mapContent/map_resources" dotnet test -
 Per-project `forge.config.json`:
 - `projectPath` — UEFN project root (folder with `.uefnproject`)
 - `readOnly` — Hard kill switch for all writes
-- `stagingDirectory` — Where staged writes go (default: `.fortniteforge/staged`)
+- `stagingDirectory` — Where staged writes go (default: `.wellversed/staged`)
 - `referenceLibraryPath` — Path to verse reference files
 
 Sandbox config: `forge.config.sandbox.json` (read-only, points at Z: drive Bedwars)
 
 ## Important Context
 
-- FortniteForge handles verse generation directly (not delegated to separate session) — it has full project context
-- UEFN projects always use `Plugins/<Name>/Content/` layout. Map collections may have extra nesting — use `ForgeConfig.DiscoverProjects()` to find project roots.
+- WellVersed handles verse generation directly (not delegated to separate session) — it has full project context
+- UEFN projects always use `Plugins/<Name>/Content/` layout. Map collections may have extra nesting — use `WellVersedConfig.DiscoverProjects()` to find project roots.
 - `.digest` files are Verse source containing device class/property schema definitions
 - The sandbox at `Z:\UEFN_Resources\mapContent\` has ~92 UEFN projects used as a reference library
 - Cross-map asset import is planned — simple for Epic-only references, complex when user assets have dependencies

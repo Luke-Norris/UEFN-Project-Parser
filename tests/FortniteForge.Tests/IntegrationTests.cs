@@ -1,14 +1,14 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
-using FortniteForge.Core.Safety;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
+using WellVersed.Core.Safety;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 /// <summary>
 /// Integration tests that run against the real UEFN_AutoMation_Test project.
-/// These tests validate that FortniteForge can parse real UEFN assets.
+/// These tests validate that WellVersed can parse real UEFN assets.
 /// Skipped if the project doesn't exist on the current machine.
 /// </summary>
 public class IntegrationTests : IDisposable
@@ -20,13 +20,13 @@ public class IntegrationTests : IDisposable
 
     private SafeFileAccess? _fileAccess;
 
-    private ForgeConfig CreateConfig() => new()
+    private WellVersedConfig CreateConfig() => new()
     {
         ProjectPath = ProjectPath,
         ReadOnlyFolders = new List<string> { "FortniteGame", "Engine" }
     };
 
-    private (AssetGuard Guard, SafeFileAccess FileAccess) CreateGuardAndFileAccess(ForgeConfig config)
+    private (AssetGuard Guard, SafeFileAccess FileAccess) CreateGuardAndFileAccess(WellVersedConfig config)
     {
         var detector = new UefnDetector(config, NullLogger<UefnDetector>.Instance);
         var fileAccess = new SafeFileAccess(config, detector, NullLogger<SafeFileAccess>.Instance);
@@ -196,7 +196,7 @@ public class IntegrationTests : IDisposable
         var configPath = Path.Combine(ProjectPath, "forge.config.json");
         Skip.IfNot(File.Exists(configPath), "forge.config.json not found");
 
-        var config = ForgeConfig.Load(configPath);
+        var config = WellVersedConfig.Load(configPath);
 
         Assert.Equal(ProjectPath, config.ProjectPath);
         Assert.True(Directory.Exists(config.ContentPath));

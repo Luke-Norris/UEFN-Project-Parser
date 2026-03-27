@@ -1,8 +1,8 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services.MapGeneration;
+namespace WellVersed.Core.Services.MapGeneration;
 
 /// <summary>
 /// Orchestrates map generation from a high-level prompt to a fully placed level.
@@ -20,14 +20,14 @@ namespace FortniteForge.Core.Services.MapGeneration;
 /// </summary>
 public class MapGenerator
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly AssetCatalog _catalog;
     private readonly ActorPlacementService _placementService;
     private readonly BackupService _backupService;
     private readonly ILogger<MapGenerator> _logger;
 
     public MapGenerator(
-        ForgeConfig config,
+        WellVersedConfig config,
         AssetCatalog catalog,
         ActorPlacementService placementService,
         BackupService backupService,

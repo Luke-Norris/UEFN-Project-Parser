@@ -1,7 +1,7 @@
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Manages backups of asset files before modifications.
@@ -9,10 +9,10 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class BackupService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<BackupService> _logger;
 
-    public BackupService(ForgeConfig config, ILogger<BackupService> logger)
+    public BackupService(WellVersedConfig config, ILogger<BackupService> logger)
     {
         _config = config;
         _logger = logger;

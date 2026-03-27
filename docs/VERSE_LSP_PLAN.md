@@ -114,5 +114,5 @@ Everything is an expression. Failure is control flow.
 - Parser source: `app/src/renderer/pages/VerseFilesPage.tsx` (parseVerseSource function)
 - Lexer reference: `verse-book/verse_lexer/verse.py`
 - Language docs: `verse-book/docs/`
-- Digest parser: `src/FortniteForge.Core/Services/DigestService.cs`
-- Sidecar verse handler: `src/FortniteForge.CLI/Program.cs` (HandleReadVerse)
+- Digest parser: `src/WellVersed.Core/Services/DigestService.cs`
+- Sidecar verse handler: `src/WellVersed.CLI/Program.cs` (HandleReadVerse)

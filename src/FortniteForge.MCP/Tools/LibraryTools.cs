@@ -1,9 +1,9 @@
-using FortniteForge.Core.Services;
+using WellVersed.Core.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// MCP tools for searching and browsing the UEFN asset library.
@@ -145,7 +145,7 @@ public class LibraryTools
         // Save to a standard location
         var savePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", "library-index.json");
+            ".wellversed", "library-index.json");
         indexer.SaveIndex(savePath);
 
         return $"Library indexed successfully!\n" +

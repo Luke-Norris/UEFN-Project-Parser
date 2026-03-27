@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { ErrorMessage } from '../components/ErrorMessage'
 import type {
-  ForgeLevel,
+  WellVersedLevel,
   DeviceEntry,
   DeviceListResult,
   DeviceInspectResult,
@@ -178,7 +178,7 @@ function runForceLayout(
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function DeviceWiringPage({ selectedLevel: selectedLevelProp, onNavigate }: DeviceWiringPageProps) {
-  const [levels, setLevels] = useState<ForgeLevel[]>([])
+  const [levels, setLevels] = useState<WellVersedLevel[]>([])
   const [activeLevelPath, setActiveLevelPath] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [scanning, setScanning] = useState(false)

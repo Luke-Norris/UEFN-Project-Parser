@@ -1,6 +1,6 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Safety;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Safety;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
@@ -8,7 +8,7 @@ using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Core service for reading and inspecting .uasset and .umap files.
@@ -17,12 +17,12 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class AssetService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly AssetGuard _guard;
     private readonly SafeFileAccess _fileAccess;
     private readonly ILogger<AssetService> _logger;
 
-    public AssetService(ForgeConfig config, AssetGuard guard, SafeFileAccess fileAccess, ILogger<AssetService> logger)
+    public AssetService(WellVersedConfig config, AssetGuard guard, SafeFileAccess fileAccess, ILogger<AssetService> logger)
     {
         _config = config;
         _guard = guard;

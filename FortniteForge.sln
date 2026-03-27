@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.Core", "src\FortniteForge.Core\FortniteForge.Core.csproj", "{A1B2C3D4-1111-2222-3333-444455556666}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WellVersed.Core", "src\FortniteForge.Core\FortniteForge.Core.csproj", "{A1B2C3D4-1111-2222-3333-444455556666}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.MCP", "src\FortniteForge.MCP\FortniteForge.MCP.csproj", "{A1B2C3D4-1111-2222-3333-444455557777}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WellVersed.MCP", "src\FortniteForge.MCP\FortniteForge.MCP.csproj", "{A1B2C3D4-1111-2222-3333-444455557777}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.CLI", "src\FortniteForge.CLI\FortniteForge.CLI.csproj", "{A1B2C3D4-1111-2222-3333-444455558888}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WellVersed.CLI", "src\FortniteForge.CLI\FortniteForge.CLI.csproj", "{A1B2C3D4-1111-2222-3333-444455558888}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FortniteForge.Tests", "tests\FortniteForge.Tests\FortniteForge.Tests.csproj", "{A1B2C3D4-1111-2222-3333-444455559999}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WellVersed.Tests", "tests\FortniteForge.Tests\FortniteForge.Tests.csproj", "{A1B2C3D4-1111-2222-3333-444455559999}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D414C80A-7472-41F6-A654-70FCDA6BEE57}"
 EndProject

@@ -1,9 +1,9 @@
-using FortniteForge.Core.Services;
+using WellVersed.Core.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// MCP tools for auditing UEFN project configurations.
@@ -79,9 +79,11 @@ public class AuditTools
             target = result.Target,
             status = result.Status.ToString(),
             summary = result.Summary,
+            criticalCount = result.Findings.Count(f => f.Severity == Core.Models.AuditSeverity.Critical),
             errorCount = result.Findings.Count(f => f.Severity == Core.Models.AuditSeverity.Error),
             warningCount = result.Findings.Count(f => f.Severity == Core.Models.AuditSeverity.Warning),
             infoCount = result.Findings.Count(f => f.Severity == Core.Models.AuditSeverity.Info),
+            healthScore = result.HealthScore != null ? new { result.HealthScore.Score, result.HealthScore.Grade, result.HealthScore.Summary } : null,
             findings = result.Findings.Select(f => new
             {
                 severity = f.Severity.ToString(),

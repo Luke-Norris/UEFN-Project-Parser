@@ -1,6 +1,6 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
@@ -8,7 +8,7 @@ using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// High-level MCP tools designed for Claude Code workflows.
@@ -29,7 +29,7 @@ public class PowerTools
         "to make informed decisions: levels, device types with counts, verse files, asset definitions, " +
         "and configurable property names per device type. Use this at the START of any UEFN work session.")]
     public string get_project_context(
-        ForgeConfig config,
+        WellVersedConfig config,
         DeviceService deviceService,
         AssetService assetService,
         UefnDetector detector)
@@ -127,7 +127,7 @@ public class PowerTools
         "Returns a diff of what changed. For Library projects, this will be blocked. " +
         "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string configure_device(
-        ForgeConfig config,
+        WellVersedConfig config,
         AssetGuard guard,
         SafeFileAccess fileAccess,
         [Description("Path to the .umap level file")] string levelPath,
@@ -254,7 +254,7 @@ public class PowerTools
         "Use after finding a relevant file with search_library or list_verse_files. " +
         "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string copy_verse_to_project(
-        ForgeConfig config,
+        WellVersedConfig config,
         SafeFileAccess fileAccess,
         [Description("Full path to the source .verse file in the library")] string sourceVersePath,
         [Description("Optional: custom filename for the copied file (without .verse extension)")] string? newName = null)
@@ -303,7 +303,7 @@ public class PowerTools
         "Use after finding relevant device configurations via search_library. " +
         "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string copy_device_to_project(
-        ForgeConfig config,
+        WellVersedConfig config,
         SafeFileAccess fileAccess,
         [Description("Full path to the source external actor .uasset file")] string sourceActorPath,
         [Description("Path to the target level's __ExternalActors__ directory")] string targetExternalActorsDir)
@@ -366,7 +366,7 @@ public class PowerTools
         "new verse code so you can integrate with existing systems, use correct device references, " +
         "and follow the project's coding patterns.")]
     public string get_verse_context(
-        ForgeConfig config)
+        WellVersedConfig config)
     {
         var contentPath = config.ContentPath;
         if (!Directory.Exists(contentPath))
@@ -429,7 +429,7 @@ public class PowerTools
     [McpServerTool, Description(
         "Read a verse file from the active project. Returns the full source code.")]
     public string read_project_verse(
-        ForgeConfig config,
+        WellVersedConfig config,
         [Description("Verse file name (with or without .verse extension)")] string fileName)
     {
         var contentPath = config.ContentPath;
@@ -451,7 +451,7 @@ public class PowerTools
         "or overwrites if it does. Use get_verse_context first to understand existing code. " +
         "Changes are staged for review — approve in the WellVersed app before they're applied to project files.")]
     public string write_project_verse(
-        ForgeConfig config,
+        WellVersedConfig config,
         SafeFileAccess fileAccess,
         [Description("Filename (with or without .verse extension)")] string fileName,
         [Description("Full verse source code to write")] string sourceCode)

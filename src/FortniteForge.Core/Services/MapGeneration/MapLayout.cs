@@ -1,6 +1,6 @@
-using FortniteForge.Core.Models;
+using WellVersed.Core.Models;
 
-namespace FortniteForge.Core.Services.MapGeneration;
+namespace WellVersed.Core.Services.MapGeneration;
 
 /// <summary>
 /// Represents the planned layout of a map before any actors are placed.

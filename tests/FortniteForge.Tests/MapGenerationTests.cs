@@ -1,8 +1,8 @@
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services.MapGeneration;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services.MapGeneration;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class AssetCatalogCategorizationTests
 {

@@ -1,5 +1,5 @@
 {
-  // FortniteForge Configuration
+  // WellVersed Configuration
   // Copy this file to your UEFN project root as "forge.config.json" and update the paths.
 
   // Path to your UEFN project root (the folder containing the .uefnproject file)
@@ -20,10 +20,10 @@
   "readOnlyFolders": ["FortniteGame", "Engine"],
 
   // Where to store backups (relative to project root)
-  "backupDirectory": ".fortniteforge/backups",
+  "backupDirectory": ".wellversed/backups",
 
   // Where staged modifications are written when UEFN is running (relative to project root)
-  "stagingDirectory": ".fortniteforge/staged",
+  "stagingDirectory": ".wellversed/staged",
 
   // Max number of backups to keep per file
   "maxBackupsPerFile": 10,

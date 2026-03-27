@@ -1,10 +1,10 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Handles UEFN build operations — triggering builds, capturing output, and parsing errors.
@@ -12,10 +12,10 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class BuildService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<BuildService> _logger;
 
-    public BuildService(ForgeConfig config, ILogger<BuildService> logger)
+    public BuildService(WellVersedConfig config, ILogger<BuildService> logger)
     {
         _config = config;
         _logger = logger;

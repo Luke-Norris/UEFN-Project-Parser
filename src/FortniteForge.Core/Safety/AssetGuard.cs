@@ -1,11 +1,11 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Safety;
+namespace WellVersed.Core.Safety;
 
 /// <summary>
 /// Central safety gate for all asset operations.
@@ -17,14 +17,14 @@ namespace FortniteForge.Core.Safety;
 /// </summary>
 public class AssetGuard
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly UefnDetector _detector;
     private readonly ILogger<AssetGuard> _logger;
 
     // Package flags that indicate cooked/engine data
     private const EPackageFlags PKG_FilterEditorOnly = EPackageFlags.PKG_FilterEditorOnly;
 
-    public AssetGuard(ForgeConfig config, UefnDetector detector, ILogger<AssetGuard> logger)
+    public AssetGuard(WellVersedConfig config, UefnDetector detector, ILogger<AssetGuard> logger)
     {
         _config = config;
         _detector = detector;

@@ -1,7 +1,7 @@
-using FortniteForge.Core.Services.MapGeneration;
+using WellVersed.Core.Services.MapGeneration;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class BiomeConfigTests
 {

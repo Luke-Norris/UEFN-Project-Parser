@@ -50,9 +50,9 @@ export function useVerseLsp(workspacePath?: string) {
           startLsp(wsPath)
         } else {
           // Try to get project path from sidecar
-          window.electronAPI?.forgeStatus?.().then((forgeStatus: any) => {
-            if (forgeStatus?.projectPath) {
-              startLsp(forgeStatus.projectPath)
+          window.electronAPI?.wellVersedStatus?.().then((wellVersedStatus: any) => {
+            if (wellVersedStatus?.projectPath) {
+              startLsp(wellVersedStatus.projectPath)
             }
           }).catch(() => {})
         }
@@ -90,9 +90,9 @@ export function useVerseLsp(workspacePath?: string) {
     if (!wsPath) {
       // Try from sidecar
       try {
-        const forgeStatus = await window.electronAPI?.forgeStatus?.() as any
-        if (forgeStatus?.projectPath) {
-          await startLsp(forgeStatus.projectPath)
+        const wellVersedStatus = await window.electronAPI?.wellVersedStatus?.() as any
+        if (wellVersedStatus?.projectPath) {
+          await startLsp(wellVersedStatus.projectPath)
           return
         }
       } catch { /* ignore */ }

@@ -1,20 +1,20 @@
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
-public class ForgeConfigTests
+public class WellVersedConfigTests
 {
     [Fact]
     public void DefaultConfig_HasExpectedDefaults()
     {
-        var config = new ForgeConfig();
+        var config = new WellVersedConfig();
 
         Assert.Equal("", config.ProjectPath);
         Assert.True(config.RequireDryRun);
         Assert.True(config.AutoBackup);
         Assert.Equal(10, config.MaxBackupsPerFile);
-        Assert.Equal(".fortniteforge/backups", config.BackupDirectory);
+        Assert.Equal(".wellversed/backups", config.BackupDirectory);
         Assert.Contains("FortniteGame", config.ReadOnlyFolders);
         Assert.Contains("Engine", config.ReadOnlyFolders);
     }
@@ -22,7 +22,7 @@ public class ForgeConfigTests
     [Fact]
     public void ContentPath_CombinesProjectPathWithContent()
     {
-        var config = new ForgeConfig { ProjectPath = @"C:\Projects\MyProject" };
+        var config = new WellVersedConfig { ProjectPath = @"C:\Projects\MyProject" };
 
         Assert.Equal(@"C:\Projects\MyProject\Content", config.ContentPath);
     }
@@ -30,7 +30,7 @@ public class ForgeConfigTests
     [Fact]
     public void Validate_EmptyProjectPath_ReturnsIssue()
     {
-        var config = new ForgeConfig();
+        var config = new WellVersedConfig();
 
         var issues = config.Validate();
 
@@ -41,7 +41,7 @@ public class ForgeConfigTests
     [Fact]
     public void Validate_NonExistentProjectPath_ReturnsIssue()
     {
-        var config = new ForgeConfig { ProjectPath = @"C:\NonExistent\Path\12345" };
+        var config = new WellVersedConfig { ProjectPath = @"C:\NonExistent\Path\12345" };
 
         var issues = config.Validate();
 
@@ -55,7 +55,7 @@ public class ForgeConfigTests
         var tempFile = Path.Combine(Path.GetTempPath(), $"forge_test_{Guid.NewGuid():N}.json");
         try
         {
-            var config = new ForgeConfig
+            var config = new WellVersedConfig
             {
                 ProjectPath = @"C:\Test\Project",
                 RequireDryRun = false,
@@ -66,7 +66,7 @@ public class ForgeConfigTests
             };
 
             config.Save(tempFile);
-            var loaded = ForgeConfig.Load(tempFile);
+            var loaded = WellVersedConfig.Load(tempFile);
 
             Assert.Equal(config.ProjectPath, loaded.ProjectPath);
             Assert.Equal(config.RequireDryRun, loaded.RequireDryRun);
@@ -85,13 +85,13 @@ public class ForgeConfigTests
     public void Load_NonExistentFile_Throws()
     {
         Assert.Throws<FileNotFoundException>(() =>
-            ForgeConfig.Load(@"C:\does_not_exist_12345.json"));
+            WellVersedConfig.Load(@"C:\does_not_exist_12345.json"));
     }
 
     [Fact]
     public void BuildConfig_HasDefaults()
     {
-        var config = new ForgeConfig();
+        var config = new WellVersedConfig();
 
         Assert.Equal("", config.Build.BuildCommand);
         Assert.Equal(300, config.Build.TimeoutSeconds);

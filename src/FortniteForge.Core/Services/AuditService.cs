@@ -1,9 +1,9 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Safety;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Safety;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Audits UEFN project assets and device configurations for issues.
@@ -11,7 +11,7 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class AuditService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly DeviceService _deviceService;
     private readonly AssetService _assetService;
     private readonly DigestService _digestService;
@@ -19,7 +19,7 @@ public class AuditService
     private readonly ILogger<AuditService> _logger;
 
     public AuditService(
-        ForgeConfig config,
+        WellVersedConfig config,
         DeviceService deviceService,
         AssetService assetService,
         DigestService digestService,
@@ -52,6 +52,9 @@ public class AuditService
             CheckDeviceReferences(devices, result);
             CheckSpawnerConfigurations(devices, result);
             CheckVerseDeviceBindings(devices, result);
+            CheckActorBudget(devices, result);
+            CheckMissingUIFeedback(devices, result);
+            CheckSpawnBalance(devices, result);
         }
         catch (Exception ex)
         {
@@ -64,11 +67,8 @@ public class AuditService
             });
         }
 
-        result.Status = result.Findings.Any(f => f.Severity == AuditSeverity.Error)
-            ? AuditStatus.Fail
-            : result.Findings.Any(f => f.Severity == AuditSeverity.Warning)
-                ? AuditStatus.Warning
-                : AuditStatus.Pass;
+        result.Status = DetermineStatus(result);
+        result.HealthScore = ComputeHealthScore(result);
 
         return result;
     }
@@ -110,11 +110,7 @@ public class AuditService
             });
         }
 
-        result.Status = result.Findings.Any(f => f.Severity == AuditSeverity.Error)
-            ? AuditStatus.Fail
-            : result.Findings.Any(f => f.Severity == AuditSeverity.Warning)
-                ? AuditStatus.Warning
-                : AuditStatus.Pass;
+        result.Status = DetermineStatus(result);
 
         return result;
     }
@@ -162,11 +158,8 @@ public class AuditService
         // Check for orphaned assets
         CheckOrphanedAssets(result);
 
-        result.Status = result.Findings.Any(f => f.Severity == AuditSeverity.Error)
-            ? AuditStatus.Fail
-            : result.Findings.Any(f => f.Severity == AuditSeverity.Warning)
-                ? AuditStatus.Warning
-                : AuditStatus.Pass;
+        result.Status = DetermineStatus(result);
+        result.HealthScore = ComputeHealthScore(result);
 
         return result;
     }
@@ -373,5 +366,184 @@ public class AuditService
         {
             _logger.LogDebug(ex, "Could not check for orphaned assets");
         }
+    }
+
+    private void CheckActorBudget(List<DeviceInfo> devices, AuditResult result)
+    {
+        var count = devices.Count;
+
+        if (count >= 20000)
+        {
+            result.Findings.Add(new AuditFinding
+            {
+                Severity = AuditSeverity.Critical,
+                Category = "Budget",
+                Message = $"Level has {count:N0} actors — exceeds UEFN absolute maximum of 20,000. Map will not build.",
+                Location = result.Target,
+                Suggestion = "Remove unused devices, merge duplicate systems, or split into sub-levels."
+            });
+        }
+        else if (count >= 15000)
+        {
+            result.Findings.Add(new AuditFinding
+            {
+                Severity = AuditSeverity.Error,
+                Category = "Budget",
+                Message = $"Level has {count:N0} actors — exceeds UEFN hard limit of 15,000. Build failures likely.",
+                Location = result.Target,
+                Suggestion = "Reduce actor count by removing unused devices or consolidating systems."
+            });
+        }
+        else if (count >= 10000)
+        {
+            result.Findings.Add(new AuditFinding
+            {
+                Severity = AuditSeverity.Warning,
+                Category = "Budget",
+                Message = $"Level has {count:N0} actors — approaching UEFN soft limit of 10,000.",
+                Location = result.Target,
+                Suggestion = "Monitor actor count. Consider removing unused devices to stay within budget."
+            });
+        }
+    }
+
+    private void CheckMissingUIFeedback(List<DeviceInfo> devices, AuditResult result)
+    {
+        var hasScoreManager = devices.Any(d =>
+            d.DeviceType.Contains("Score", StringComparison.OrdinalIgnoreCase) &&
+            d.DeviceType.Contains("Manager", StringComparison.OrdinalIgnoreCase));
+
+        var hasEliminationManager = devices.Any(d =>
+            d.DeviceType.Contains("Elimination", StringComparison.OrdinalIgnoreCase) &&
+            d.DeviceType.Contains("Manager", StringComparison.OrdinalIgnoreCase));
+
+        var hasHudMessage = devices.Any(d =>
+            d.DeviceType.Contains("HUD", StringComparison.OrdinalIgnoreCase) ||
+            d.DeviceType.Contains("Billboard", StringComparison.OrdinalIgnoreCase) ||
+            d.DeviceClass.Contains("HUDMessage", StringComparison.OrdinalIgnoreCase));
+
+        if ((hasScoreManager || hasEliminationManager) && !hasHudMessage)
+        {
+            result.Findings.Add(new AuditFinding
+            {
+                Severity = AuditSeverity.Warning,
+                Category = "UIFeedback",
+                Message = "Level has score/elimination managers but no HUD message devices for player feedback.",
+                Location = result.Target,
+                Suggestion = "Add HUD Message devices to display score updates, elimination feeds, or game status to players."
+            });
+        }
+    }
+
+    private void CheckSpawnBalance(List<DeviceInfo> devices, AuditResult result)
+    {
+        // Find team spawners and group by team index
+        var teamSpawners = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var device in devices)
+        {
+            if (!device.DeviceType.Contains("Spawn", StringComparison.OrdinalIgnoreCase) ||
+                !device.DeviceType.Contains("Pad", StringComparison.OrdinalIgnoreCase) &&
+                !device.DeviceClass.Contains("Spawner", StringComparison.OrdinalIgnoreCase) &&
+                !device.DeviceClass.Contains("SpawnPad", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var teamProp = device.Properties.FirstOrDefault(p =>
+                p.Name.Equals("TeamIndex", StringComparison.OrdinalIgnoreCase) ||
+                p.Name.Equals("Team", StringComparison.OrdinalIgnoreCase));
+
+            var teamKey = teamProp != null && !string.IsNullOrEmpty(teamProp.Value)
+                ? teamProp.Value
+                : "Unassigned";
+
+            teamSpawners.TryGetValue(teamKey, out var count);
+            teamSpawners[teamKey] = count + 1;
+        }
+
+        // Only check balance if there are multiple teams
+        var teamEntries = teamSpawners.Where(kv =>
+            !kv.Key.Equals("Unassigned", StringComparison.OrdinalIgnoreCase) &&
+            !kv.Key.Equals("0", StringComparison.Ordinal) &&
+            !kv.Key.Equals("Any", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (teamEntries.Count >= 2)
+        {
+            var counts = teamEntries.Select(kv => kv.Value).ToList();
+            var min = counts.Min();
+            var max = counts.Max();
+
+            if (min != max)
+            {
+                var details = string.Join(", ", teamEntries.Select(kv => $"Team {kv.Key}: {kv.Value}"));
+                result.Findings.Add(new AuditFinding
+                {
+                    Severity = AuditSeverity.Warning,
+                    Category = "Balance",
+                    Message = $"Unequal spawn pad counts across teams — {details}.",
+                    Location = result.Target,
+                    Suggestion = "Ensure each team has the same number of spawn pads for fair gameplay."
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Computes a health score from the audit findings.
+    /// Starts at 100 and applies deductions weighted by severity.
+    /// </summary>
+    public static HealthScore ComputeHealthScore(AuditResult result)
+    {
+        var score = 100;
+
+        foreach (var finding in result.Findings)
+        {
+            score -= finding.Severity switch
+            {
+                AuditSeverity.Critical => 20,
+                AuditSeverity.Error => 5, // Note: spec says Warning=-5, but Error should be heavier than Warning
+                AuditSeverity.Warning => 3,
+                AuditSeverity.Info => 1,
+                _ => 0
+            };
+        }
+
+        score = Math.Clamp(score, 0, 100);
+
+        var grade = score switch
+        {
+            >= 95 => "A+",
+            >= 90 => "A",
+            >= 85 => "B+",
+            >= 80 => "B",
+            >= 70 => "C",
+            >= 60 => "D",
+            _ => "F"
+        };
+
+        var criticals = result.Findings.Count(f => f.Severity == AuditSeverity.Critical);
+        var errors = result.Findings.Count(f => f.Severity == AuditSeverity.Error);
+        var warnings = result.Findings.Count(f => f.Severity == AuditSeverity.Warning);
+
+        var summary = score >= 95
+            ? "Excellent project health. No significant issues found."
+            : score >= 80
+                ? $"Good health with minor issues. {warnings} warnings to review."
+                : score >= 60
+                    ? $"Fair health. {errors} errors and {warnings} warnings need attention."
+                    : $"Poor health. {criticals} critical issues and {errors} errors require immediate action.";
+
+        return new HealthScore { Score = score, Grade = grade, Summary = summary };
+    }
+
+    private static AuditStatus DetermineStatus(AuditResult result)
+    {
+        if (result.Findings.Any(f => f.Severity == AuditSeverity.Critical))
+            return AuditStatus.Fail;
+        if (result.Findings.Any(f => f.Severity == AuditSeverity.Error))
+            return AuditStatus.Fail;
+        if (result.Findings.Any(f => f.Severity == AuditSeverity.Warning))
+            return AuditStatus.Warning;
+        return AuditStatus.Pass;
     }
 }

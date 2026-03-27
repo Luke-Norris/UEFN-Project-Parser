@@ -1,7 +1,7 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using UAssetAPI;
@@ -12,7 +12,7 @@ using UAssetAPI.UnrealTypes;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class ForestPlacementTest
 {
@@ -193,7 +193,7 @@ public class ForestPlacementTest
         // Clone strategy for external actors:
         // Each external actor is its own .uasset file.
         // To create a forest, we copy the tree file and modify the location in each copy.
-        var backupDir = Path.Combine(ProjectPath, ".fortniteforge", "forest_backups");
+        var backupDir = Path.Combine(ProjectPath, ".wellversed", "forest_backups");
         Directory.CreateDirectory(backupDir);
 
         // Backup original tree

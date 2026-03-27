@@ -1,10 +1,10 @@
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services.VerseGeneration;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services.VerseGeneration;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// MCP tools for generating Verse source code — UI widgets and game logic devices.

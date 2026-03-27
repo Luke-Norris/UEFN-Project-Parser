@@ -1,29 +1,29 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 /// <summary>
 /// Tests that run against a UEFN map collection (sandbox).
-/// Set FORTNITEFORGE_SANDBOX env var to the path containing UEFN projects.
+/// Set WELLVERSED_SANDBOX env var to the path containing UEFN projects.
 /// Skipped automatically if the env var is not set or the path doesn't exist.
 ///
 /// These tests discover real UEFN projects dynamically and validate
-/// FortniteForge's ability to parse any UEFN project structure.
+/// WellVersed's ability to parse any UEFN project structure.
 /// </summary>
 public class SandboxTests : IDisposable
 {
-    private static readonly string? SandboxPath = Environment.GetEnvironmentVariable("FORTNITEFORGE_SANDBOX");
+    private static readonly string? SandboxPath = Environment.GetEnvironmentVariable("WELLVERSED_SANDBOX");
     private static bool SandboxExists => !string.IsNullOrEmpty(SandboxPath) && Directory.Exists(SandboxPath);
 
     private SafeFileAccess? _fileAccess;
 
-    private (ForgeConfig Config, AssetGuard Guard, SafeFileAccess FileAccess, UefnDetector Detector) CreateServices(string projectPath)
+    private (WellVersedConfig Config, AssetGuard Guard, SafeFileAccess FileAccess, UefnDetector Detector) CreateServices(string projectPath)
     {
-        var config = new ForgeConfig
+        var config = new WellVersedConfig
         {
             ProjectPath = projectPath,
             ReadOnly = true,
@@ -46,9 +46,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void DiscoverProjects_FindsMultipleProjects()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
 
         Assert.NotEmpty(projects);
         Assert.True(projects.Count >= 2, $"Expected multiple projects, found {projects.Count}");
@@ -57,9 +57,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void DiscoverProjects_AllHaveUefnProjectFile()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
 
         foreach (var projectPath in projects)
         {
@@ -74,14 +74,14 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void ContentPath_ResolvesForAllDiscoveredProjects()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         int resolved = 0;
 
         foreach (var projectPath in projects)
         {
-            var config = new ForgeConfig { ProjectPath = projectPath };
+            var config = new WellVersedConfig { ProjectPath = projectPath };
             var contentPath = config.ContentPath;
 
             if (Directory.Exists(contentPath))
@@ -100,13 +100,13 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void ContentPath_AlwaysUnderPlugins()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
 
         foreach (var projectPath in projects)
         {
-            var config = new ForgeConfig { ProjectPath = projectPath };
+            var config = new WellVersedConfig { ProjectPath = projectPath };
             var contentPath = config.ContentPath;
 
             if (Directory.Exists(contentPath))
@@ -120,13 +120,13 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void ProjectName_DetectedForAllProjects()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
 
         foreach (var projectPath in projects)
         {
-            var config = new ForgeConfig { ProjectPath = projectPath };
+            var config = new WellVersedConfig { ProjectPath = projectPath };
             Assert.NotEmpty(config.ProjectName);
             Assert.NotEqual("Unknown", config.ProjectName);
         }
@@ -137,9 +137,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void AssetService_CanListAssetsFromAnyProject()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         int projectsWithAssets = 0;
 
         foreach (var projectPath in projects.Take(5)) // Test first 5 to keep it fast
@@ -174,9 +174,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void PropertyExtraction_ExternalActorsHaveProperties()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         int actorsWithProperties = 0;
         int totalActorsTested = 0;
 
@@ -225,9 +225,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void PropertyExtraction_DeviceActorsHaveConfigurableProperties()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         var deviceKeywords = new[] { "Device_", "Spawner", "Trigger", "Timer", "Button", "Barrier" };
         int devicesFound = 0;
         int devicesWithProperties = 0;
@@ -283,9 +283,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void SafeFileAccess_CopyOnRead_DoesNotModifySource()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         Skip.If(projects.Count == 0, "No projects found");
 
         var (config, guard, fileAccess, _) = CreateServices(projects[0]);
@@ -310,9 +310,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void SafeFileAccess_ReadOnlyMode_BlocksWrites()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         Skip.If(projects.Count == 0, "No projects found");
 
         var (config, _, fileAccess, _) = CreateServices(projects[0]);
@@ -329,21 +329,21 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void UefnDetector_DetectsUrcWhenPresent()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         var withUrc = projects.Where(p => Directory.Exists(Path.Combine(p, ".urc"))).ToList();
 
         if (withUrc.Count > 0)
         {
-            var config = new ForgeConfig { ProjectPath = withUrc[0] };
+            var config = new WellVersedConfig { ProjectPath = withUrc[0] };
             Assert.True(config.HasUrc, $"HasUrc should be true for {withUrc[0]}");
         }
 
         var withoutUrc = projects.Where(p => !Directory.Exists(Path.Combine(p, ".urc"))).ToList();
         if (withoutUrc.Count > 0)
         {
-            var config = new ForgeConfig { ProjectPath = withoutUrc[0] };
+            var config = new WellVersedConfig { ProjectPath = withoutUrc[0] };
             Assert.False(config.HasUrc, $"HasUrc should be false for {withoutUrc[0]}");
         }
     }
@@ -353,9 +353,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void AssetGuard_ReadOnlyConfig_BlocksAllModifications()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         Skip.If(projects.Count == 0, "No projects found");
 
         var (config, guard, fileAccess, _) = CreateServices(projects[0]);
@@ -374,9 +374,9 @@ public class SandboxTests : IDisposable
     [SkippableFact]
     public void TransformExtraction_SomeActorsHaveRelativeLocation()
     {
-        Skip.IfNot(SandboxExists, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(SandboxExists, "WELLVERSED_SANDBOX not set");
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath!);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath!);
         int actorsWithLocation = 0;
         int totalChecked = 0;
 

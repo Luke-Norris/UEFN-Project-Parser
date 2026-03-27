@@ -1,4 +1,4 @@
-namespace FortniteForge.Core.Models;
+namespace WellVersed.Core.Models;
 
 /// <summary>
 /// Declarative specification for a Widget Blueprint.
@@ -189,7 +189,7 @@ public class WidgetSpec
 /// <summary>
 /// A bindable variable in a WidgetSpec. Links a user-editable value
 /// to a specific widget's property. Used by both the visual editor
-/// (Component Creator) and the .uasset builder (FortniteForge).
+/// (Component Creator) and the .uasset builder (WellVersed).
 /// </summary>
 public class WidgetVariable
 {

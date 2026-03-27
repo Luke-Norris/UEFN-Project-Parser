@@ -1,13 +1,13 @@
 {
-  // FortniteForge Sandbox Config — points at Z:\UEFN_Resources\mapContent for safe development
+  // WellVersed Sandbox Config — points at Z:\UEFN_Resources\mapContent for safe development
   // Use this when testing against the map collection without risk to any active project.
 
   "projectPath": "Z:\\UEFN_Resources\\mapContent\\map_resources\\Bedwars",
   "readOnly": true,
   "readOnlyFolders": ["FortniteGame", "Engine"],
   "modifiableFolders": [],
-  "backupDirectory": ".fortniteforge/backups",
-  "stagingDirectory": ".fortniteforge/staged",
+  "backupDirectory": ".wellversed/backups",
+  "stagingDirectory": ".wellversed/staged",
   "maxBackupsPerFile": 10,
   "requireDryRun": true,
   "autoBackup": true,

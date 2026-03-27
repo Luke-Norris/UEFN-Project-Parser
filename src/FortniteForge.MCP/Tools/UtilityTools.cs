@@ -1,12 +1,12 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 using UAssetAPI;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// MCP utility tools — project health checks, JSON export for debugging,
@@ -26,7 +26,7 @@ public class UtilityTools
         "checks digest files are loadable, and reports any issues. " +
         "Run this first when starting a session to make sure everything is configured.")]
     public string check_project_health(
-        ForgeConfig config,
+        WellVersedConfig config,
         DigestService digestService)
     {
         var issues = config.Validate();
@@ -210,9 +210,9 @@ public class UtilityTools
     }
 
     [McpServerTool, Description(
-        "Gets the current FortniteForge configuration. " +
+        "Gets the current WellVersed configuration. " +
         "Shows all configured paths, safety settings, and build config.")]
-    public string get_config(ForgeConfig config)
+    public string get_config(WellVersedConfig config)
     {
         return JsonSerializer.Serialize(new
         {

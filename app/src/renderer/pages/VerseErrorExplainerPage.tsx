@@ -3,10 +3,13 @@ import { VerseHighlighter } from '../components/VerseHighlighter'
 
 // ─── Error Pattern Database ─────────────────────────────────────────────────
 
+type ErrorCategory = 'type_system' | 'failable' | 'effect' | 'scope' | 'device' | 'syntax' | 'concurrency'
+
 interface ErrorPattern {
   pattern: RegExp
   title: string
   severity: 'error' | 'warning' | 'info'
+  category: ErrorCategory
   explanation: string
   fix: string
   example: string
@@ -14,280 +17,684 @@ interface ErrorPattern {
 }
 
 const ERROR_PATTERNS: ErrorPattern[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // TYPE SYSTEM ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    pattern: /This function does not return a value in all cases/i,
+    pattern: /does\s+not\s+return\s+a?\s*value\s+in\s+all\s+cases|not\s+all\s+(?:code\s+)?paths\s+return/i,
     title: 'Missing Return Value',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'Every code path in your function must return a value. If you have an `if` without an `else`, the function has no return value when the condition is false.',
-    fix: 'Add an `else` branch that returns a default value, or restructure to ensure all paths return.',
+      'Every code path in your function must produce a value of the declared return type. If you have an `if` without an `else`, the function has no return value when the condition is false.',
+    fix: 'Add an `else` branch that returns a default value, or restructure so all paths return. In Verse, the last expression in a block is the return value.',
     example:
-      '# Before (broken):\nGetScore():int =\n    if (HasWon?):\n        return 100\n\n# After (fixed):\nGetScore():int =\n    if (HasWon?):\n        return 100\n    else:\n        return 0',
+      '# Before (broken):\nGetScore():int =\n    if (HasWon?):\n        100\n\n# After (fixed):\nGetScore():int =\n    if (HasWon?):\n        100\n    else:\n        0',
     docSection: 'Functions',
   },
   {
-    pattern: /Expected\s+[`']?(\w+)[`']?\s+but\s+found\s+[`']?(\w+)[`']?/i,
+    pattern: /[Ee]xpected\s+(?:expression\s+of\s+)?type\s+[`']?(\w+)[`']?\s+but\s+found\s+[`']?(\w+)[`']?/,
     title: 'Type Mismatch',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'The compiler expected one type but received another. This often happens when passing arguments to functions, assigning to typed variables, or returning the wrong type.',
-    fix: 'Check that the value you are using matches the expected type. You may need a conversion function, a cast, or to change the variable type.',
+      'The compiler expected one type but received another. This happens when passing arguments to functions, assigning to typed variables, or returning the wrong type from a function.',
+    fix: 'Check that the value matches the expected type. You may need a conversion function (e.g., `Floor()` for float-to-int, string interpolation for int-to-string), or change the variable/parameter type.',
     example:
-      '# Before (broken):\nMyHealth : int = 100.0  # float assigned to int\n\n# After (fixed):\nMyHealth : int = 100\n# Or use the correct type:\nMyHealth : float = 100.0',
+      '# Before (broken):\nMyHealth : int = 100.0  # float assigned to int\n\n# After (fixed):\nMyHealth : int = 100\n# Or convert:\nMyHealth : int = Floor[100.0]',
     docSection: 'Types',
   },
   {
-    pattern: /failable\s+expression.*not\s+in\s+(a\s+)?failable\s+context/i,
-    title: 'Failable Expression Outside Failable Context',
+    pattern: /[Cc]annot\s+convert\s+(?:from\s+)?[`']?(\w+)[`']?\s+to\s+[`']?(\w+)[`']?/,
+    title: 'Cannot Convert Between Types',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'Operations that can fail (like array access, map lookups, or `?` expressions) must be wrapped in a failable context such as `if`, `for`, or a failure block `[]`.',
-    fix: 'Wrap the failable expression in an `if` block, or use the failure operator `[]` to provide a default value.',
+      'There is no implicit or explicit conversion between these two types. Verse is strictly typed and does not allow arbitrary casts between unrelated types.',
+    fix: 'Use an appropriate conversion function (e.g., `ToString()`, `Floor()`, `Ceil()`, `Round()`) or restructure your code to use the correct type from the start.',
     example:
-      '# Before (broken):\nItem := MyArray[Index]\n\n# After (fixed) — using if:\nif (Item := MyArray[Index]):\n    # use Item here\n\n# Or with default value:\nItem := MyArray[Index] or DefaultItem',
-    docSection: 'Failure',
+      '# Before (broken):\nMyString : string = 42  # No implicit int->string\n\n# After (fixed):\nMyString : string = "{42}"\n\n# float to int:\nMyInt : int = Floor[3.14]',
+    docSection: 'Types',
   },
   {
-    pattern: /Unknown\s+identifier\s+[`']?(\w+)[`']?/i,
-    title: 'Unknown Identifier',
+    pattern: /[Tt]ype\s+[`']?(\w+)[`']?\s+is\s+not\s+a\s+subtype\s+of\s+[`']?(\w+)[`']?/,
+    title: 'Type Is Not a Subtype',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'The compiler does not recognize this name. It could be a typo, a missing `using` import, or the symbol may not be in scope.',
-    fix: 'Check for typos in the name. If it comes from another module, add the appropriate `using` statement at the top of your file.',
+      'You\'re trying to use a type where a more specific subtype is required. For example, assigning a base class where a derived class is expected.',
+    fix: 'Ensure your type inherits from the required parent type. Check the class definition\'s parent type in the parentheses after `class`.',
     example:
-      '# Before (broken):\nusing { /Fortnite.com/Devices }\n# Typo: "Buttn" instead of "Button"\nMyButton : Buttn_Device = ...\n\n# After (fixed):\nusing { /Fortnite.com/Devices }\nMyButton : button_device = ...',
-    docSection: 'Modules',
+      '# Ensure correct inheritance:\nmy_device := class(creative_device):\n    # creative_device is the base for UEFN devices\n    OnBegin<override>()<suspends>:void =\n        Print("Started")',
+    docSection: 'Types',
   },
   {
-    pattern: /effect\s+mismatch|cannot\s+call.*<decides>.*from.*<computes>/i,
-    title: 'Effect Mismatch',
+    pattern: /[Pp]arametric\s+type\s+mismatch|[Gg]eneric\s+(?:type\s+)?constraint|type\s+parameter.*(?:does\s+not\s+(?:match|satisfy)|mismatch)/,
+    title: 'Parametric Type / Generic Constraint Mismatch',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'Verse functions have effect specifiers like `<decides>`, `<computes>`, `<suspends>`, and `<transacts>`. You cannot call a function with a stronger effect from one with a weaker effect. For example, you cannot call a `<decides>` function from a `<computes>` context.',
-    fix: 'Either change your calling function to include the required effect specifier, or wrap the call in the appropriate context (e.g., an `if` for `<decides>`).',
+      'A generic/parametric type does not satisfy its constraints. The type argument you provided does not meet the requirements specified by the generic type parameter.',
+    fix: 'Check the generic constraints on the type/function definition. Ensure your type argument implements the required interfaces or extends the required base type.',
     example:
-      '# Before (broken):\nGetItem()<computes> : item =\n    Items.Find(Key)  # Find is <decides>\n\n# After (fixed):\nGetItem()<transacts><decides> : item =\n    Items.Find(Key)\n\n# Or handle failure:\nGetItem()<computes> : item =\n    if (Result := Items.Find(Key)):\n        Result\n    else:\n        DefaultItem',
-    docSection: 'Effects',
+      '# If a function requires comparable(t):\nSort(Items : []t where t : comparable) : []t = ...\n\n# Your type must be comparable:\nmy_type := class<comparable>:\n    Value : int\n    Equals(Other : my_type)<computes><decides> : void = ...',
+    docSection: 'Types',
   },
   {
-    pattern: /Cannot\s+modify\s+immutable|cannot\s+assign\s+to\s+(a\s+)?(constant|immutable)/i,
-    title: 'Cannot Modify Immutable Variable',
+    pattern: /option\s+type\s+(?:error|mismatch)|cannot\s+(?:use|access)\s+option\s+(?:value|type)|expected\s+option|[`']?\?[`']?\s+type\s+error/i,
+    title: 'Option Type Error',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'By default, Verse variables are immutable (constants). To reassign a variable, it must be declared with `var`, and you must use `set` to change it.',
-    fix: 'Declare the variable with `var` and use `set` to modify it.',
+      'Option types (`?type`) represent values that may or may not exist. You cannot use an option value directly — you must unwrap it first using a failable context.',
+    fix: 'Unwrap the option value using `if` to check whether it has a value before using it.',
     example:
-      '# Before (broken):\nScore : int = 0\nScore = 10  # Error: cannot modify\n\n# After (fixed):\nvar Score : int = 0\nset Score = 10',
-    docSection: 'Variables',
+      '# Before (broken):\nMaybePlayer : ?player = GetPlayer()\nMaybePlayer.GetName()  # Cannot call directly on option!\n\n# After (fixed):\nif (Player := MaybePlayer?):\n    Name := Player.GetName()\n    Print("Player: {Name}")\nelse:\n    Print("No player")',
+    docSection: 'Types',
   },
   {
-    pattern: /Ambiguous\s+(call|reference|overload)|multiple\s+(overloads|functions)\s+match/i,
+    pattern: /expected\s+[`']?logic[`']?.*found\s+[`']?(?:bool|void)[`']?|[`']?logic[`']?\s+vs\s+[`']?(?:bool|void)[`']?|cannot\s+use.*(?:true|false).*logic/i,
+    title: 'Logic vs Bool Type Confusion',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'Verse uses `logic` type (with values `true` and `false`) instead of `bool`. Conditions in if-expressions are failable expressions, not boolean checks.',
+    fix: 'Use `logic` type for true/false values. For conditions, use failable expressions with `?` rather than boolean comparisons.',
+    example:
+      '# Verse logic type:\nvar IsActive : logic = true\nvar IsReady : logic = false\n\n# Conditional check (failable pattern):\nif (IsActive?):\n    Print("Active")\n\n# NOT like other languages:\n# if (IsActive == true):  # Wrong\n# if (IsActive?):         # Correct',
+    docSection: 'Types',
+  },
+  {
+    pattern: /(?:if|case|branch).*branches?\s+(?:have|return)\s+(?:different|incompatible)\s+types|(?:then|else)\s+branch.*type\s+mismatch|all\s+branches\s+must\s+(?:have|return)\s+(?:the\s+)?same\s+type/i,
+    title: 'If/Else Branch Type Mismatch',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'When an if-else expression is used as a value, both branches must produce the same type. The `if` and `else` branches return different types.',
+    fix: 'Ensure both branches return the same type. Convert one branch\'s value if needed.',
+    example:
+      '# Before (broken):\nResult := if (Condition?):\n    42        # int\nelse:\n    "none"    # string — type mismatch!\n\n# After (fixed):\nResult : int = if (Condition?):\n    42\nelse:\n    0  # Same type as then-branch',
+    docSection: 'Types',
+  },
+  {
+    pattern: /tuple.*(?:type\s+)?(?:error|mismatch)|cannot\s+(?:destructure|unpack)\s+tuple|wrong\s+(?:number\s+of\s+)?tuple\s+elements/i,
+    title: 'Tuple Type Error',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'Tuple destructuring or construction has a type mismatch. The number of elements or their types don\'t match what\'s expected.',
+    fix: 'Ensure the number and types of elements match. Use parentheses for tuple construction and destructuring.',
+    example:
+      '# Tuple construction:\nPair : tuple(int, string) = (42, "hello")\n\n# Destructuring:\n(MyInt, MyString) := Pair\n\n# Function returning tuple:\nGetCoords() : tuple(float, float) =\n    (10.0, 20.0)\n\n(X, Y) := GetCoords()',
+    docSection: 'Types',
+  },
+  {
+    pattern: /where\s+clause.*(?:not\s+satisfied|error|fail)|constraint.*where.*not\s+(?:met|satisfied)|type.*does\s+not\s+satisfy\s+(?:the\s+)?where/i,
+    title: 'Where Clause Constraint Not Satisfied',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'A `where` clause specifies a constraint that a type parameter must satisfy. The type you\'re using doesn\'t meet this constraint.',
+    fix: 'Ensure your type implements the required interface or extends the required base class specified in the `where` clause.',
+    example:
+      '# Function with where clause:\nFindMax(Items : []t where t : comparable) : ?t =\n    ...\n\n# Your type must be comparable:\nmy_scored := class<comparable>:\n    Score : int = 0\n    Equals(Other : my_scored)<computes><decides> : void =\n        Score = Other.Score',
+    docSection: 'Types',
+  },
+  {
+    pattern: /[Rr]ecursive\s+type|[Cc]ircular\s+(?:reference|dependency|type)/,
+    title: 'Recursive / Circular Type',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'A type refers to itself directly or through a chain of other types, creating an infinite-size type. Verse does not allow directly recursive value types.',
+    fix: 'Use `option` (?) or a reference type (class) to break the recursion.',
+    example:
+      '# Before (broken):\ntree_node := struct:\n    Value : int\n    Children : []tree_node  # Infinite size!\n\n# After (fixed) — use class (reference type):\ntree_node := class:\n    Value : int = 0\n    var Children : []tree_node = array{}',
+    docSection: 'Types',
+  },
+  {
+    pattern: /[Cc]annot\s+use\s+[`']?[Ss]elf[`']?\s+before|[Ss]elf.*not\s+initialized|use\s+of\s+[`']?[Ss]elf[`']?\s+before\s+(?:all\s+)?fields?\s+(?:are\s+)?initialized/,
+    title: 'Self Used Before Initialization',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'You\'re referencing `Self` in a constructor or initializer before all fields have been assigned. All fields must be initialized before `Self` can be used.',
+    fix: 'Reorder field initializations so all fields are set before any reference to `Self`. Reference `Self` only in methods, not field initializers.',
+    example:
+      '# Before (broken):\nmy_class := class:\n    Other : my_class = Self  # Self not ready yet!\n    Value : int = 0\n\n# After (fixed):\nmy_class := class:\n    Value : int = 0\n    # Reference Self only in methods, not field initializers',
+    docSection: 'Classes',
+  },
+  {
+    pattern: /interface.*not\s+implemented|does\s+not\s+implement|missing\s+implementation/i,
+    title: 'Interface Not Implemented',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'Your class declares it implements an interface but is missing one or more required methods. All methods defined in the interface must have matching implementations.',
+    fix: 'Add the missing method implementations. Check the interface definition for exact signatures (name, parameters, return type, and effects).',
+    example:
+      '# Interface:\ndamageable := interface:\n    TakeDamage(Amount : float) : void\n    GetHealth() : float\n\n# Before (broken):\nmy_actor := class(damageable):\n    TakeDamage(Amount : float) : void = {}\n    # Missing GetHealth!\n\n# After (fixed):\nmy_actor := class(damageable):\n    TakeDamage(Amount : float) : void = {}\n    GetHealth() : float = 100.0',
+    docSection: 'Interfaces',
+  },
+  {
+    pattern: /field\s+[`']?(\w+)[`']?\s+not\s+found|(?:struct|class).*does\s+not\s+have\s+(?:member|field)/i,
+    title: 'Struct/Class Field Not Found',
+    severity: 'error',
+    category: 'type_system',
+    explanation:
+      'The struct or class does not have a field with that name. This could be a typo, the field may be private, or it may be on a different type.',
+    fix: 'Check the struct/class definition for the correct field name. Field names are case-sensitive in Verse.',
+    example:
+      '# If the struct is:\nplayer_data := struct:\n    Name : string\n    Score : int\n\n# Before (broken):\nData.Points  # No field "Points"\n\n# After (fixed):\nData.Score  # Correct field name',
+    docSection: 'Structs',
+  },
+  {
+    pattern: /[Aa]mbiguous\s+(?:call|reference|overload)|multiple\s+(?:overloads|functions)\s+match/,
     title: 'Ambiguous Function Call',
     severity: 'error',
+    category: 'type_system',
     explanation:
       'Multiple function overloads match the given arguments, and the compiler cannot determine which one to use.',
-    fix: 'Add explicit type annotations to the arguments to disambiguate, or cast to a specific type.',
+    fix: 'Add explicit type annotations to disambiguate. Cast arguments to the specific type expected by the overload you want.',
     example:
-      '# Before (broken):\nPrint(0)  # Ambiguous: Print(int) or Print(float)?\n\n# After (fixed):\nPrint(0 : int)  # Explicit type annotation\n# Or:\nMyVal : int = 0\nPrint(MyVal)',
+      '# Before (broken):\nPrint(0)  # Ambiguous: multiple overloads match\n\n# After (fixed):\nMyVal : int = 0\nPrint("{MyVal}")  # Use string interpolation',
     docSection: 'Functions',
   },
   {
-    pattern: /subscript\s+out\s+of\s+range|index\s+out\s+of\s+(bounds|range)/i,
-    title: 'Subscript Out of Range',
+    pattern: /subscript\s+out\s+of\s+range|index\s+out\s+of\s+(?:bounds|range)/i,
+    title: 'Subscript / Index Out of Range',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'An array or container access used an index that is outside the valid range. In Verse, array indexing is failable, so this is typically a compile-time warning that you are not handling the failure case.',
-    fix: 'Always access arrays within a failable context (`if` or `for`) to handle out-of-range indices gracefully.',
+      'An array or container access used an index outside the valid range. In Verse, array indexing is failable — you must handle the case where the index is invalid.',
+    fix: 'Always access arrays within a failable context (`if` or `for`) to handle out-of-range indices.',
     example:
       '# Before (broken):\nFirstItem := MyArray[0]  # Failable, not handled\n\n# After (fixed):\nif (FirstItem := MyArray[0]):\n    # Safe to use FirstItem\nelse:\n    # Handle empty array',
     docSection: 'Arrays',
   },
   {
-    pattern: /missing\s+[`']?using[`']?\s+statement|module\s+[`']?([^`']+)[`']?\s+not\s+found/i,
-    title: 'Missing Using Statement',
-    severity: 'error',
-    explanation:
-      'The type or function you are trying to use lives in a module that has not been imported. Verse requires explicit `using` declarations for each module.',
-    fix: 'Add the appropriate `using` statement at the top of your file.',
-    example:
-      '# Common using statements for UEFN:\nusing { /Fortnite.com/Devices }\nusing { /Fortnite.com/Characters }\nusing { /Fortnite.com/UI }\nusing { /Verse.org/Simulation }\nusing { /UnrealEngine.com/Temporary/Diagnostics }\nusing { /UnrealEngine.com/Temporary/SpatialMath }',
-    docSection: 'Modules',
-  },
-  {
-    pattern: /Invalid\s+[`']?set[`']?\s+target|cannot\s+set\s+/i,
-    title: 'Invalid Set Target',
-    severity: 'error',
-    explanation:
-      'The `set` keyword can only be used on mutable variables (declared with `var`), mutable struct fields, or mutable map/array entries. You cannot `set` a function call result, a temporary, or an immutable binding.',
-    fix: 'Ensure the target is a `var` variable or a mutable field. If it is a computed property or function result, store it in a `var` first.',
-    example:
-      '# Before (broken):\nset GetPosition().X = 10.0  # Cannot set a function result\n\n# After (fixed):\nvar Pos : vector3 = GetPosition()\nset Pos.X = 10.0\nSetPosition(Pos)',
-    docSection: 'Variables',
-  },
-  {
-    pattern: /Cannot\s+convert\s+(from\s+)?[`']?(\w+)[`']?\s+to\s+[`']?(\w+)[`']?/i,
-    title: 'Cannot Convert Between Types',
-    severity: 'error',
-    explanation:
-      'There is no implicit or explicit conversion between these two types. Verse is strictly typed and does not allow arbitrary casts.',
-    fix: 'Use an appropriate conversion function (e.g., `ToString`, `Floor`, `Ceil`) or restructure your code to use the correct type from the start.',
-    example:
-      '# Before (broken):\nMyString : string = 42  # No implicit int->string\n\n# After (fixed):\nMyString : string = ToString(42)\n\n# float to int:\nMyInt : int = Floor(3.14)',
-    docSection: 'Types',
-  },
-  {
-    pattern: /Unreachable\s+code/i,
-    title: 'Unreachable Code',
-    severity: 'warning',
-    explanation:
-      'Code after a `return`, `break`, or unconditional jump will never execute. The compiler warns about this dead code.',
-    fix: 'Remove the unreachable code, or restructure the control flow so the code can actually be reached.',
-    example:
-      '# Before (warning):\nDoSomething():void =\n    return\n    Print("Never reached")  # Unreachable\n\n# After (fixed):\nDoSomething():void =\n    Print("This runs")\n    return',
-    docSection: 'Control Flow',
-  },
-  {
-    pattern: /Duplicate\s+definition|already\s+defined|redefinition\s+of/i,
-    title: 'Duplicate Definition',
-    severity: 'error',
-    explanation:
-      'A variable, function, or type with this name already exists in the same scope. Verse does not allow shadowing within the same scope level.',
-    fix: 'Rename one of the duplicates, or if they are meant to be overloads, ensure their parameter types differ.',
-    example:
-      '# Before (broken):\nScore : int = 0\nScore : int = 10  # Duplicate!\n\n# After (fixed):\nScore : int = 0\nBonusScore : int = 10',
-    docSection: 'Variables',
-  },
-  {
-    pattern: /<suspends>.*outside\s+(async|concurrent)|cannot\s+call.*<suspends>|suspends.*not\s+allowed/i,
-    title: 'Suspends Outside Async Context',
-    severity: 'error',
-    explanation:
-      'A `<suspends>` function (one that can pause execution, like `Sleep` or `Await`) can only be called from within another `<suspends>` context, or spawned with `spawn`.',
-    fix: 'Mark the calling function as `<suspends>`, or use `spawn` to run the suspending function concurrently.',
-    example:
-      '# Before (broken):\nOnBegin():void =\n    Sleep(1.0)  # Sleep is <suspends>\n\n# After (fixed) — make function suspends:\nOnBegin()<suspends>:void =\n    Sleep(1.0)\n\n# Or use spawn:\nOnBegin():void =\n    spawn { Sleep(1.0) }',
-    docSection: 'Concurrency',
-  },
-  {
     pattern: /type\s+[`']?array[`']?\s+does\s+not\s+have|cannot\s+use.*on\s+array|array\s+type\s+error/i,
     title: 'Array Type Error',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'You are trying to use an operation or method that does not exist on the array type. Common mistakes include calling methods that exist on other collection types, or using the wrong syntax for array operations.',
-    fix: 'Check the Verse array API. Common operations: `array.Length`, indexing with `[]` (failable), `for` iteration. Use `Array` helpers for transformations.',
+      'You\'re trying to use an operation or method that doesn\'t exist on the array type. Arrays in Verse have a specific API.',
+    fix: 'Use correct array operations: `.Length` for count, `[]` for indexed access (failable), `for` for iteration, `+` for concatenation.',
     example:
-      '# Common array operations:\nvar Items : []int = array{1, 2, 3}\nCount := Items.Length\n\n# Add element (creates new array):\nset Items = Items + array{4}\n\n# Safe access:\nif (First := Items[0]):\n    Print("First: {First}")',
+      '# Common array operations:\nvar Items : []int = array{1, 2, 3}\nCount := Items.Length\n\n# Add element (creates new array):\nset Items = Items + array{4}\n\n# Safe access:\nif (First := Items[0]):\n    Print("{First}")\n\n# Iteration:\nfor (Item : Items):\n    Print("{Item}")',
     docSection: 'Arrays',
   },
   {
     pattern: /map\s+type\s+error|cannot\s+use.*on\s+map|type\s+[`']?\[.*\].*[`']?\s+does\s+not/i,
     title: 'Map Type Error',
     severity: 'error',
+    category: 'type_system',
     explanation:
-      'You are using an invalid operation on a map type. Maps in Verse use `[key_type]value_type` syntax and lookups are failable.',
-    fix: 'Use the correct map syntax. Lookups require a failable context. Insertion uses concatenation.',
+      'You\'re using an invalid operation on a map type. Maps in Verse use `[key_type]value_type` syntax and lookups are failable.',
+    fix: 'Use the correct map syntax. Lookups require a failable context. Use `if (set Map[Key] = Value)` for insertion.',
     example:
       '# Map declaration:\nvar Scores : [string]int = map{}\n\n# Insert/update:\nif (set Scores["Player1"] = 100) {}\n\n# Lookup (failable):\nif (PlayerScore := Scores["Player1"]):\n    Print("Score: {PlayerScore}")',
     docSection: 'Maps',
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // FAILABLE CONTEXT ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    pattern: /field\s+[`']?(\w+)[`']?\s+not\s+found|struct.*does\s+not\s+have\s+(member|field)/i,
-    title: 'Struct Field Not Found',
+    pattern: /failable\s+expression.*not\s+in\s+(?:a\s+)?failable\s+context|may\s+fail\s+but\s+is\s+not\s+in\s+a\s+failable\s+context/i,
+    title: 'Failable Expression Outside Failable Context',
     severity: 'error',
+    category: 'failable',
     explanation:
-      'The struct or class you are accessing does not have a field with that name. This could be a typo, or the field may be private, or it may be defined on a different type.',
-    fix: 'Check the struct definition for the correct field name. If the field is on a parent class, ensure you are using the right type. Check access specifiers.',
+      'Operations that can fail (like array access with `[]`, map lookups, casting, or calling `<decides>` functions) must be wrapped in a failable context. Verse enforces this because these operations might not succeed at runtime.',
+    fix: 'Wrap the expression in an `if` block (most common), a `for` loop, or provide a default with the `or` operator.',
     example:
-      '# If the struct is:\nplayer_data := struct:\n    Name : string\n    Score : int\n\n# Before (broken):\nData.Points  # No field "Points"\n\n# After (fixed):\nData.Score  # Correct field name',
-    docSection: 'Structs',
+      '# Before (broken):\nItem := MyArray[Index]\n\n# After (fixed) — using if:\nif (Item := MyArray[Index]):\n    # use Item safely here\nelse:\n    # handle missing item\n\n# Or with default value:\nItem := MyArray[Index] or DefaultItem',
+    docSection: 'Failure',
   },
   {
-    pattern: /interface.*not\s+implemented|does\s+not\s+implement|missing\s+implementation/i,
-    title: 'Interface Not Implemented',
+    pattern: /might\s+fail.*use\s+[`']?\?[`']?\s+to\s+propagate|propagate\s+failure\s+with\s+\?|add\s+[`']?\?[`']?\s+to\s+propagate/i,
+    title: 'Failure Propagation Required',
     severity: 'error',
+    category: 'failable',
     explanation:
-      'Your class claims to implement an interface but is missing one or more required methods. All methods defined in the interface must be implemented.',
-    fix: 'Add the missing method implementations to your class. Check the interface definition for the exact signatures required.',
+      'This expression can fail, and you\'re inside a function that is already `<decides>` (failable). You can propagate the failure upward by adding `?` after the call.',
+    fix: 'Add `?` after the failable call to propagate failure to the caller. This only works inside `<decides>` functions.',
     example:
-      '# Interface:\ndamageable := interface:\n    TakeDamage(Amount:float):void\n    GetHealth():float\n\n# Before (broken):\nmy_actor := class(damageable):\n    TakeDamage(Amount:float):void = {}\n    # Missing GetHealth!\n\n# After (fixed):\nmy_actor := class(damageable):\n    TakeDamage(Amount:float):void = {}\n    GetHealth():float = 100.0',
-    docSection: 'Interfaces',
+      '# Before (broken):\nGetItem()<decides><transacts> : item =\n    Items.Find(Key)  # Can fail, not propagated\n\n# After (fixed):\nGetItem()<decides><transacts> : item =\n    Items.Find(Key)?  # ? propagates failure',
+    docSection: 'Failure',
   },
   {
-    pattern: /access\s+(specifier\s+)?violation|cannot\s+access\s+(private|protected)|not\s+accessible/i,
+    pattern: /<decides>\s+effect\s+required|requires?\s+<decides>|needs?\s+(?:the\s+)?<decides>\s+effect/i,
+    title: '<decides> Effect Required',
+    severity: 'error',
+    category: 'failable',
+    explanation:
+      'You\'re calling a failable function or using a failable expression, but your function doesn\'t have the `<decides>` effect. The `<decides>` effect marks a function as one that may fail.',
+    fix: 'Add `<decides>` (and usually `<transacts>`) to your function signature. If you don\'t want the function to be failable, wrap the call in `if` instead.',
+    example:
+      '# Before (broken):\nFindPlayer(Name : string)<computes> : player =\n    PlayerMap[Name]  # Failable, needs <decides>\n\n# After (fixed) — make function failable:\nFindPlayer(Name : string)<decides><transacts> : player =\n    PlayerMap[Name]\n\n# Or handle inline with if:\nFindPlayerSafe(Name : string) : ?player =\n    if (P := PlayerMap[Name]):\n        option{P}\n    else:\n        false',
+    docSection: 'Failure',
+  },
+  {
+    pattern: /this\s+call\s+may\s+fail|call.*may\s+fail.*not\s+(?:in\s+)?(?:a\s+)?failable/i,
+    title: 'Call May Fail',
+    severity: 'error',
+    category: 'failable',
+    explanation:
+      'You\'re calling a function that has the `<decides>` effect (it can fail), but you\'re not in a context that handles failure.',
+    fix: 'Wrap the call in `if` to handle success/failure, or add `<decides>` to your own function and use `?` to propagate failure.',
+    example:
+      '# Before (broken):\nDoSomething():void =\n    Player := FindPlayer("Luke")  # FindPlayer is <decides>\n\n# After (fixed):\nDoSomething():void =\n    if (Player := FindPlayer("Luke")):\n        # Use Player\n    else:\n        Print("Player not found")',
+    docSection: 'Failure',
+  },
+  {
+    pattern: /for.*(?:requires|expected)\s+(?:a\s+)?(?:generator|iterable)|cannot\s+iterate\s+over|not\s+(?:iterable|a\s+generator)/i,
+    title: 'For Loop Iteration Error',
+    severity: 'error',
+    category: 'failable',
+    explanation:
+      'The `for` expression expects an iterable (like an array) or a failable filter. You might be trying to iterate over a non-iterable type.',
+    fix: 'Use `for (Item : Collection)` for iteration, or `for (Index := 0..Count-1)` for index ranges. Remember `for` is also a failable context in Verse.',
+    example:
+      '# Array iteration:\nfor (Item : MyArray):\n    Print("{Item}")\n\n# Index range:\nfor (I := 0..MyArray.Length-1):\n    if (Item := MyArray[I]):\n        Print("{I}: {Item}")\n\n# For as failable context:\nfor:\n    Player := FindPlayer("Luke")?\n    Score := GetScore(Player)?\ndo:\n    Print("Score: {Score}")',
+    docSection: 'Control Flow',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // EFFECT SYSTEM ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    pattern: /[Ee]ffect\s+mismatch|cannot\s+call.*<decides>.*<computes>|<computes>.*vs.*<transacts>|incompatible\s+effects?/,
+    title: 'Effect Mismatch',
+    severity: 'error',
+    category: 'effect',
+    explanation:
+      'Verse functions have effect specifiers (`<computes>`, `<decides>`, `<transacts>`, `<suspends>`) that form a hierarchy. A function with weaker effects cannot call a function with stronger effects.',
+    fix: 'Add the required effect to your function, or wrap the call to handle it (e.g., wrap `<decides>` calls in `if`). Effect hierarchy: `<computes>` is weakest, `<decides>` and `<transacts>` are stronger.',
+    example:
+      '# Before (broken):\nGetItem()<computes> : item =\n    Items.Find(Key)  # Find is <decides><transacts>\n\n# After (fixed) — escalate effects:\nGetItem()<decides><transacts> : item =\n    Items.Find(Key)\n\n# Or handle failure:\nGetItem()<computes> : item =\n    if (Result := Items.Find(Key)):\n        Result\n    else:\n        DefaultItem',
+    docSection: 'Effects',
+  },
+  {
+    pattern: /[Ee]xpected\s+<no_rollback>.*<transacts>|<no_rollback>.*incompatible.*<transacts>|cannot.*<transacts>.*<no_rollback>/,
+    title: 'Effect Conflict: <no_rollback> vs <transacts>',
+    severity: 'error',
+    category: 'effect',
+    explanation:
+      '`<no_rollback>` and `<transacts>` are mutually exclusive effects. `<transacts>` allows rollback on failure, while `<no_rollback>` explicitly forbids it.',
+    fix: 'Remove one of the conflicting effects. Most functions that modify variables need `<transacts>`.',
+    example:
+      '# Before (broken):\nUpdate()<no_rollback><transacts> : void =  # Conflict!\n    set Score += 1\n\n# After (fixed):\nUpdate()<transacts> : void =\n    set Score += 1',
+    docSection: 'Effects',
+  },
+  {
+    pattern: /requires?\s+<transacts>|<transacts>\s+effect\s+required|cannot\s+(?:modify|set).*without\s+<transacts>/i,
+    title: '<transacts> Effect Required',
+    severity: 'error',
+    category: 'effect',
+    explanation:
+      'Modifying mutable variables (using `set`) requires the `<transacts>` effect. Verse needs to track mutations for potential rollback in failable contexts.',
+    fix: 'Add `<transacts>` to your function signature.',
+    example:
+      '# Before (broken):\nvar Score : int = 0\nAddScore(Points : int)<computes> : void =\n    set Score += Points  # Needs <transacts>\n\n# After (fixed):\nAddScore(Points : int)<transacts> : void =\n    set Score += Points',
+    docSection: 'Effects',
+  },
+  {
+    pattern: /[Cc]annot\s+call.*<suspends>.*(?:non-suspending|from)|<suspends>.*(?:outside|not\s+allowed|requires)|suspends.*not\s+(?:allowed|available)/,
+    title: 'Cannot Call <suspends> from Non-Suspending Context',
+    severity: 'error',
+    category: 'effect',
+    explanation:
+      'A `<suspends>` function (one that can pause execution, like `Sleep()` or `Await()`) can only be called from within another `<suspends>` context.',
+    fix: 'Either mark the calling function as `<suspends>`, or use `spawn` to run the suspending function concurrently.',
+    example:
+      '# Before (broken):\nOnBegin():void =\n    Sleep(1.0)  # Sleep is <suspends>\n\n# After (fixed) — make function suspends:\nOnBegin()<suspends>:void =\n    Sleep(1.0)\n\n# Or use spawn:\nOnBegin():void =\n    spawn { MyAsyncLoop() }',
+    docSection: 'Concurrency',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // VARIABLE / SCOPE ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    pattern: /[Cc]annot\s+modify\s+immutable|cannot\s+assign\s+to\s+(?:a\s+)?(?:constant|immutable)|cannot\s+set\s+(?:a\s+)?(?:constant|immutable|non-mutable)/,
+    title: 'Cannot Modify Immutable Variable',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'By default, Verse variables are immutable. Once assigned, their value cannot change. To create a mutable variable, declare it with `var` and use `set` to change it.',
+    fix: 'Declare the variable with `var` and use `set` to modify it.',
+    example:
+      '# Before (broken):\nScore : int = 0\nScore = 10  # Cannot modify!\n\n# After (fixed):\nvar Score : int = 0\nset Score = 10',
+    docSection: 'Variables',
+  },
+  {
+    pattern: /[Uu]nknown\s+identifier\s+[`']?(\w+)[`']?|[Vv]ariable\s+[`']?(\w+)[`']?\s+(?:is\s+)?not\s+(?:defined|declared)|[`']?(\w+)[`']?\s+is\s+(?:not\s+)?(?:undefined|undeclared)/,
+    title: 'Unknown Identifier / Variable Not Defined',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'The compiler does not recognize this name. Common causes: typo, missing `using` import, or the variable is out of scope.',
+    fix: 'Check for typos. If the identifier comes from a Fortnite module, add the appropriate `using` statement.',
+    example:
+      '# Before (broken):\nusing { /Fortnite.com/Devices }\nMyButton : Buttn_Device = ...  # Typo!\n\n# After (fixed):\nusing { /Fortnite.com/Devices }\nMyButton : button_device = ...  # Correct\n\n# Common using statements:\nusing { /Fortnite.com/Devices }\nusing { /Fortnite.com/Characters }\nusing { /Fortnite.com/UI }\nusing { /Verse.org/Simulation }\nusing { /UnrealEngine.com/Temporary/SpatialMath }',
+    docSection: 'Modules',
+  },
+  {
+    pattern: /[Cc]annot\s+shadow\s+variable|shadows?\s+(?:existing\s+)?(?:variable|binding)|already\s+(?:defined|bound)\s+in\s+(?:this\s+)?scope/,
+    title: 'Variable Shadowing Not Allowed',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'Verse does not allow variable shadowing within the same scope level. You cannot declare a new variable with the same name as an existing one in the same block.',
+    fix: 'Rename the second variable, or use `set` to modify the existing one.',
+    example:
+      '# Before (broken):\nScore : int = 0\nif (Condition?):\n    Score : int = 10  # Shadows outer Score!\n\n# After (fixed):\nvar Score : int = 0\nif (Condition?):\n    set Score = 10  # Modifies outer Score',
+    docSection: 'Variables',
+  },
+  {
+    pattern: /[Ii]nvalid\s+[`']?set[`']?\s+target|cannot\s+set\s+(?!.*immutable)|[`']?set[`']?\s+requires\s+(?:a\s+)?mutable/,
+    title: 'Invalid Set Target',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'The `set` keyword can only be used on mutable variables (declared with `var`), mutable struct fields, or mutable map/array entries.',
+    fix: 'Ensure the target is a `var` variable or a mutable field. Store computed values in a `var` first.',
+    example:
+      '# Before (broken):\nset GetPosition().X = 10.0  # Cannot set function result\n\n# After (fixed):\nvar Pos : vector3 = GetPosition()\nset Pos = vector3{X := 10.0, Y := Pos.Y, Z := Pos.Z}\nSetPosition(Pos)',
+    docSection: 'Variables',
+  },
+  {
+    pattern: /[Dd]uplicate\s+definition|already\s+defined|[Rr]edefinition\s+of/,
+    title: 'Duplicate Definition',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'A variable, function, or type with this name already exists in the same scope.',
+    fix: 'Rename one of the duplicates. For function overloads, ensure parameter types differ.',
+    example:
+      '# Before (broken):\nScore : int = 0\nScore : int = 10  # Duplicate!\n\n# After (fixed):\nScore : int = 0\nBonusScore : int = 10',
+    docSection: 'Variables',
+  },
+  {
+    pattern: /access\s+(?:specifier\s+)?violation|cannot\s+access\s+(?:private|protected)|not\s+accessible|[`']?(\w+)[`']?\s+is\s+(?:private|protected)/i,
     title: 'Access Specifier Violation',
     severity: 'error',
+    category: 'scope',
     explanation:
-      'You are trying to access a member that is marked `<private>` or `<protected>` from outside its allowed scope. Private members can only be accessed within the same class, protected within the class hierarchy.',
+      'You\'re trying to access a member marked `<private>` or `<protected>` from outside its allowed scope.',
     fix: 'If you need external access, change the specifier to `<public>`. Otherwise, provide a public getter/setter method.',
     example:
-      '# Before (broken):\nmy_class := class:\n    <private> Secret : int = 42\n\n# External code:\nObj.Secret  # Access violation!\n\n# After (fixed) — add a getter:\nmy_class := class:\n    <private> Secret : int = 42\n    GetSecret()<computes> : int = Secret',
+      '# Before (broken):\nmy_class := class:\n    <private> Secret : int = 42\n\n# External code:\nObj.Secret  # Access violation!\n\n# After (fixed) — add a getter:\nmy_class := class:\n    <private> var InternalSecret : int = 42\n    GetSecret()<computes> : int = InternalSecret',
     docSection: 'Access Specifiers',
   },
   {
-    pattern: /Expected\s+indentation|indentation\s+error|unexpected\s+indent/i,
+    pattern: /(?:not\s+)?(?:visible|accessible)\s+(?:from|in)\s+(?:this\s+)?module|module\s+(?:scope|visibility)|cross[- ]module\s+access/i,
+    title: 'Cross-Module Visibility Error',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'You\'re trying to access a type, function, or variable from another Verse module that isn\'t marked as `<public>`, or the module hasn\'t been properly imported.',
+    fix: 'Ensure the target is marked `<public>` in its module. Add the correct `using` statement.',
+    example:
+      '# In module A (my_utils.verse):\n<public> Helper()<computes> : int = 42\n\n# In module B (my_device.verse):\nusing { my_utils_module }\n\nmy_device := class(creative_device):\n    OnBegin<override>()<suspends>:void =\n        Value := Helper()',
+    docSection: 'Modules',
+  },
+  {
+    pattern: /cannot\s+(?:set|modify)\s+(?:element\s+(?:of|in)\s+)?(?:an?\s+)?(?:immutable\s+)?array|array\s+(?:element\s+)?(?:is\s+)?(?:not\s+)?(?:mutable|immutable|modifiable)/i,
+    title: 'Cannot Modify Array Element',
+    severity: 'error',
+    category: 'scope',
+    explanation:
+      'Arrays in Verse are immutable by default. You cannot modify individual elements in-place. To "change" an array, you must create a new one.',
+    fix: 'Declare the array as `var` and rebuild it with changes. Or use a map if you need frequent updates by key.',
+    example:
+      '# Before (broken):\nItems : []int = array{1, 2, 3}\nset Items[0] = 10  # Cannot modify!\n\n# After (fixed) — rebuild array:\nvar Items : []int = array{1, 2, 3}\n# To replace, rebuild with new values:\nvar NewItems : []int = array{}\nfor (I := 0..Items.Length-1):\n    if (I = 0):\n        set NewItems = NewItems + array{10}\n    else if (Item := Items[I]):\n        set NewItems = NewItems + array{Item}\nset Items = NewItems',
+    docSection: 'Arrays',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // DEVICE / API ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    pattern: /[Nn]o\s+such\s+member\s+[`']?(\w+)[`']?\s+on\s+(?:type\s+)?[`']?(\w+)[`']?|[`']?(\w+)[`']?\s+does\s+not\s+have\s+(?:a\s+)?member\s+[`']?(\w+)[`']?|[`']?(\w+)[`']?\s+is\s+not\s+a\s+member\s+of\s+[`']?(\w+)[`']?/,
+    title: 'No Such Member on Type',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      'You\'re trying to access a member that doesn\'t exist on this type. Could be a typo, or the member might be on a different type or require a specific `using` import.',
+    fix: 'Check the device/class documentation for the correct member name. Names are case-sensitive and use `snake_case` for device APIs.',
+    example:
+      '# Before (broken):\nMyButton.OnActivated.Subscribe(OnPressed)  # Wrong!\n\n# After (fixed):\nMyButton.InteractedWithEvent.Subscribe(OnPressed)\n\n# Common device events:\n# button_device: InteractedWithEvent\n# trigger_device: TriggeredEvent\n# item_granter_device: ItemGrantedEvent',
+    docSection: 'Devices',
+  },
+  {
+    pattern: /[Ww]rong\s+number\s+of\s+arguments|too\s+(?:many|few)\s+arguments|expected\s+(\d+)\s+argument|incorrect\s+(?:number\s+of\s+)?arguments/,
+    title: 'Wrong Number of Arguments',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      'You\'re passing the wrong number of arguments to a function or method.',
+    fix: 'Check the function signature for the correct parameter list. For device event handlers, the callback typically takes an `?agent` parameter.',
+    example:
+      '# Before (broken):\nMyButton.InteractedWithEvent.Subscribe(OnPressed)\nOnPressed():void =  # Missing agent parameter!\n    Print("Pressed")\n\n# After (fixed):\nMyButton.InteractedWithEvent.Subscribe(OnPressed)\nOnPressed(Agent : ?agent):void =\n    Print("Pressed")',
+    docSection: 'Functions',
+  },
+  {
+    pattern: /[Mm]issing\s+required\s+argument|argument\s+[`']?(\w+)[`']?\s+(?:is\s+)?required|required\s+(?:parameter|argument)\s+[`']?(\w+)[`']?\s+not\s+provided/,
+    title: 'Missing Required Argument',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      'A required argument was not provided in the function call.',
+    fix: 'Add the missing argument. Check the function signature for all required parameters and their types.',
+    example:
+      '# Before (broken):\nMyGranter.GrantItem()  # Missing player argument\n\n# After (fixed):\nMyGranter.GrantItem(Player)',
+    docSection: 'Functions',
+  },
+  {
+    pattern: /missing\s+[`']?using[`']?\s+statement|module\s+[`']?([^`']+)[`']?\s+not\s+found|cannot\s+find\s+module/i,
+    title: 'Missing Using Statement / Module Not Found',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      'The type or function you\'re using lives in a module that hasn\'t been imported.',
+    fix: 'Add the appropriate `using` statement at the top of your file.',
+    example:
+      '# Common UEFN using statements:\nusing { /Fortnite.com/Devices }          # Device types\nusing { /Fortnite.com/Characters }       # Character/agent types\nusing { /Fortnite.com/UI }               # UI widgets\nusing { /Fortnite.com/Game }             # Game framework\nusing { /Verse.org/Simulation }          # Simulation framework\nusing { /Verse.org/Random }              # Random numbers\nusing { /UnrealEngine.com/Temporary/Diagnostics }  # Print()\nusing { /UnrealEngine.com/Temporary/SpatialMath }  # Vectors',
+    docSection: 'Modules',
+  },
+  {
+    pattern: /@editable.*(?:invalid|unsupported)\s+type|(?:invalid|unsupported)\s+type.*@editable|cannot\s+use\s+@editable\s+(?:on|with)/i,
+    title: '@editable with Invalid Type',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      'The `@editable` attribute can only be used with types that UEFN can display in its property editor. Complex custom types, functions, and some generics are not supported.',
+    fix: 'Use supported types: `int`, `float`, `string`, `logic`, device references, enums, arrays of simple types, and color/vector types.',
+    example:
+      '# Supported @editable types:\n@editable MyDevice : button_device = button_device{}\n@editable Health : float = 100.0\n@editable Name : string = "Default"\n@editable Enabled : logic = true\n@editable SpawnPoints : []player_spawner_device = array{}\n\n# NOT supported:\n# @editable MyFunc : type{} = ...\n# @editable Data : my_custom_struct = ...',
+    docSection: 'Devices',
+  },
+  {
+    pattern: /OnBegin.*(?:not\s+found|not\s+a\s+member|override)|(?:override|overriding)\s+OnBegin|cannot\s+override\s+OnBegin/i,
+    title: 'OnBegin Override Error',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      '`OnBegin()` is the entry point for `creative_device` classes. It must have the correct signature: `OnBegin<override>()<suspends>:void`. Missing `<override>` or `<suspends>` will cause errors.',
+    fix: 'Use the exact signature: `OnBegin<override>()<suspends>:void =`',
+    example:
+      '# Before (broken):\nmy_device := class(creative_device):\n    OnBegin():void =  # Missing <override> and <suspends>\n        Print("Started")\n\n# After (fixed):\nmy_device := class(creative_device):\n    OnBegin<override>()<suspends>:void =\n        Print("Started")',
+    docSection: 'Devices',
+  },
+  {
+    pattern: /Subscribe.*(?:type\s+mismatch|wrong\s+(?:type|signature))|(?:handler|callback)\s+(?:type|signature)\s+(?:mismatch|incorrect)/i,
+    title: 'Event Handler Signature Mismatch',
+    severity: 'error',
+    category: 'device',
+    explanation:
+      'The function you\'re subscribing to an event doesn\'t match the expected handler signature.',
+    fix: 'Match the handler signature. Most device events require `(Agent : ?agent) : void`.',
+    example:
+      '# Before (broken):\nMyButton.InteractedWithEvent.Subscribe(OnPress)\nOnPress() : void =  # Wrong!\n    Print("Pressed")\n\n# After (fixed):\nMyButton.InteractedWithEvent.Subscribe(OnPress)\nOnPress(Agent : ?agent) : void =\n    Print("Pressed by agent")\n\n# For awaitable events:\nOnBegin<override>()<suspends>:void =\n    MyButton.InteractedWithEvent.Await()',
+    docSection: 'Devices',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SYNTAX ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    pattern: /[Ee]xpected\s+indentation|[Ii]ndentation\s+error|[Uu]nexpected\s+indent/,
     title: 'Indentation Error',
     severity: 'error',
+    category: 'syntax',
     explanation:
-      'Verse uses significant whitespace (like Python). Incorrect indentation breaks the block structure. Mixing tabs and spaces can also cause this.',
-    fix: 'Use consistent 4-space indentation. Ensure all lines in a block are aligned. Do not mix tabs and spaces.',
+      'Verse uses significant whitespace (like Python). UEFN requires exactly 4 spaces per indentation level. Tabs are not allowed.',
+    fix: 'Use consistent 4-space indentation. Do NOT mix tabs and spaces. Configure your editor to insert spaces when pressing Tab.',
     example:
-      '# Before (broken):\nif (Condition?):\nDoSomething()  # Not indented!\n\n# After (fixed):\nif (Condition?):\n    DoSomething()  # 4-space indent',
+      '# Before (broken):\nif (Condition?):\nDoSomething()  # Not indented!\n\n# After (fixed):\nif (Condition?):\n    DoSomething()  # 4-space indent\n\n# Nested blocks:\nif (X > 0):\n    if (Y > 0):\n        DoSomething()  # 8 spaces for nested',
     docSection: 'Syntax',
   },
   {
-    pattern: /Expected\s+[`']?:[`']?\s+in|missing\s+type\s+annotation|type\s+annotation\s+required/i,
+    pattern: /[Ee]xpected\s+[`']?:[`']?\s+(?:in|after|for)|[Mm]issing\s+type\s+annotation|[Tt]ype\s+annotation\s+required/,
     title: 'Missing Type Annotation',
     severity: 'error',
+    category: 'syntax',
     explanation:
-      'Verse requires explicit type annotations in many contexts, including function parameters, return types, and class fields. The compiler cannot always infer types.',
-    fix: 'Add the type annotation using the `: type` syntax.',
+      'Verse requires explicit type annotations in many contexts: function parameters, return types, class fields.',
+    fix: 'Add the type annotation using `: type` syntax.',
     example:
-      '# Before (broken):\nMyFunc(X, Y) = X + Y  # Missing types\n\n# After (fixed):\nMyFunc(X : int, Y : int) : int = X + Y',
+      '# Before (broken):\nMyFunc(X, Y) = X + Y  # Missing types\n\n# After (fixed):\nMyFunc(X : int, Y : int) : int = X + Y\n\n# Class fields:\nmy_class := class:\n    Health : float = 100.0',
     docSection: 'Types',
   },
   {
-    pattern: /Recursive\s+type|circular\s+(reference|dependency|type)/i,
-    title: 'Recursive Type Error',
+    pattern: /[Ee]xpected\s+[`']?=[`']?\s+(?:in|after)|[Ee]xpected\s+[`']?:=[`']?\s+(?:in|for)|use\s+[`']?:=[`']?\s+(?:for|instead)/,
+    title: 'Assignment Syntax Error',
     severity: 'error',
+    category: 'syntax',
     explanation:
-      'A type refers to itself directly or through a chain of other types, creating an infinite size. Verse does not allow directly recursive value types.',
-    fix: 'Use `option` or a reference type to break the recursion. For tree structures, make the recursive field optional.',
+      'Verse uses `:=` for new bindings (creating variables) and `set X =` for mutation. Regular `=` is used in definitions.',
+    fix: 'Use `:=` to create new bindings, `set X =` to modify existing `var` variables, and `=` in class field definitions.',
     example:
-      '# Before (broken):\ntree_node := struct:\n    Value : int\n    Children : []tree_node  # Infinite size!\n\n# After (fixed):\ntree_node := struct:\n    Value : int\n    Children : []?tree_node  # Optional breaks recursion',
-    docSection: 'Types',
+      '# Binding (new variable):\nScore := 42\nName := "Player"\n\n# Definition (class field):\nmy_class := class:\n    Health : float = 100.0\n\n# Mutation (changing existing var):\nvar Counter : int = 0\nset Counter = Counter + 1',
+    docSection: 'Variables',
   },
   {
-    pattern: /Cannot\s+use\s+[`']?self[`']?\s+before|self.*not\s+initialized/i,
-    title: 'Self Used Before Initialization',
+    pattern: /[Uu]nexpected\s+token|[Ss]yntax\s+error|[Pp]arse\s+error/,
+    title: 'Syntax Error / Unexpected Token',
     severity: 'error',
+    category: 'syntax',
     explanation:
-      'You are referencing `Self` in a constructor or initializer before all fields have been assigned. All fields must be initialized before `Self` can be used.',
-    fix: 'Reorder field initializations so that all fields are set before any reference to `Self`.',
+      'The compiler encountered something unexpected. Common causes: missing parentheses, extra commas, wrong operator, mismatched brackets.',
+    fix: 'Check for missing or extra punctuation. Ensure parentheses and brackets are balanced.',
     example:
-      '# Before (broken):\nmy_class := class:\n    Other : my_class = Self  # Self not ready yet\n    Value : int = 0\n\n# After (fixed):\nmy_class := class:\n    Value : int = 0\n    # Reference Self only after construction',
-    docSection: 'Classes',
-  },
-  {
-    pattern: /Unexpected\s+token|syntax\s+error|parse\s+error/i,
-    title: 'Syntax Error',
-    severity: 'error',
-    explanation:
-      'The compiler encountered something it did not expect at this position. Common causes: missing parentheses, extra commas, wrong operator, or mismatched brackets.',
-    fix: 'Check the line for missing or extra punctuation. Ensure parentheses and brackets are balanced. Verify operator usage.',
-    example:
-      '# Common syntax fixes:\n# Missing closing paren:\nif (X > 0:   # Bad\nif (X > 0):  # Good\n\n# Extra comma:\narray{1, 2, 3,}  # Bad (trailing comma)\narray{1, 2, 3}   # Good',
+      '# Common syntax fixes:\n# Missing closing paren:\nif (X > 0:     # Bad\nif (X > 0):    # Good\n\n# Trailing comma:\narray{1, 2, 3,}  # Bad\narray{1, 2, 3}   # Good\n\n# Block expression:\nResult := block:\n    X := 10\n    X + 5  # Last expression is the value',
     docSection: 'Syntax',
   },
   {
-    pattern: /Cannot\s+spawn|spawn.*requires|spawn.*<suspends>/i,
+    pattern: /[Ee]xpected\s+[`']?:[`']?\s+(?:to\s+)?(?:start|begin)\s+(?:a\s+)?block|missing\s+[`']?:[`']?\s+after/,
+    title: 'Missing Colon to Start Block',
+    severity: 'error',
+    category: 'syntax',
+    explanation:
+      'In Verse, blocks (after `if`, `for`, class, function definitions, etc.) start with a colon `:` followed by an indented block.',
+    fix: 'Add `:` at the end of the line before the indented block.',
+    example:
+      '# Before (broken):\nif (X > 0)\n    DoSomething()\n\n# After (fixed):\nif (X > 0):\n    DoSomething()\n\n# Same for functions:\nMyFunc() : void =\n    DoSomething()',
+    docSection: 'Syntax',
+  },
+  {
+    pattern: /(?:invalid|error\s+in)\s+string\s+interpolation|string\s+interpolation.*(?:error|fail|invalid)|cannot\s+interpolate|interpolation.*type/i,
+    title: 'String Interpolation Error',
+    severity: 'error',
+    category: 'syntax',
+    explanation:
+      'Verse uses `{expression}` inside double-quoted strings for interpolation. The expression must be convertible to string.',
+    fix: 'Use `"{Expression}"` syntax. Most primitive types work. For complex types, format the value first.',
+    example:
+      '# Correct string interpolation:\nScore : int = 42\nPrint("Score: {Score}")\n\n# Multiple values:\nName := "Player"\nPrint("{Name} scored {Score} points")\n\n# With expressions:\nPrint("Double: {Score * 2}")',
+    docSection: 'Syntax',
+  },
+  {
+    pattern: /[Uu]nreachable\s+code/,
+    title: 'Unreachable Code',
+    severity: 'warning',
+    category: 'syntax',
+    explanation:
+      'Code after a `return`, `break`, or unconditional jump will never execute.',
+    fix: 'Remove the unreachable code, or restructure the control flow.',
+    example:
+      '# Before (warning):\nDoSomething():void =\n    return\n    Print("Never reached")  # Unreachable!\n\n# After (fixed):\nDoSomething():void =\n    Print("This runs")\n    return',
+    docSection: 'Control Flow',
+  },
+  {
+    pattern: /conflicting\s+specifiers?|specifier.*(?:conflict|incompatible|duplicate)|duplicate\s+(?:effect\s+)?specifier|cannot\s+combine\s+specifiers?/i,
+    title: 'Conflicting Specifiers',
+    severity: 'error',
+    category: 'syntax',
+    explanation:
+      'You\'ve used specifiers that conflict with each other, or duplicated a specifier.',
+    fix: 'Remove the conflicting or duplicate specifier.',
+    example:
+      '# Before (broken):\n<public><private> MyField : int = 0  # Cannot be both!\n\n# After (fixed):\n<public> MyField : int = 0\n\n# Valid combinations:\n<public><transacts><decides>  # OK\n<override><suspends>          # OK',
+    docSection: 'Access Specifiers',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONCURRENCY ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    pattern: /[Cc]annot\s+spawn|spawn.*requires|spawn.*<suspends>|invalid\s+spawn/,
     title: 'Invalid Spawn Usage',
     severity: 'error',
+    category: 'concurrency',
     explanation:
-      'The `spawn` expression requires a `<suspends>` function or block. You may also need to be within an appropriate async context to use `spawn`.',
-    fix: 'Ensure the expression inside `spawn { }` calls a `<suspends>` function. The enclosing function may also need the `<suspends>` effect.',
+      'The `spawn` expression requires a `<suspends>` function or block.',
+    fix: 'Ensure the expression inside `spawn { }` calls a `<suspends>` function. Create an async wrapper if needed.',
     example:
-      '# Before (broken):\nspawn { DoSyncWork() }  # Not a suspends function\n\n# After (fixed):\nMyAsync()<suspends>:void =\n    Sleep(1.0)\n    DoWork()\n\nOnBegin()<suspends>:void =\n    spawn { MyAsync() }',
+      '# Before (broken):\nspawn { DoSyncWork() }  # Not <suspends>\n\n# After (fixed):\nMyAsync()<suspends>:void =\n    Sleep(1.0)\n    DoWork()\n\nOnBegin()<suspends>:void =\n    spawn { MyAsync() }',
     docSection: 'Concurrency',
+  },
+  {
+    pattern: /race.*requires\s+<suspends>|sync.*requires\s+<suspends>|rush.*requires\s+<suspends>/i,
+    title: 'Concurrency Primitive Requires <suspends>',
+    severity: 'error',
+    category: 'concurrency',
+    explanation:
+      'Concurrency primitives like `race{}`, `sync{}`, and `rush{}` require a `<suspends>` context because they manage async tasks.',
+    fix: 'Ensure the enclosing function has `<suspends>`, and all branches inside the concurrency block are also `<suspends>`.',
+    example:
+      '# Before (broken):\nDoGameLoop():void =\n    race:\n        WaitForTimer()\n        WaitForKill()\n\n# After (fixed):\nDoGameLoop()<suspends>:void =\n    race:\n        WaitForTimer()  # Must be <suspends>\n        WaitForKill()   # Must be <suspends>',
+    docSection: 'Concurrency',
+  },
+  {
+    pattern: /[Aa]wait.*(?:outside|not\s+in|requires)\s+(?:a\s+)?(?:<suspends>|suspending|async)|cannot\s+(?:use\s+)?[Aa]wait\s+(?:here|in\s+this)/,
+    title: 'Await Outside <suspends> Context',
+    severity: 'error',
+    category: 'concurrency',
+    explanation:
+      '`Await()` pauses execution until an event fires. It can only be used inside a `<suspends>` function.',
+    fix: 'Mark your function as `<suspends>` to use `Await()`. Or use `Subscribe()` for non-blocking event handling.',
+    example:
+      '# Before (broken):\nWaitForButton():void =\n    MyButton.InteractedWithEvent.Await()  # Needs <suspends>\n\n# After (fixed):\nWaitForButton()<suspends>:void =\n    MyButton.InteractedWithEvent.Await()\n    Print("Button was pressed!")\n\n# Or use Subscribe (non-blocking):\nSetupButton():void =\n    MyButton.InteractedWithEvent.Subscribe(OnButtonPressed)\n\nOnButtonPressed(Agent : ?agent):void =\n    Print("Pressed!")',
+    docSection: 'Concurrency',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // UEFN WORKFLOW ERRORS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    pattern: /file\s+(?:has\s+)?(?:not\s+been\s+saved|is\s+not\s+saved|unsaved)|save\s+(?:the\s+)?file\s+before\s+compil/i,
+    title: 'File Not Saved Before Compilation',
+    severity: 'error',
+    category: 'syntax',
+    explanation:
+      'The Verse file hasn\'t been saved before compiling. UEFN compiles from the saved file on disk, not from the editor buffer.',
+    fix: 'Save the file (Ctrl+S) before pressing the Verse compile button or building.',
+    example:
+      '# This is a workflow error, not a code error.\n# Steps:\n# 1. Edit your .verse file\n# 2. Save (Ctrl+S)\n# 3. Then compile (Ctrl+Shift+B)',
+    docSection: 'Syntax',
   },
 ]
 
@@ -360,7 +767,7 @@ function parseErrors(input: string): ParsedError[] {
 
 function explainErrors(parsed: ParsedError[]): ExplainedError[] {
   return parsed.map((p) => {
-    const match = ERROR_PATTERNS.find((ep) => ep.pattern.test(p.message))
+    const match = ERROR_PATTERNS.find((ep) => ep.pattern.test(p.message)) ?? null
     return { parsed: p, match }
   })
 }
@@ -397,6 +804,7 @@ const DOC_SECTION_LINKS: Record<string, string> = {
   Classes: 'https://dev.epicgames.com/documentation/en-us/uefn/verse-language-reference#classes',
   Interfaces: 'https://dev.epicgames.com/documentation/en-us/uefn/verse-language-reference#interfaces',
   'Access Specifiers': 'https://dev.epicgames.com/documentation/en-us/uefn/verse-language-reference#specifiers',
+  Devices: 'https://dev.epicgames.com/documentation/en-us/uefn/verse-api-reference',
   Syntax: 'https://dev.epicgames.com/documentation/en-us/uefn/verse-language-reference#expressions',
   'Control Flow': 'https://dev.epicgames.com/documentation/en-us/uefn/verse-language-reference#control-flow',
 }
@@ -528,7 +936,7 @@ export function VerseErrorExplainerPage() {
                   Paste errors on the left and click Explain
                 </p>
                 <p className="text-[10px] text-gray-700 mt-1">
-                  Supports 25+ common Verse error patterns
+                  Supports 45+ Verse error patterns across types, effects, failable, scope, devices, syntax, and concurrency
                 </p>
               </div>
             </div>

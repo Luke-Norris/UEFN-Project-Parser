@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ForgeProject, ForgeProjectList, ForgeDiscoveredProject } from '../../shared/types'
+import type { WellVersedProject, WellVersedProjectList, WellVersedDiscoveredProject } from '../../shared/types'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
 
@@ -18,7 +18,7 @@ export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (p
   // Scan form
   const [scanPath, setScanPath] = useState('')
   const [scanning, setScanning] = useState(false)
-  const [discovered, setDiscovered] = useState<ForgeDiscoveredProject[]>([])
+  const [discovered, setDiscovered] = useState<WellVersedDiscoveredProject[]>([])
 
   useEffect(() => {
     fetchProjects()
@@ -69,7 +69,7 @@ export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (p
   async function handleActivateProject(id: string) {
     try {
       setError(null)
-      await window.electronAPI.forgeActivateProject(id)
+      await window.electronAPI.wellVersedActivateProject(id)
       await reloadProjects()
       onProjectChanged?.()
     } catch (err) {
@@ -101,7 +101,7 @@ export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (p
     }
   }
 
-  async function handleAddDiscovered(project: ForgeDiscoveredProject, type: 'MyProject' | 'Library') {
+  async function handleAddDiscovered(project: WellVersedDiscoveredProject, type: 'MyProject' | 'Library') {
     try {
       setError(null)
       await window.electronAPI.forgeAddProject(project.projectPath, type)
@@ -277,7 +277,7 @@ function ProjectCard({
   onActivate,
   onRemove
 }: {
-  project: ForgeProject
+  project: WellVersedProject
   isActive: boolean
   onActivate: () => void
   onRemove: () => void
@@ -351,7 +351,7 @@ function DiscoveredProjectRow({
   project,
   onAdd
 }: {
-  project: ForgeDiscoveredProject
+  project: WellVersedDiscoveredProject
   onAdd: (type: 'MyProject' | 'Library') => void
 }) {
   return (

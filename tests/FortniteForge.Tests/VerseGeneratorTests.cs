@@ -1,10 +1,10 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services.VerseGeneration;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services.VerseGeneration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class VerseCodeBuilderTests
 {
@@ -129,7 +129,7 @@ public class VerseUIGeneratorTests
         _tempDir = Path.Combine(Path.GetTempPath(), $"ForgeVerseTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
 
-        var config = new ForgeConfig { ProjectPath = _tempDir };
+        var config = new WellVersedConfig { ProjectPath = _tempDir };
         _generator = new VerseUIGenerator(config, NullLogger<VerseUIGenerator>.Instance);
     }
 
@@ -300,7 +300,7 @@ public class VerseDeviceGeneratorTests
         _tempDir = Path.Combine(Path.GetTempPath(), $"ForgeVerseDevTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
 
-        var config = new ForgeConfig { ProjectPath = _tempDir };
+        var config = new WellVersedConfig { ProjectPath = _tempDir };
         _generator = new VerseDeviceGenerator(config, NullLogger<VerseDeviceGenerator>.Instance);
     }
 

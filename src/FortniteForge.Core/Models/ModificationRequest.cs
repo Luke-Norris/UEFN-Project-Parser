@@ -1,4 +1,4 @@
-namespace FortniteForge.Core.Models;
+namespace WellVersed.Core.Models;
 
 /// <summary>
 /// Describes a requested modification to an asset.

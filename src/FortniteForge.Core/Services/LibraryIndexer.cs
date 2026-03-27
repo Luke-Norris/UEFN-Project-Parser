@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Indexes all assets, verse files, and device patterns across a library of UEFN projects.
@@ -41,7 +41,7 @@ public class LibraryIndexer
         };
 
         // Discover projects in the library path and any subdirectories
-        var projects = ForgeConfig.DiscoverProjects(libraryPath);
+        var projects = WellVersedConfig.DiscoverProjects(libraryPath);
         _logger.LogInformation("Indexing {Count} projects in {Path}", projects.Count, libraryPath);
 
         foreach (var projectPath in projects)
@@ -200,7 +200,7 @@ public class LibraryIndexer
 
     private ProjectIndexEntry IndexProject(string projectPath)
     {
-        var config = new ForgeConfig { ProjectPath = projectPath };
+        var config = new WellVersedConfig { ProjectPath = projectPath };
         var entry = new ProjectIndexEntry
         {
             Name = config.ProjectName,

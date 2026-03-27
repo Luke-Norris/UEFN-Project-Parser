@@ -1,10 +1,10 @@
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 /// <summary>
 /// MCP tools for placing and scattering actors in levels.

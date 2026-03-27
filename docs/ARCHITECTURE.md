@@ -1,4 +1,4 @@
-# FortniteForge — Architecture
+# WellVersed — Architecture
 
 ## System Overview
 
@@ -15,7 +15,7 @@
           │
           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    FortniteForge.MCP                             │
+│                    WellVersed.MCP                             │
 │                   (MCP Server Process)                           │
 │                                                                  │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐          │
@@ -36,13 +36,13 @@
                │                          │
                ▼                          ▼
 ┌──────────────────────────┐   ┌──────────────────────────┐
-│   FortniteForge.Core     │   │   FortniteForge.CLI      │
+│   WellVersed.Core     │   │   WellVersed.CLI      │
 │                          │   │   (Manual Interface)      │
 │   The shared brain       │   │                          │
-│   All business logic     │   │   fortniteforge list     │
-│                          │   │   fortniteforge inspect   │
-│                          │   │   fortniteforge audit     │
-│                          │   │   fortniteforge build     │
+│   All business logic     │   │   wellversed list     │
+│                          │   │   wellversed inspect   │
+│                          │   │   wellversed audit     │
+│                          │   │   wellversed build     │
 └──────────────────────────┘   └──────────────────────────┘
 ```
 
@@ -50,7 +50,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                     FortniteForge.Core                        │
+│                     WellVersed.Core                        │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │                    Config Layer                          │ │
@@ -150,7 +150,7 @@
              │
              ▼
   ┌──────────────────────┐
-  │  Create backup        │──► .fortniteforge/backups/
+  │  Create backup        │──► .wellversed/backups/
   │  (auto)               │    MainLevel_20240115_143022.umap
   └──────────┬───────────┘
              │
@@ -301,7 +301,7 @@
                     │
                     ▼
         ┌────────────────────────┐
-        │  FortniteForge Models   │
+        │  WellVersed Models   │
         │                         │
         │  AssetInfo (summary)    │ ◄── Claude sees this FIRST
         │    • name, class, size  │     (token-efficient)

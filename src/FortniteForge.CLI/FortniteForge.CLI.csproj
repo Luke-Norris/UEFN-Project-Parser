@@ -5,8 +5,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>FortniteForge.CLI</RootNamespace>
-    <AssemblyName>fortniteforge</AssemblyName>
+    <RootNamespace>WellVersed.CLI</RootNamespace>
+    <AssemblyName>wellversed</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

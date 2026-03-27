@@ -32,13 +32,25 @@ import { PersistentDataPage } from './pages/PersistentDataPage'
 import { VerseReferencePage } from './pages/VerseReferencePage'
 import { VerseErrorExplainerPage } from './pages/VerseErrorExplainerPage'
 import { ProjectHealthPage } from './pages/ProjectHealthPage'
+import { ProjectDiffPage } from './pages/ProjectDiffPage'
+import { DeviceEncyclopediaPage } from './pages/DeviceEncyclopediaPage'
+import { ChatPage } from './pages/ChatPage'
+import { StampsPage } from './pages/StampsPage'
+import { GeometryPage } from './pages/GeometryPage'
+import { PublishPage } from './pages/PublishPage'
+import { GameLoopPage } from './pages/GameLoopPage'
 import { useTheme } from './hooks/useTheme'
+import { useFileWatcher } from './hooks/useFileWatcher'
 import { useSettingsStore } from './stores/settingsStore'
+import { useBridgeStore } from './stores/bridgeStore'
 
 import { applyZoom } from './lib/zoom'
 
 export default function App() {
   useTheme()
+
+  // File watcher — auto-starts when a project is active, shows notification bar
+  const { notification: watcherNotification, dismissNotification } = useFileWatcher()
 
   // Restore UI zoom via transform (not body.zoom which breaks layout)
   const savedZoom = useSettingsStore((s) => s.uiZoom)
@@ -56,6 +68,15 @@ export default function App() {
   const status = useForgeStore((s) => s.status)
   const fetchStatus = useForgeStore((s) => s.fetchStatus)
   const invalidateCache = useForgeStore((s) => s.invalidateCache)
+
+  // Bridge auto-connect on mount (attempt silently, no error display)
+  const bridgeConnected = useBridgeStore((s) => s.connected)
+  const bridgeConnect = useBridgeStore((s) => s.connect)
+  const bridgeError = useBridgeStore((s) => s.error)
+  useEffect(() => {
+    // Try to connect to bridge silently on startup
+    bridgeConnect().catch(() => { /* silent — bridge may not be running */ })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- only on mount
 
   // Derive activeProject from the store
   const activeProject = status?.isConfigured
@@ -123,6 +144,8 @@ export default function App() {
         return <BlueprintGraphPage selectedLevel={selectedLevel} />
       case 'recipes':
         return <RecipesPage />
+      case 'encyclopedia':
+        return <DeviceEncyclopediaPage />
       case 'levels':
         return <LevelsPage onNavigate={handleNavigate} onSelectLevel={(path) => { setSelectedLevel(path); handleNavigate('devices') }} />
       case 'content-browser':
@@ -157,6 +180,18 @@ export default function App() {
         return <ProjectsPage onNavigate={handleNavigate} onProjectChanged={refreshProject} />
       case 'staged':
         return <StagedPage />
+      case 'project-diff':
+        return <ProjectDiffPage />
+      case 'chat':
+        return <ChatPage selectedLevel={selectedLevel} onNavigate={handleNavigate} />
+      case 'stamps':
+        return <StampsPage />
+      case 'geometry':
+        return <GeometryPage />
+      case 'game-loop':
+        return <GameLoopPage selectedLevel={selectedLevel} onNavigate={handleNavigate} />
+      case 'publish':
+        return <PublishPage />
       case 'settings':
         return <SettingsPage />
       default:
@@ -167,28 +202,52 @@ export default function App() {
   return (
     <ContextMenuProvider>
       <div
-        className="h-full flex bg-fn-darker text-gray-200 select-none overflow-hidden"
+        className="h-full flex flex-col bg-fn-darker text-gray-200 select-none overflow-hidden"
         onContextMenu={(e) => {
           e.preventDefault()
         }}
       >
-        <Sidebar
-          activePage={activePage}
-          onNavigate={handleNavigate}
-          activeProject={activeProject}
-          selectedLevel={selectedLevel}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
-          width={sidebarWidth}
-        />
-        {!sidebarCollapsed && (
-          <ResizeHandle
-            direction="horizontal"
-            onResize={(delta) => setSidebarWidth((w) => Math.max(160, Math.min(400, w + delta)))}
-          />
+        {/* Bridge connection indicator bar */}
+        {bridgeConnected && (
+          <div className="flex items-center px-3 py-1 bg-emerald-900/30 border-b border-emerald-700/20 text-[10px] text-emerald-300/70 shrink-0">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2" />
+            <span>Bridge connected</span>
+          </div>
+        )}
+        {/* File watcher notification bar */}
+        {watcherNotification && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-blue-900/60 border-b border-blue-700/40 text-xs text-blue-200 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <span>{watcherNotification}</span>
+            </div>
+            <button
+              onClick={dismissNotification}
+              className="text-blue-400 hover:text-blue-200 ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
         )}
         <div className="flex-1 min-h-0 min-w-0 flex">
-          {renderPage()}
+          <Sidebar
+            activePage={activePage}
+            onNavigate={handleNavigate}
+            activeProject={activeProject}
+            selectedLevel={selectedLevel}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+            width={sidebarWidth}
+          />
+          {!sidebarCollapsed && (
+            <ResizeHandle
+              direction="horizontal"
+              onResize={(delta) => setSidebarWidth((w) => Math.max(160, Math.min(400, w + delta)))}
+            />
+          )}
+          <div className="flex-1 min-h-0 min-w-0 flex">
+            {renderPage()}
+          </div>
         </div>
       </div>
     </ContextMenuProvider>

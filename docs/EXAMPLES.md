@@ -1,11 +1,11 @@
-# FortniteForge — Usage Examples & Architecture
+# WellVersed — Usage Examples & Architecture
 
 ## CLI Output Examples
 
-### `fortniteforge list`
+### `wellversed list`
 
 ```
-$ fortniteforge list --folder MyMaps
+$ wellversed list --folder MyMaps
 
 {
   "count": 4,
@@ -50,10 +50,10 @@ $ fortniteforge list --folder MyMaps
 }
 ```
 
-### `fortniteforge devices <level>`
+### `wellversed devices <level>`
 
 ```
-$ fortniteforge devices "C:\Users\Luke\Documents\FortniteProjects\MyProject\Content\MyMaps\MainLevel.umap"
+$ wellversed devices "C:\Users\Luke\Documents\FortniteProjects\MyProject\Content\MyMaps\MainLevel.umap"
 
 {
   "level": "MainLevel.umap",
@@ -99,10 +99,10 @@ $ fortniteforge devices "C:\Users\Luke\Documents\FortniteProjects\MyProject\Cont
 }
 ```
 
-### `fortniteforge device TriggerDevice_3`
+### `wellversed device TriggerDevice_3`
 
 ```
-$ fortniteforge device BP_TriggerDevice_C_3
+$ wellversed device BP_TriggerDevice_C_3
 
 Found in: C:\Users\Luke\Documents\FortniteProjects\MyProject\Content\MyMaps\MainLevel.umap
 
@@ -141,10 +141,10 @@ Found in: C:\Users\Luke\Documents\FortniteProjects\MyProject\Content\MyMaps\Main
 }
 ```
 
-### `fortniteforge audit --level MainLevel.umap`
+### `wellversed audit --level MainLevel.umap`
 
 ```
-$ fortniteforge audit --level MainLevel.umap
+$ wellversed audit --level MainLevel.umap
 
 {
   "target": "MainLevel.umap",
@@ -189,10 +189,10 @@ $ fortniteforge audit --level MainLevel.umap
 }
 ```
 
-### `fortniteforge build-log`
+### `wellversed build-log`
 
 ```
-$ fortniteforge build-log
+$ wellversed build-log
 
 Build Status: Failed
 Log File: C:\Users\Luke\Documents\FortniteProjects\MyProject\Saved\Logs\Build_20240115.log
@@ -281,7 +281,7 @@ Claude: "Here's the plan:
 Claude uses: apply_scatter_place(...)
 
 Claude: "Done! Placed 40/40 pine trees. Backup saved at:
-        .fortniteforge/backups/MyMaps/MainLevel_20240115_143022.umap
+        .wellversed/backups/MyMaps/MainLevel_20240115_143022.umap
 
         Open the level in UEFN to see them. If anything looks off,
         I can restore from backup instantly."
@@ -316,7 +316,7 @@ Claude: "Done! Placed 40/40 pine trees. Backup saved at:
     {
       "check": "Backup Directory",
       "status": "PASS",
-      "details": "Exists at: C:\\...\\MyProject\\.fortniteforge\\backups"
+      "details": "Exists at: C:\\...\\MyProject\\.wellversed\\backups"
     },
     {
       "check": "Build Config",

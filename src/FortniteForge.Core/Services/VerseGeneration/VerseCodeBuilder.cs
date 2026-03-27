@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace FortniteForge.Core.Services.VerseGeneration;
+namespace WellVersed.Core.Services.VerseGeneration;
 
 /// <summary>
 /// Fluent builder for Verse source code. Handles indentation-sensitive syntax.

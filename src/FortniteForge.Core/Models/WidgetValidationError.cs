@@ -1,4 +1,4 @@
-namespace FortniteForge.Core.Models;
+namespace WellVersed.Core.Models;
 
 /// <summary>
 /// A validation finding from WidgetSpec.Validate().

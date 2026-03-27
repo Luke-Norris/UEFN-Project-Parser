@@ -435,6 +435,7 @@ li {
   <a href="changelog.html" class="nav-link">Changelog</a>
   <a href="documentation.html" class="nav-link active">Documentation</a>
   <a href="backlog.html" class="nav-link">Backlog</a>
+  <a href="analysis.html" class="nav-link">Analysis</a>
 </nav>
 <!-- ================================================================
      TITLE PAGE
@@ -471,7 +472,7 @@ li {
         <a class="toc-item" href="#dotnet-core"><span class="toc-num">04</span><span class="toc-title">.NET Core Services</span></a>
         <a class="toc-item toc-sub" href="#core-services-list"><span class="toc-num">4.1</span><span class="toc-title">Service Catalogue</span></a>
         <a class="toc-item toc-sub" href="#safety"><span class="toc-num">4.2</span><span class="toc-title">Safety System</span></a>
-        <a class="toc-item toc-sub" href="#config"><span class="toc-num">4.3</span><span class="toc-title">ForgeConfig</span></a>
+        <a class="toc-item toc-sub" href="#config"><span class="toc-num">4.3</span><span class="toc-title">WellVersedConfig</span></a>
         <a class="toc-item" href="#mcp"><span class="toc-num">05</span><span class="toc-title">MCP Server Tools</span></a>
         <a class="toc-item toc-sub" href="#mcp-tool-list"><span class="toc-num">5.1</span><span class="toc-title">Tool Files (16)</span></a>
         <a class="toc-item" href="#cli"><span class="toc-num">06</span><span class="toc-title">CLI Reference</span></a>
@@ -519,16 +520,16 @@ li {
 │   └── lib/zoom.ts         CSS transform zoom utility
 │
 ├── app/src/shared/         TypeScript types shared between renderer and build tools
-│   ├── types.ts            All TS interfaces (ForgeStatus, DeviceEntry, …)
+│   ├── types.ts            All TS interfaces (WellVersedStatus, DeviceEntry, …)
 │   ├── recipes.ts          DeviceRecipe schema + helper functions
 │   ├── widget-spec.ts      WidgetSpec schema
 │   ├── widget-rules.ts     UEFN widget containment rules
 │   └── builtin-recipes.ts  Bundled stock recipe library
 │
-└── .NET sidecar (FortniteForge.CLI  sidecar  command)
-    ├── src/FortniteForge.CLI/       CLI + sidecar entry point
-    ├── src/FortniteForge.Core/      Business logic, models, safety
-    └── src/FortniteForge.MCP/       MCP server (Claude Code integration)</pre>
+└── .NET sidecar (WellVersed.CLI  sidecar  command)
+    ├── src/WellVersed.CLI/       CLI + sidecar entry point
+    ├── src/WellVersed.Core/      Business logic, models, safety
+    └── src/WellVersed.MCP/       MCP server (Claude Code integration)</pre>
             </div>
 
             <h3 id="tech-stack"><span class="sub-num">1.2</span> Technology Stack</h3>
@@ -545,23 +546,23 @@ li {
                     <tr><td>Asset parsing</td><td>UAssetAPI (patched)</td><td>Submodule at lib/UAssetAPI/, UE5.4 fix</td></tr>
                     <tr><td>Game file reading</td><td>CUE4Parse</td><td>Optional — requires Fortnite installed</td></tr>
                     <tr><td>MCP integration</td><td>ModelContextProtocol 0.1.0-preview.9</td><td>Stdio transport, 16 tool files</td></tr>
-                    <tr><td>CLI framework</td><td>System.CommandLine 2.0.0-beta4</td><td>Used by FortniteForge.CLI</td></tr>
+                    <tr><td>CLI framework</td><td>System.CommandLine 2.0.0-beta4</td><td>Used by WellVersed.CLI</td></tr>
                 </tbody>
             </table>
 
             <h3 id="build-run"><span class="sub-num">1.3</span> Build &amp; Run</h3>
             <pre><code># Build .NET sidecar
-dotnet build FortniteForge.sln
+dotnet build WellVersed.sln
 
 # Launch the Tauri desktop app (dev mode)
 cd app && npm run dev
 
 # MCP server (Claude Code integration)
-dotnet run --project src/FortniteForge.MCP -- path/to/forge.config.json
+dotnet run --project src/WellVersed.MCP -- path/to/forge.config.json
 
 # CLI (standalone, no UI)
-dotnet run --project src/FortniteForge.CLI -- -c forge.config.json status
-dotnet run --project src/FortniteForge.CLI -- -c forge.config.json audit
+dotnet run --project src/WellVersed.CLI -- -c forge.config.json status
+dotnet run --project src/WellVersed.CLI -- -c forge.config.json audit
 
 # Tests
 dotnet test
@@ -738,7 +739,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
             <ul>
                 <li><strong>Asset management</strong> — <code>AssetEntry</code>, <code>AssetCategory</code>, <code>AssetIndex</code></li>
                 <li><strong>Template/canvas layers</strong> — <code>TemplateLayer</code>, <code>ComponentTemplate</code>, <code>TemplateVariable</code></li>
-                <li><strong>FortniteForge project</strong> — <code>ForgeStatus</code>, <code>ForgeProject</code>, <code>ForgeProjectList</code>, <code>ForgeDiscoveredProject</code></li>
+                <li><strong>WellVersed project</strong> — <code>WellVersedStatus</code>, <code>WellVersedProject</code>, <code>WellVersedProjectList</code>, <code>ForgeDiscoveredProject</code></li>
                 <li><strong>Audit</strong> — <code>AuditFinding</code>, <code>AuditResult</code></li>
                 <li><strong>Devices</strong> — <code>DeviceEntry</code>, <code>DeviceListResult</code>, <code>DeviceInspectResult</code></li>
                 <li><strong>Assets</strong> — <code>ContentEntry</code>, <code>AssetInspectResult</code>, <code>UserAssetEntry</code>, <code>EpicAssetTypeEntry</code></li>
@@ -787,7 +788,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
 
             <h3 id="sidecar-methods"><span class="sub-num">3.2</span> Sidecar Methods</h3>
             <p>
-                The .NET sidecar (<code>FortniteForge.CLI</code> <code>sidecar</code> subcommand) handles all
+                The .NET sidecar (<code>WellVersed.CLI</code> <code>sidecar</code> subcommand) handles all
                 <code>forge_*</code> Tauri commands. The project manager (<code>SidecarProjectManager</code>) and
                 library manager (<code>SidecarLibraryManager</code>) maintain state across calls within a session.
                 The optional <code>AssetPreviewService</code> (CUE4Parse) is initialised on demand via
@@ -805,7 +806,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
         <section id="dotnet-core">
             <h2><span class="section-num">04</span> .NET Core Services</h2>
             <p>
-                <code>src/FortniteForge.Core/</code> contains all business logic with no UI dependencies.
+                <code>src/WellVersed.Core/</code> contains all business logic with no UI dependencies.
                 Services are composed manually (no DI container) in <code>LoadServices()</code> in the CLI.
             </p>
 
@@ -819,8 +820,8 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
                     <tr><td><code>DigestService</code></td><td>Parses <code>.digest</code> Verse source files to extract device class/property schema definitions.</td></tr>
                     <tr><td><code>ModificationService</code></td><td>Two-step modify workflow: preview diff → apply. Writes through <code>SafeFileAccess</code> (staged or direct based on mode).</td></tr>
                     <tr><td><code>ActorPlacementService</code></td><td>Clone-and-modify actor placement. Reads a source actor, adjusts transform/properties, writes a new external actor file.</td></tr>
-                    <tr><td><code>BackupService</code></td><td>Pre-modification backups to <code>.fortniteforge/backups/</code>. Configurable per-file limit with automatic pruning.</td></tr>
-                    <tr><td><code>SafeFileAccess</code></td><td>Copy-on-read (all .uasset reads go through a temp copy). Staged writes: writes go to <code>.fortniteforge/staged/</code> when UEFN is running. Direct writes with backup when UEFN is closed.</td></tr>
+                    <tr><td><code>BackupService</code></td><td>Pre-modification backups to <code>.wellversed/backups/</code>. Configurable per-file limit with automatic pruning.</td></tr>
+                    <tr><td><code>SafeFileAccess</code></td><td>Copy-on-read (all .uasset reads go through a temp copy). Staged writes: writes go to <code>.wellversed/staged/</code> when UEFN is running. Direct writes with backup when UEFN is closed.</td></tr>
                     <tr><td><code>UefnDetector</code></td><td>Process detection for the UEFN editor and URC (Unreal Remote Control). Determines current <code>OperationMode</code>.</td></tr>
                     <tr><td><code>BuildService</code></td><td>Triggers UEFN project builds and reads build logs.</td></tr>
                     <tr><td><code>AssetPreviewService</code></td><td>CUE4Parse-backed texture extraction and mesh statistics from the Fortnite game files. Optional — requires a local Fortnite installation.</td></tr>
@@ -845,7 +846,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
                 <thead><tr><th>Mode</th><th>When active</th><th>Reads</th><th>Writes</th></tr></thead>
                 <tbody>
                     <tr><td><code>ReadOnly</code></td><td><code>readOnly: true</code> in config, or Library project</td><td>Copy-on-read</td><td>Blocked</td></tr>
-                    <tr><td><code>Staged</code></td><td>UEFN editor process running, or URC active</td><td>Copy-on-read</td><td>To <code>.fortniteforge/staged/</code></td></tr>
+                    <tr><td><code>Staged</code></td><td>UEFN editor process running, or URC active</td><td>Copy-on-read</td><td>To <code>.wellversed/staged/</code></td></tr>
                     <tr><td><code>Direct</code></td><td>UEFN not running, My Project type</td><td>Copy-on-read</td><td>To source, with auto-backup</td></tr>
                 </tbody>
             </table>
@@ -870,7 +871,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
                 Locking a file that UEFN has open can corrupt the project.
             </div>
 
-            <h3 id="config"><span class="sub-num">4.3</span> ForgeConfig</h3>
+            <h3 id="config"><span class="sub-num">4.3</span> WellVersedConfig</h3>
             <p>Loaded from <code>forge.config.json</code> in the project root (or specified with <code>-c</code>).</p>
             <table>
                 <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
@@ -880,8 +881,8 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
                     <tr><td><code>readOnly</code></td><td>bool</td><td>false</td><td>Hard kill switch for all writes</td></tr>
                     <tr><td><code>modifiableFolders</code></td><td>string[]</td><td>[]</td><td>Relative Content/ paths allowed for writes</td></tr>
                     <tr><td><code>readOnlyFolders</code></td><td>string[]</td><td>["FortniteGame","Engine"]</td><td>Paths that must never be modified</td></tr>
-                    <tr><td><code>backupDirectory</code></td><td>string</td><td>.fortniteforge/backups</td><td>Backup storage relative to project root</td></tr>
-                    <tr><td><code>stagingDirectory</code></td><td>string</td><td>.fortniteforge/staged</td><td>Staged write destination</td></tr>
+                    <tr><td><code>backupDirectory</code></td><td>string</td><td>.wellversed/backups</td><td>Backup storage relative to project root</td></tr>
+                    <tr><td><code>stagingDirectory</code></td><td>string</td><td>.wellversed/staged</td><td>Staged write destination</td></tr>
                     <tr><td><code>maxBackupsPerFile</code></td><td>int</td><td>10</td><td>Oldest pruned when exceeded</td></tr>
                     <tr><td><code>requireDryRun</code></td><td>bool</td><td>true</td><td>Preview before applying modifications</td></tr>
                     <tr><td><code>autoBackup</code></td><td>bool</td><td>true</td><td>Backup before every direct write</td></tr>
@@ -889,7 +890,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
                     <tr><td><code>verseErrorForwardPath</code></td><td>string?</td><td>null</td><td>Forward Verse compiler errors here</td></tr>
                 </tbody>
             </table>
-            <p>Use <code>ForgeConfig.DiscoverProjects(path)</code> to recursively find UEFN project roots (files with <code>.uefnproject</code>).</p>
+            <p>Use <code>WellVersedConfig.DiscoverProjects(path)</code> to recursively find UEFN project roots (files with <code>.uefnproject</code>).</p>
         </section>
 
         <!-- ============================================================
@@ -898,7 +899,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
         <section id="mcp">
             <h2><span class="section-num">05</span> MCP Server Tools</h2>
             <p>
-                <code>src/FortniteForge.MCP/</code> runs as a Model Context Protocol server on stdio transport,
+                <code>src/WellVersed.MCP/</code> runs as a Model Context Protocol server on stdio transport,
                 letting Claude Code interact with UEFN projects directly. Uses
                 <code>ModelContextProtocol 0.1.0-preview.9</code>.
             </p>
@@ -927,7 +928,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
             </table>
 
             <p>Start the MCP server:</p>
-            <pre><code>dotnet run --project src/FortniteForge.MCP -- path/to/forge.config.json</code></pre>
+            <pre><code>dotnet run --project src/WellVersed.MCP -- path/to/forge.config.json</code></pre>
         </section>
 
         <!-- ============================================================
@@ -936,7 +937,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
         <section id="cli">
             <h2><span class="section-num">06</span> CLI Reference</h2>
             <p>
-                <code>src/FortniteForge.CLI/</code> provides both a standalone CLI and the sidecar entry point.
+                <code>src/WellVersed.CLI/</code> provides both a standalone CLI and the sidecar entry point.
                 All commands accept <code>--config/-c &lt;path&gt;</code> (falls back to
                 <code>FORTNITEFORGE_CONFIG</code> env var, then walks parent directories).
             </p>
@@ -1094,9 +1095,9 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
 
             <h4>Models</h4>
             <ul>
-                <li><code>src/FortniteForge.Core/Models/WidgetSpec.cs</code> — C# widget tree spec</li>
-                <li><code>src/FortniteForge.Core/Models/WidgetRules.cs</code> — containment rule validation</li>
-                <li><code>src/FortniteForge.Core/Models/WidgetValidationError.cs</code> — validation error with path and severity</li>
+                <li><code>src/WellVersed.Core/Models/WidgetSpec.cs</code> — C# widget tree spec</li>
+                <li><code>src/WellVersed.Core/Models/WidgetRules.cs</code> — containment rule validation</li>
+                <li><code>src/WellVersed.Core/Models/WidgetValidationError.cs</code> — validation error with path and severity</li>
             </ul>
         </section>
 
@@ -1115,7 +1116,7 @@ window.electronAPI.forgeListDevices({ levelPath: '...' })</code></pre>
 
             <h4>Indexing</h4>
             <p>
-                <code>LibraryIndexer.BuildIndex(path)</code> uses <code>ForgeConfig.DiscoverProjects()</code>
+                <code>LibraryIndexer.BuildIndex(path)</code> uses <code>WellVersedConfig.DiscoverProjects()</code>
                 to find all project roots, then indexes each:
             </p>
             <ul>

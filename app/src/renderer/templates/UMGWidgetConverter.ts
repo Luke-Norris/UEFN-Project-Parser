@@ -1,5 +1,5 @@
 /**
- * Converts a WidgetSpec JSON (from FortniteForge) into a ComponentTemplate
+ * Converts a WidgetSpec JSON (from WellVersed) into a ComponentTemplate
  * that the UEFN UI Component Creator can render on the Fabric.js canvas.
  *
  * Mapping:
@@ -60,7 +60,7 @@ export function widgetSpecToTemplate(spec: WidgetSpecJson): ComponentTemplate {
 
 /**
  * Convert a ComponentTemplate back to WidgetSpec JSON.
- * Used when exporting the edited canvas back to FortniteForge.
+ * Used when exporting the edited canvas back to WellVersed.
  */
 export function templateToWidgetSpec(
   template: ComponentTemplate,

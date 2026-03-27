@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FortniteForge.Core.Services.MapGeneration;
+namespace WellVersed.Core.Services.MapGeneration;
 
 /// <summary>
 /// Defines a biome — the style, density, and composition rules for an environment.

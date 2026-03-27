@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useForgeStore } from '../../stores/forgeStore'
 import { useLibraryStore } from '../../stores/libraryStore'
-import type { ForgeProject } from '../../../shared/types'
+import type { WellVersedProject } from '../../../shared/types'
 
 export type PageId =
   | 'home'
+  | 'chat'
   | 'dashboard'
   | 'project-health'
   | 'widget-editor'
@@ -32,6 +33,12 @@ export type PageId =
   | 'staged'
   | 'asset-search'
   | 'blueprint-graph'
+  | 'project-diff'
+  | 'encyclopedia'
+  | 'stamps'
+  | 'geometry'
+  | 'publish'
+  | 'game-loop'
   | 'settings'
 
 interface NavItem {
@@ -148,6 +155,21 @@ const icons = {
       <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
   ),
+  stamps: (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+    </svg>
+  ),
+  geometry: (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+    </svg>
+  ),
+  publish: (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+    </svg>
+  ),
   chevronDown: (
     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path d="M19 9l-7 7-7-7" />
@@ -214,9 +236,9 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  async function handleSwitchProject(project: ForgeProject) {
+  async function handleSwitchProject(project: WellVersedProject) {
     try {
-      await window.electronAPI.forgeActivateProject(project.id)
+      await window.electronAPI.wellVersedActivateProject(project.id)
       invalidateCache()
       await fetchStatus()
       await fetchProjects()
@@ -271,41 +293,78 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
     <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
   )
 
+  // Sparkle icon for Studio
+  const sparkleIcon = (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+    </svg>
+  )
+
   // Nav items
   const topItems: NavItem[] = [
     { id: 'home', label: 'Home', icon: icons.home },
+    { id: 'chat', label: 'Studio', icon: sparkleIcon },
     { id: 'projects', label: 'Projects', icon: icons.folder },
   ]
 
+  // BROWSE section
   const browseItems: NavItem[] = activeProject
     ? [
         { id: 'content-browser', label: 'Content', icon: icons.contentBrowser, indent: true },
         { id: 'project-verse-files', label: 'Verse Files', icon: icons.code, indent: true },
-        { id: 'persistent-data', label: 'Persistent Data', icon: icons.audit, indent: true },
         { id: 'levels', label: 'Levels', icon: icons.levels, indent: true },
         ...(selectedLevel !== null
           ? [{ id: 'devices' as PageId, label: 'Devices', icon: icons.devices, indent: true }]
           : []),
-        { id: 'user-assets', label: 'User Assets', icon: icons.userAssets, indent: true },
-        { id: 'epic-assets', label: 'Epic Assets', icon: icons.epicAssets, indent: true },
       ]
     : []
 
-  const toolsItems: NavItem[] = activeProject
+  // CREATE section
+  const createItems: NavItem[] = activeProject
+    ? [
+        { id: 'widget-editor', label: 'Widget Editor', icon: icons.widget, indent: true },
+        { id: 'geometry', label: 'Geometry Builder', icon: icons.geometry, indent: true },
+        { id: 'stamps', label: 'Stamps', icon: icons.stamps, indent: true },
+      ]
+    : []
+
+  // ANALYZE section
+  const analyzeItems: NavItem[] = activeProject
     ? [
         { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard, indent: true },
         { id: 'project-health', label: 'Health Report', icon: icons.health, indent: true },
-        { id: 'widget-editor', label: 'Widget Editor', icon: icons.widget, indent: true },
         { id: 'audit', label: 'Audit', icon: icons.audit, indent: true },
-        { id: 'verse-errors', label: 'Error Explainer', icon: icons.verseErrors, indent: true },
         { id: 'device-wiring', label: 'Device Wiring', icon: icons.wiring, indent: true },
+        { id: 'game-loop', label: 'Game Loop', icon: icons.wiring, indent: true },
         { id: 'scene-preview', label: 'Scene Preview', icon: icons.levels, indent: true },
-        { id: 'asset-search', label: 'Asset Search', icon: icons.search, indent: true },
-        { id: 'blueprint-graph', label: 'Blueprint Graph', icon: icons.wiring, indent: true },
-        { id: 'recipes', label: 'Device Recipes', icon: icons.devices, indent: true },
+        { id: 'project-diff', label: 'Project Diff', icon: icons.audit, indent: true },
+      ]
+    : []
+
+  // PUBLISH section
+  const publishItems: NavItem[] = activeProject
+    ? [
+        { id: 'publish', label: 'Publish Checklist', icon: icons.publish, indent: true },
         { id: 'staged', label: 'Staged Changes', icon: icons.staged, indent: true },
       ]
     : []
+
+  // REFERENCE section
+  const referenceItems: NavItem[] = activeProject
+    ? [
+        { id: 'encyclopedia', label: 'Encyclopedia', icon: icons.book, indent: true },
+        { id: 'verse-errors', label: 'Error Explainer', icon: icons.verseErrors, indent: true },
+        { id: 'recipes', label: 'Device Recipes', icon: icons.devices, indent: true },
+        { id: 'persistent-data', label: 'Persistent Data', icon: icons.audit, indent: true },
+        { id: 'user-assets', label: 'User Assets', icon: icons.userAssets, indent: true },
+        { id: 'epic-assets', label: 'Epic Assets', icon: icons.epicAssets, indent: true },
+        { id: 'asset-search', label: 'Asset Search', icon: icons.search, indent: true },
+        { id: 'blueprint-graph', label: 'Blueprint Graph', icon: icons.wiring, indent: true },
+      ]
+    : []
+
+  // Combine all project items for collapsed view
+  const allProjectItems: NavItem[] = [...browseItems, ...createItems, ...analyzeItems, ...publishItems, ...referenceItems]
 
   function renderNavButton(item: NavItem) {
     const isActive = activePage === item.id
@@ -476,17 +535,39 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
               )}
             </div>
 
-            {/* Browse + Tools (collapsible) */}
+            {/* Project sections (collapsible) */}
             {activeProject && !projectSectionCollapsed && (
               <div className="border-t border-fn-border/50">
-                <div className="py-1">
-                  {renderSectionHeader('BROWSE')}
-                  {browseItems.map(renderNavButton)}
-                </div>
-                <div className="py-1 border-t border-fn-border/30">
-                  {renderSectionHeader('TOOLS')}
-                  {toolsItems.map(renderNavButton)}
-                </div>
+                {browseItems.length > 0 && (
+                  <div className="py-1">
+                    {renderSectionHeader('BROWSE')}
+                    {browseItems.map(renderNavButton)}
+                  </div>
+                )}
+                {createItems.length > 0 && (
+                  <div className="py-1 border-t border-fn-border/30">
+                    {renderSectionHeader('CREATE')}
+                    {createItems.map(renderNavButton)}
+                  </div>
+                )}
+                {analyzeItems.length > 0 && (
+                  <div className="py-1 border-t border-fn-border/30">
+                    {renderSectionHeader('ANALYZE')}
+                    {analyzeItems.map(renderNavButton)}
+                  </div>
+                )}
+                {publishItems.length > 0 && (
+                  <div className="py-1 border-t border-fn-border/30">
+                    {renderSectionHeader('PUBLISH')}
+                    {publishItems.map(renderNavButton)}
+                  </div>
+                )}
+                {referenceItems.length > 0 && (
+                  <div className="py-1 border-t border-fn-border/30">
+                    {renderSectionHeader('REFERENCE')}
+                    {referenceItems.map(renderNavButton)}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -497,9 +578,7 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
               <div className="flex justify-center py-1" title={`${activeProject.name} (Protected)`}>
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
               </div>
-              {browseItems.map(renderNavButton)}
-              <div className="h-px bg-fn-border mx-2 my-0.5" />
-              {toolsItems.map(renderNavButton)}
+              {allProjectItems.map(renderNavButton)}
             </div>
           )
         )}

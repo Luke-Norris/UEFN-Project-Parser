@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Detects whether UEFN is running and provides project status information.
@@ -10,7 +10,7 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class UefnDetector
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<UefnDetector> _logger;
 
     private static readonly string[] UefnProcessNames =
@@ -20,7 +20,7 @@ public class UefnDetector
         "UnrealEditor"
     };
 
-    public UefnDetector(ForgeConfig config, ILogger<UefnDetector> logger)
+    public UefnDetector(WellVersedConfig config, ILogger<UefnDetector> logger)
     {
         _config = config;
         _logger = logger;

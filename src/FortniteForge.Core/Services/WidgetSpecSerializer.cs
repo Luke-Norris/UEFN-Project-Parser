@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Models;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Serializes/deserializes WidgetSpec to/from the shared JSON format
-/// used by both FortniteForge (→ .uasset) and the UEFN UI Component Creator (→ visual preview).
+/// used by both WellVersed (→ .uasset) and the UEFN UI Component Creator (→ visual preview).
 ///
 /// The JSON format is the bridge between the two projects. Variable bindings
 /// map widget properties (text, color, texture) to editable values that

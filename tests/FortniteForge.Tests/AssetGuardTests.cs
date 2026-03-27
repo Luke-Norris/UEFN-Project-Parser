@@ -1,16 +1,16 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class AssetGuardTests
 {
-    private static AssetGuard CreateGuard(ForgeConfig? config = null)
+    private static AssetGuard CreateGuard(WellVersedConfig? config = null)
     {
-        config ??= new ForgeConfig
+        config ??= new WellVersedConfig
         {
             ProjectPath = Path.Combine(Path.GetTempPath(), "TestProject"),
             ReadOnlyFolders = new List<string> { "FortniteGame", "Engine" },
@@ -24,7 +24,7 @@ public class AssetGuardTests
     public void CheckPath_InsideContent_IsModifiable()
     {
         var projectPath = Path.Combine(Path.GetTempPath(), "TestProject");
-        var config = new ForgeConfig { ProjectPath = projectPath };
+        var config = new WellVersedConfig { ProjectPath = projectPath };
         var guard = CreateGuard(config);
 
         // Create the content directory structure
@@ -47,7 +47,7 @@ public class AssetGuardTests
     public void CheckPath_OutsideContent_NotModifiable()
     {
         var projectPath = Path.Combine(Path.GetTempPath(), "TestProject");
-        var config = new ForgeConfig { ProjectPath = projectPath };
+        var config = new WellVersedConfig { ProjectPath = projectPath };
         var guard = CreateGuard(config);
 
         var outsidePath = Path.Combine(Path.GetTempPath(), "OtherProject", "test.uasset");
@@ -62,7 +62,7 @@ public class AssetGuardTests
     public void CheckPath_ReadOnlyFolder_NotModifiable()
     {
         var projectPath = Path.Combine(Path.GetTempPath(), "TestProject");
-        var config = new ForgeConfig
+        var config = new WellVersedConfig
         {
             ProjectPath = projectPath,
             ReadOnlyFolders = new List<string> { "FortniteGame", "Engine" }
@@ -81,7 +81,7 @@ public class AssetGuardTests
     public void CheckPath_EngineFolder_NotModifiable()
     {
         var projectPath = Path.Combine(Path.GetTempPath(), "TestProject");
-        var config = new ForgeConfig
+        var config = new WellVersedConfig
         {
             ProjectPath = projectPath,
             ReadOnlyFolders = new List<string> { "FortniteGame", "Engine" }
@@ -99,7 +99,7 @@ public class AssetGuardTests
     public void CheckPath_WithModifiableFolders_OnlyAllowsConfigured()
     {
         var projectPath = Path.Combine(Path.GetTempPath(), "TestProject");
-        var config = new ForgeConfig
+        var config = new WellVersedConfig
         {
             ProjectPath = projectPath,
             ModifiableFolders = new List<string> { "MyMaps", "MyDevices" },

@@ -1,4 +1,4 @@
-// FortniteForge Web Dashboard
+// WellVersed Web Dashboard
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 const content = () => $('#content');
@@ -189,7 +189,7 @@ window.addScanned = async (path, name) => { try { await apiPost('/projects/add',
 async function renderDashboard() {
   const s = await getStatus();
   if (!s.projectName || s.projectName === 'No Project') {
-    content().innerHTML = `<div class="empty" style="padding:80px 20px"><h2 style="margin-bottom:12px">Welcome to FortniteForge</h2>
+    content().innerHTML = `<div class="empty" style="padding:80px 20px"><h2 style="margin-bottom:12px">Welcome to WellVersed</h2>
       <p style="color:var(--text-secondary);margin-bottom:20px">Add a UEFN project to get started.</p>
       <a href="#/projects" class="btn btn-primary">Add Project</a></div>`;
     return;

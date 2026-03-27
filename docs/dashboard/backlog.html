@@ -130,6 +130,7 @@
   <a href="changelog.html" class="nav-link">Changelog</a>
   <a href="documentation.html" class="nav-link">Documentation</a>
   <a href="backlog.html" class="nav-link active">Backlog</a>
+  <a href="analysis.html" class="nav-link">Analysis</a>
 </nav>
 <div class="content">
 
@@ -190,7 +191,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Scene Preview device scan takes 10–20 seconds on large maps (283 actors). Needs incremental loading or a background worker so the UI remains responsive during scan.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/AuditService.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/AuditService.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -200,7 +201,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-tech-debt">tech-debt</span></div>
     <div class="item-desc">Device Wiring connection detection is heuristic-based. Real UEFN signal/binding data is needed to reliably detect wired connections between devices.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/DeviceService.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/DeviceService.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -210,7 +211,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-bug">bug</span></div>
     <div class="item-desc">Widget editor does not fully apply theme-aware colors — some hardcoded color values remain that do not respect the active theme.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/WidgetBlueprintBuilder.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/WidgetBlueprintBuilder.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -230,7 +231,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Content Browser does not display file type icons or asset thumbnails. All assets render as plain text entries, making the browser harder to navigate visually.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Web/wwwroot/</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Web/wwwroot/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -240,7 +241,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-bug">bug</span></div>
     <div class="item-desc">Audit times out on large projects. The audit service does not yet stream partial results or enforce per-file time budgets, so scanning large maps hangs the UI.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/AuditService.cs  ·  src/FortniteForge.MCP/Tools/</div>
+    <div class="item-files">src/WellVersed.Core/Services/AuditService.cs  ·  src/WellVersed.MCP/Tools/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -252,7 +253,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Widget Editor overhaul — richer visual editing, full theme-aware color application, and improved widget tree interaction. Active on <code>feature/widget-overhaul</code>.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/WidgetBlueprintBuilder.cs  ·  src/FortniteForge.Core/Models/WidgetSpec.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/WidgetBlueprintBuilder.cs  ·  src/WellVersed.Core/Models/WidgetSpec.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -262,7 +263,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Scene Preview + CUE4Parse materials — integrating CUE4Parse material extraction so devices render with real textures instead of placeholder geometry. Active on <code>feature/scene-preview</code>.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -272,7 +273,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">Verse Language Server — proxy or standalone parser for Verse. Active on <code>feature/verse-lsp</code>. Two strategies under evaluation: proxy Epic's <code>verse-lsp-latest.exe</code> or build a standalone parser.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  src/FortniteForge.MCP/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  src/WellVersed.MCP/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -295,7 +296,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Device Recipe deployment — allow users to place a saved recipe's devices into a project via the clone-and-modify pipeline, turning recipes from view-only references into live deployment templates.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/ActorPlacementService.cs  ·  src/FortniteForge.MCP/Tools/PlacementTools.cs</div>
+    <div class="item-files">src/WellVersed.Core/Services/ActorPlacementService.cs  ·  src/WellVersed.MCP/Tools/PlacementTools.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -305,7 +306,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Project diffing — compare two versions of a map side-by-side, highlighting added, removed, and changed actors and device properties.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/  ·  src/FortniteForge.MCP/Tools/</div>
+    <div class="item-files">src/WellVersed.Core/Services/  ·  src/WellVersed.MCP/Tools/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -315,7 +316,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Live file watching — auto-refresh project data when UEFN saves to disk. Should work alongside the existing UEFN detection and staged-write safety model without breaking copy-on-read guarantees.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/UefnDetector.cs  ·  src/FortniteForge.Core/Services/SafeFileAccess.cs</div>
+    <div class="item-files">src/WellVersed.Core/Services/UefnDetector.cs  ·  src/WellVersed.Core/Services/SafeFileAccess.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -325,7 +326,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">AI Map Architect — natural-language map layout description generates a device placement plan, which can be previewed in Scene Preview and deployed via the recipe pipeline.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/MapGeneration/  ·  src/FortniteForge.MCP/Tools/MapGenTools.cs</div>
+    <div class="item-files">src/WellVersed.Core/Services/MapGeneration/  ·  src/WellVersed.MCP/Tools/MapGenTools.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -335,7 +336,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">Cross-map asset import with dependency resolution — copy user-created assets (blueprints, materials, textures) between projects, resolving transitive dependencies that break on a naive file copy.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/AssetService.cs  ·  src/FortniteForge.Core/Safety/AssetGuard.cs</div>
+    <div class="item-files">src/WellVersed.Core/Services/AssetService.cs  ·  src/WellVersed.Core/Safety/AssetGuard.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -345,7 +346,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Full Scene Reconstruction — CUE4Parse can parse landscapes, foliage, static meshes, and materials. Render a full UEFN map approximation in Three.js combining terrain, buildings, devices, and foliage layers.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -355,7 +356,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Material Preview Pipeline — export material definitions and texture references from PAK via CUE4Parse and render realistic PBR materials in Three.js so devices match their actual in-game appearance.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -365,7 +366,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Blueprint Graph Visualization — CUE4Parse parses <code>EdGraph</code> Blueprint node graphs. Visualize device Blueprint logic in an interactive node-graph editor UI within WellVersed.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -375,7 +376,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">Verse Type Extraction from PAK — <code>UVerseClass</code>, <code>UVerseDigest</code>, and <code>UVerseStruct</code> are accessible via CUE4Parse. Extract Verse type definitions directly from Fortnite PAK files to build a complete, authoritative type database.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  src/FortniteForge.MCP/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  src/WellVersed.MCP/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -385,7 +386,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Audio Preview — extract <code>USoundWave</code> assets from PAK via CUE4Parse, decode to a playable format, and stream in-browser so device sound effects can be auditioned directly in WellVersed.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -395,7 +396,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Animation Preview — export skeletal mesh and animation sequences as glTF via CUE4Parse and play animations in Three.js for character and prop asset inspection.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -405,7 +406,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Landscape / Terrain Extraction — export terrain heightmap and material layer data via CUE4Parse and apply as displacement maps in Three.js for accurate terrain representation in Scene Preview.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -415,7 +416,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Asset Search Engine — searchable catalog of every Epic PAK asset with preview thumbnails generated via CUE4Parse texture extraction. Enables rapid lookup and reference browsing across all Fortnite content.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  src/FortniteForge.Web/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  src/WellVersed.Web/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -425,7 +426,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-low">low</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">Nanite Mesh Support — CUE4Parse handles Nanite virtualized geometry. Investigate extraction path and LOD fallback strategy for Nanite-enabled meshes in Scene Preview.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -435,7 +436,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">Cross-Map Asset Import Intelligence — CUE4Parse can resolve full dependency trees (mesh → materials → textures). Use this to power accurate dependency resolution when copying user assets between projects, replacing the current heuristic approach (C17).</div>
-    <div class="item-files">src/FortniteForge.Core/Services/AssetService.cs  ·  src/FortniteForge.Core/Safety/AssetGuard.cs</div>
+    <div class="item-files">src/WellVersed.Core/Services/AssetService.cs  ·  src/WellVersed.Core/Safety/AssetGuard.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -457,7 +458,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">3D Scene Preview implemented with Three.js — WASD fly camera, actor hierarchy tree, inspector panel for selected actors.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Web/SpatialExtractor.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Web/SpatialExtractor.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -467,7 +468,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Device Recipes shipped with 4 built-in templates. Users can browse, preview, and save recipes. Deployment pipeline is planned (C13).</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -477,7 +478,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">CUE4Parse integrated as a texture and mesh preview service, enabling raw asset inspection outside UAssetAPI's scope.</div>
-    <div class="item-files">src/FortniteForge.Core/  ·  lib/UAssetAPI/</div>
+    <div class="item-files">src/WellVersed.Core/  ·  lib/UAssetAPI/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -487,7 +488,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Scene Preview Phase 3 complete — real mesh geometry via CUE4Parse. Implemented <code>MeshExportService</code> with GLB export, disk cache, and progressive loading so actor meshes stream into the Three.js scene without blocking the UI.</div>
-    <div class="item-files">src/FortniteForge.Core/Services/MeshExportService.cs  ·  app/src/renderer/</div>
+    <div class="item-files">src/WellVersed.Core/Services/MeshExportService.cs  ·  app/src/renderer/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -497,7 +498,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Persistent Data page added — DB schema viewer that surfaces Verse struct definitions from <code>.digest</code> files, making device schema browsable in the UI.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/DigestService.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/DigestService.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -507,7 +508,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-medium">medium</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Verse Files page added — file tree navigator with syntax highlighting and per-file analysis (class count, imports, exported symbols).</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -517,7 +518,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-improvement">improvement</span></div>
     <div class="item-desc">Device Wiring graph rendering optimized — selective rendering reduced node/edge count from 71K to a manageable subset, resolving browser freezes on large maps.</div>
-    <div class="item-files">app/src/renderer/  ·  src/FortniteForge.Core/Services/DeviceService.cs</div>
+    <div class="item-files">app/src/renderer/  ·  src/WellVersed.Core/Services/DeviceService.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>
@@ -527,7 +528,7 @@
   <div class="item-body">
     <div class="item-tags"><span class="tag tag-high">high</span><span class="tag tag-architecture">architecture</span></div>
     <div class="item-desc">Safety model hardened — all projects default to read-only, writes isolated to <code>.wellversed/</code> directory. Safety tier messaging updated across the UI.</div>
-    <div class="item-files">src/FortniteForge.Core/Safety/AssetGuard.cs  ·  src/FortniteForge.Core/Services/SafeFileAccess.cs</div>
+    <div class="item-files">src/WellVersed.Core/Safety/AssetGuard.cs  ·  src/WellVersed.Core/Services/SafeFileAccess.cs</div>
     <div class="item-date">2026-03-21</div>
   </div>
 </div>

@@ -1,9 +1,9 @@
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Provides safe file access for .uasset/.umap files.
@@ -16,19 +16,19 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class SafeFileAccess : IDisposable
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly UefnDetector _detector;
     private readonly ILogger<SafeFileAccess> _logger;
     private readonly string _tempDir;
     private readonly List<string> _tempFiles = new();
     private bool _disposed;
 
-    public SafeFileAccess(ForgeConfig config, UefnDetector detector, ILogger<SafeFileAccess> logger)
+    public SafeFileAccess(WellVersedConfig config, UefnDetector detector, ILogger<SafeFileAccess> logger)
     {
         _config = config;
         _detector = detector;
         _logger = logger;
-        _tempDir = Path.Combine(Path.GetTempPath(), "FortniteForge", Guid.NewGuid().ToString("N")[..8]);
+        _tempDir = Path.Combine(Path.GetTempPath(), "WellVersed", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempDir);
     }
 

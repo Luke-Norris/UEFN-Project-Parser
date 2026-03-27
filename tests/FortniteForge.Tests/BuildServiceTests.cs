@@ -1,15 +1,15 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class BuildServiceTests : IDisposable
 {
     private readonly string _tempDir;
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly BuildService _service;
 
     public BuildServiceTests()
@@ -17,7 +17,7 @@ public class BuildServiceTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), $"ForgeBuildTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
 
-        _config = new ForgeConfig { ProjectPath = _tempDir };
+        _config = new WellVersedConfig { ProjectPath = _tempDir };
         _service = new BuildService(_config, NullLogger<BuildService>.Instance);
     }
 

@@ -27,3 +27,4 @@ tokio = { version = "1", features = ["full"] }
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
 tauri-plugin-mcp-bridge = "0.10.0"
+notify = { version = "6", default-features = false, features = ["macos_kqueue"] }

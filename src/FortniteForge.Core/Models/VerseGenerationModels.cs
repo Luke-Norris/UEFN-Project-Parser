@@ -1,4 +1,4 @@
-namespace FortniteForge.Core.Models;
+namespace WellVersed.Core.Models;
 
 /// <summary>
 /// Request to generate a Verse source file from a template.

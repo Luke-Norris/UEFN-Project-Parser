@@ -1,6 +1,6 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Safety;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Safety;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
@@ -8,7 +8,7 @@ using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Handles placing new actors in levels by cloning existing ones.
@@ -26,23 +26,26 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class ActorPlacementService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly AssetGuard _guard;
     private readonly SafeFileAccess _fileAccess;
     private readonly BackupService _backupService;
+    private readonly AssetValidator _validator;
     private readonly ILogger<ActorPlacementService> _logger;
 
     public ActorPlacementService(
-        ForgeConfig config,
+        WellVersedConfig config,
         AssetGuard guard,
         SafeFileAccess fileAccess,
         BackupService backupService,
+        AssetValidator validator,
         ILogger<ActorPlacementService> logger)
     {
         _config = config;
         _guard = guard;
         _fileAccess = fileAccess;
         _backupService = backupService;
+        _validator = validator;
         _logger = logger;
     }
 
@@ -194,8 +197,18 @@ public class ActorPlacementService
             }
 
             // Save to appropriate path (staged or direct)
+            var snapshot = _validator.CaptureSnapshot(asset, $"CloneActor:{sourceActorName}");
             asset.Write(writePath);
-            _logger.LogInformation("Wrote modified level to: {Path}", writePath);
+
+            var validation = _validator.Validate(writePath, snapshot);
+            if (!validation.IsValid)
+            {
+                result.Success = false;
+                result.Message = $"Post-write validation failed: {string.Join("; ", validation.Errors)}";
+                _logger.LogError("Validation failed after cloning {Actor}: {Errors}",
+                    sourceActorName, string.Join("; ", validation.Errors));
+                return result;
+            }
 
             result.Success = true;
             result.NewActorName = newActorName;
@@ -204,7 +217,7 @@ public class ActorPlacementService
                              $"{componentIndexMap.Count} component(s) at " +
                              $"({newLocation.X}, {newLocation.Y}, {newLocation.Z})";
 
-            _logger.LogInformation("Placed actor: {Result}", result.Message);
+            _logger.LogInformation("Placed and validated actor: {Result}", result.Message);
         }
         catch (Exception ex)
         {

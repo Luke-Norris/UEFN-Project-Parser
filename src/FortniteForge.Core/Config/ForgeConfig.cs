@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FortniteForge.Core.Config;
+namespace WellVersed.Core.Config;
 
 /// <summary>
-/// Root configuration for FortniteForge — loaded from forge.config.json in the project root.
+/// Root configuration for WellVersed — loaded from forge.config.json in the project root.
 /// </summary>
-public class ForgeConfig
+public class WellVersedConfig
 {
     /// <summary>
     /// Path to the UEFN project root (the folder containing the .uefnproject or .uproject file).
@@ -40,15 +40,15 @@ public class ForgeConfig
 
     /// <summary>
     /// Directory where backups are stored before modifications.
-    /// Relative to the project root. Defaults to ".fortniteforge/backups".
+    /// Relative to the project root. Defaults to ".wellversed/backups".
     /// </summary>
-    public string BackupDirectory { get; set; } = ".fortniteforge/backups";
+    public string BackupDirectory { get; set; } = ".wellversed/backups";
 
     /// <summary>
     /// Directory where staged modifications are written (instead of source files).
-    /// Relative to the project root. Defaults to ".fortniteforge/staged".
+    /// Relative to the project root. Defaults to ".wellversed/staged".
     /// </summary>
-    public string StagingDirectory { get; set; } = ".fortniteforge/staged";
+    public string StagingDirectory { get; set; } = ".wellversed/staged";
 
     /// <summary>
     /// Maximum number of backups to retain per file. Oldest are pruned.
@@ -131,13 +131,13 @@ public class ForgeConfig
         AllowTrailingCommas = true
     };
 
-    public static ForgeConfig Load(string configPath)
+    public static WellVersedConfig Load(string configPath)
     {
         if (!File.Exists(configPath))
             throw new FileNotFoundException($"Config file not found: {configPath}");
 
         var json = File.ReadAllText(configPath);
-        return JsonSerializer.Deserialize<ForgeConfig>(json, JsonOptions)
+        return JsonSerializer.Deserialize<WellVersedConfig>(json, JsonOptions)
                ?? throw new InvalidOperationException("Failed to deserialize config file.");
     }
 

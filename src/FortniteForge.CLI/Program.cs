@@ -2,31 +2,31 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Safety;
-using FortniteForge.Core.Services;
-using FortniteForge.Core.Services.MapGeneration;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Safety;
+using WellVersed.Core.Services;
+using WellVersed.Core.Services.MapGeneration;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.CLI;
+namespace WellVersed.CLI;
 
 /// <summary>
-/// FortniteForge CLI — manual interface for testing, debugging, and standalone use.
+/// WellVersed CLI — manual interface for testing, debugging, and standalone use.
 ///
 /// Usage:
-///   fortniteforge status
-///   fortniteforge list [--folder path] [--class type]
-///   fortniteforge inspect asset-path
-///   fortniteforge devices level-path
-///   fortniteforge device device-name [--level path]
-///   fortniteforge audit [--level path]
-///   fortniteforge staged [--apply | --discard]
-///   fortniteforge build
-///   fortniteforge build-log
-///   fortniteforge backups [--asset path]
-///   fortniteforge schema device-type
-///   fortniteforge init project-path
+///   wellversed status
+///   wellversed list [--folder path] [--class type]
+///   wellversed inspect asset-path
+///   wellversed devices level-path
+///   wellversed device device-name [--level path]
+///   wellversed audit [--level path]
+///   wellversed staged [--apply | --discard]
+///   wellversed build
+///   wellversed build-log
+///   wellversed backups [--asset path]
+///   wellversed schema device-type
+///   wellversed init project-path
 /// </summary>
 public class Program
 {
@@ -50,7 +50,7 @@ public class Program
 
     public static async Task<int> Main(string[] args)
     {
-        var rootCommand = new RootCommand("FortniteForge — AI-powered UEFN project tools")
+        var rootCommand = new RootCommand("WellVersed — AI-powered UEFN project tools")
         {
             BuildStatusCommand(),
             BuildListCommand(),
@@ -76,21 +76,21 @@ public class Program
     // Track the last created service bundle for cleanup
     private static ServiceBundle? _lastServices;
 
-    private static (ForgeConfig Config, ServiceBundle Services, UefnDetector Detector) LoadServices(string? configPath = null)
+    private static (WellVersedConfig Config, ServiceBundle Services, UefnDetector Detector) LoadServices(string? configPath = null)
     {
         // Priority: explicit arg > env var > walk parent dirs
-        configPath ??= Environment.GetEnvironmentVariable("FORTNITEFORGE_CONFIG")
+        configPath ??= Environment.GetEnvironmentVariable("WELLVERSED_CONFIG")
                        ?? FindConfigFile();
-        ForgeConfig config;
+        WellVersedConfig config;
 
         if (configPath != null && File.Exists(configPath))
         {
-            config = ForgeConfig.Load(configPath);
+            config = WellVersedConfig.Load(configPath);
         }
         else
         {
-            Console.Error.WriteLine("Warning: No forge.config.json found. Run 'fortniteforge init' to create one.");
-            config = new ForgeConfig();
+            Console.Error.WriteLine("Warning: No forge.config.json found. Run 'wellversed init' to create one.");
+            config = new WellVersedConfig();
         }
 
         var loggerFactory = LoggerFactory.Create(builder =>
@@ -107,8 +107,9 @@ public class Program
         var digestService = new DigestService(config, loggerFactory.CreateLogger<DigestService>());
         var deviceService = new DeviceService(config, assetService, digestService, loggerFactory.CreateLogger<DeviceService>());
         var auditService = new AuditService(config, deviceService, assetService, digestService, guard, loggerFactory.CreateLogger<AuditService>());
-        var placementService = new ActorPlacementService(config, guard, fileAccess, backupService, loggerFactory.CreateLogger<ActorPlacementService>());
-        var modService = new ModificationService(config, assetService, backupService, guard, fileAccess, digestService, placementService, loggerFactory.CreateLogger<ModificationService>());
+        var assetValidator = new AssetValidator(loggerFactory.CreateLogger<AssetValidator>());
+        var placementService = new ActorPlacementService(config, guard, fileAccess, backupService, assetValidator, loggerFactory.CreateLogger<ActorPlacementService>());
+        var modService = new ModificationService(config, assetService, backupService, guard, fileAccess, digestService, placementService, assetValidator, loggerFactory.CreateLogger<ModificationService>());
         var buildService = new BuildService(config, loggerFactory.CreateLogger<BuildService>());
         var catalog = new AssetCatalog(config, loggerFactory.CreateLogger<AssetCatalog>());
         var mapGenerator = new MapGenerator(config, catalog, placementService, backupService, loggerFactory.CreateLogger<MapGenerator>());
@@ -120,7 +121,7 @@ public class Program
 
     // ========= Status Line =========
 
-    private static void PrintStatusLine(ForgeConfig config, UefnDetector detector)
+    private static void PrintStatusLine(WellVersedConfig config, UefnDetector detector)
     {
         var status = detector.GetStatus();
         var isConfigured = !string.IsNullOrEmpty(config.ProjectPath) && Directory.Exists(config.ProjectPath);
@@ -142,11 +143,11 @@ public class Program
         if (isConfigured)
         {
             var projectType = config.IsUefnProject ? "UEFN" : "UE";
-            Console.Error.WriteLine($"{bold}{cyan}  FortniteForge{reset}  {status.ProjectName} {dim}({projectType}){reset}");
+            Console.Error.WriteLine($"{bold}{cyan}  WellVersed{reset}  {status.ProjectName} {dim}({projectType}){reset}");
         }
         else
         {
-            Console.Error.WriteLine($"{bold}{cyan}  FortniteForge{reset}  {yellow}No project configured{reset}");
+            Console.Error.WriteLine($"{bold}{cyan}  WellVersed{reset}  {yellow}No project configured{reset}");
         }
 
         // Status indicators
@@ -445,7 +446,7 @@ public class Program
         cmd.SetHandler((string projectPath, bool readOnly) =>
         {
             var fullPath = Path.GetFullPath(projectPath);
-            var config = new ForgeConfig
+            var config = new WellVersedConfig
             {
                 ProjectPath = fullPath,
                 ReadOnly = readOnly,
@@ -486,6 +487,8 @@ public class Program
     private static AssetPreviewService? _previewService;
     // Mesh export service for GLB extraction from PAK files
     private static MeshExportService? _meshExportService;
+    // UEFN Bridge — HTTP client connecting to the Python bridge inside UEFN
+    private static UefnBridge? _uefnBridge;
 
     private static Command BuildSidecarCommand()
     {
@@ -493,7 +496,7 @@ public class Program
         cmd.SetHandler(async (InvocationContext ctx) =>
         {
             var configPath = ctx.ParseResult.GetValueForOption(ConfigOption);
-            ForgeConfig? config = null;
+            WellVersedConfig? config = null;
             ServiceBundle? services = null;
 
             _sidecarProjects = new SidecarProjectManager();
@@ -505,7 +508,7 @@ public class Program
                 var active = _sidecarProjects.GetActiveProject();
                 if (active != null)
                 {
-                    config = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
+                    config = new WellVersedConfig { ProjectPath = active.ProjectPath, ReadOnly = active.Type == "Library" };
                     // Don't call LoadServices(null) — it would overwrite config with an empty one.
                     // Services are built on-demand by BuildActiveProjectServices() for each request.
                 }
@@ -517,12 +520,12 @@ public class Program
                 }
                 else
                 {
-                    config = new ForgeConfig();
+                    config = new WellVersedConfig();
                 }
             }
             catch
             {
-                config = new ForgeConfig();
+                config = new WellVersedConfig();
             }
 
             // Signal ready
@@ -556,7 +559,7 @@ public class Program
         return cmd;
     }
 
-    private static SidecarResponse HandleSidecarRequest(SidecarRequest req, ForgeConfig config, ServiceBundle? services)
+    private static SidecarResponse HandleSidecarRequest(SidecarRequest req, WellVersedConfig config, ServiceBundle? services)
     {
         try
         {
@@ -605,6 +608,28 @@ public class Program
                 "preview-export-mesh" => HandlePreviewExportMesh(req),
                 "preview-export-mesh-batch" => HandlePreviewExportMeshBatch(req),
                 "preview-status" => HandlePreviewStatus(req),
+                // System extraction
+                "analyze-level-systems" => HandleAnalyzeLevelSystems(req),
+                "analyze-project-systems" => HandleAnalyzeProjectSystems(req),
+                // Project diff / snapshots
+                "take-snapshot" => HandleTakeSnapshot(req),
+                "list-snapshots" => HandleListSnapshots(req),
+                "compare-snapshot" => HandleCompareSnapshot(req),
+                // Device Encyclopedia
+                "encyclopedia-search" => HandleEncyclopediaSearch(req),
+                "encyclopedia-device-reference" => HandleEncyclopediaDeviceReference(req),
+                "encyclopedia-common-configs" => HandleEncyclopediaCommonConfigs(req),
+                "encyclopedia-list-devices" => HandleEncyclopediaListDevices(req),
+                // File watcher integration (called from Rust side)
+                "watch-project" => HandleWatchProject(req),
+                "unwatch-project" => HandleUnwatchProject(req),
+                // UEFN Bridge passthrough
+                "bridge-connect" => HandleBridgeConnect(req),
+                "bridge-status" => HandleBridgeStatus(req),
+                "bridge-command" => HandleBridgeCommand(req),
+                // Device Behavior Simulator
+                "simulate-game-loop" => HandleSimulateGameLoop(req),
+                "simulate-event" => HandleSimulateEvent(req),
                 _ => new SidecarResponse(req.Id, Error: new SidecarError("UNKNOWN_METHOD", $"Unknown method: {req.Method}"))
             };
         }
@@ -632,7 +657,7 @@ public class Program
                 levelCount = 0
             });
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.None));
         var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
         var status = detector.GetStatus();
@@ -743,7 +768,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
         if (!Directory.Exists(cfg.ContentPath))
             return new SidecarResponse(req.Id, Array.Empty<object>());
 
@@ -769,7 +794,7 @@ public class Program
         // Build services for the active project if we don't have them or they're for a different project
         if (services == null)
         {
-            var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
+            var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
             var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
             var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
             var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
@@ -811,7 +836,7 @@ public class Program
     /// Returns (config, assetService, deviceService, fileAccess) or an error response.
     /// The caller must dispose fileAccess when done.
     /// </summary>
-    private static (ForgeConfig Cfg, AssetService Asset, DeviceService Device, SafeFileAccess FileAccess)?
+    private static (WellVersedConfig Cfg, AssetService Asset, DeviceService Device, SafeFileAccess FileAccess)?
         BuildActiveProjectServices(out SidecarResponse? errorResponse, string requestId)
     {
         errorResponse = null;
@@ -823,7 +848,7 @@ public class Program
             return null;
         }
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
         var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
@@ -842,7 +867,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
         var basePath = cfg.ContentPath;
 
         // Optional subfolder param
@@ -917,7 +942,7 @@ public class Program
             var active2 = _sidecarProjects!.GetActiveProject();
             if (active2 != null)
             {
-                var projCfg = new ForgeConfig { ProjectPath = active2.ProjectPath };
+                var projCfg = new WellVersedConfig { ProjectPath = active2.ProjectPath };
                 var resolved = Path.Combine(projCfg.ContentPath, assetPath);
                 if (File.Exists(resolved))
                     assetPath = resolved;
@@ -1238,7 +1263,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
         if (!Directory.Exists(cfg.ContentPath))
             return new SidecarResponse(req.Id, new { assets = Array.Empty<object>() });
 
@@ -1283,7 +1308,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
         if (!Directory.Exists(cfg.ContentPath))
             return new SidecarResponse(req.Id, new { types = Array.Empty<object>() });
 
@@ -1362,7 +1387,7 @@ public class Program
             var active = pm.GetActiveProject();
             if (active != null)
             {
-                var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+                var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
                 var resolved = Path.Combine(cfg.ContentPath, versePath);
                 if (File.Exists(resolved))
                     versePath = resolved;
@@ -1393,7 +1418,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath, ReadOnly = true, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
         var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
@@ -1420,7 +1445,7 @@ public class Program
 
     /// <summary>
     /// Simplified actor name cleaning — mirrors DeviceClassifier.CleanActorName
-    /// without taking a dependency on FortniteForge.Web.
+    /// without taking a dependency on WellVersed.Web.
     /// </summary>
     private static string CleanActorNameSimple(string rawName, string className)
     {
@@ -1442,7 +1467,7 @@ public class Program
 
     /// <summary>
     /// Simplified device detection — mirrors DeviceClassifier.IsDevice
-    /// without taking a dependency on FortniteForge.Web.
+    /// without taking a dependency on WellVersed.Web.
     /// </summary>
     private static bool IsDeviceSimple(string className)
     {
@@ -1511,7 +1536,7 @@ public class Program
         });
     }
 
-    private static SidecarResponse HandleBuildUasset(SidecarRequest req, ForgeConfig config)
+    private static SidecarResponse HandleBuildUasset(SidecarRequest req, WellVersedConfig config)
     {
         var specJson = req.Params?.GetProperty("spec").GetRawText()
             ?? throw new ArgumentException("Missing 'spec' parameter");
@@ -1572,7 +1597,7 @@ public class Program
         if (active == null)
             return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
 
-        var cfg = new ForgeConfig { ProjectPath = active.ProjectPath };
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
         if (!Directory.Exists(cfg.ContentPath))
             return new SidecarResponse(req.Id, new { widgets = Array.Empty<object>() });
 
@@ -1611,7 +1636,7 @@ public class Program
             return new SidecarResponse(req.Id, Error: new SidecarError("FILE_NOT_FOUND", $"File not found: {path}"));
 
         // Build a temporary SafeFileAccess for copy-on-read
-        var config = new ForgeConfig { ProjectPath = Path.GetDirectoryName(path) ?? "", ReadOnly = true };
+        var config = new WellVersedConfig { ProjectPath = Path.GetDirectoryName(path) ?? "", ReadOnly = true };
         var detector = new UefnDetector(config, Microsoft.Extensions.Logging.Abstractions.NullLogger<UefnDetector>.Instance);
         using var fileAccess = new SafeFileAccess(config, detector,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<SafeFileAccess>.Instance);
@@ -1674,7 +1699,7 @@ public class Program
         return new SidecarResponse(req.Id, new { spec = System.Text.Json.JsonDocument.Parse(specJson).RootElement });
     }
 
-    private static SidecarResponse HandleWidgetTexture(SidecarRequest req, ForgeConfig config)
+    private static SidecarResponse HandleWidgetTexture(SidecarRequest req, WellVersedConfig config)
     {
         var texRef = req.Params?.GetProperty("texturePath").GetString()
             ?? throw new ArgumentException("Missing 'texturePath' parameter");
@@ -1907,10 +1932,10 @@ public class Program
 
         var index = indexer.BuildIndex(lib.Path);
 
-        // Save index to ~/.fortniteforge/library-index-{id}.json
+        // Save index to ~/.wellversed/library-index-{id}.json
         var indexPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", $"library-index-{lib.Id}.json");
+            ".wellversed", $"library-index-{lib.Id}.json");
         indexer.SaveIndex(indexPath);
 
         // Update library entry stats
@@ -1938,7 +1963,7 @@ public class Program
 
         var indexPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", $"library-index-{lib.Id}.json");
+            ".wellversed", $"library-index-{lib.Id}.json");
 
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
@@ -1978,7 +2003,7 @@ public class Program
 
         var indexPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", $"library-index-{lib.Id}.json");
+            ".wellversed", $"library-index-{lib.Id}.json");
 
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
@@ -2092,7 +2117,7 @@ public class Program
 
         var indexPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", $"library-index-{lib.Id}.json");
+            ".wellversed", $"library-index-{lib.Id}.json");
 
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
@@ -2236,6 +2261,619 @@ static SidecarResponse HandlePreviewExportMeshBatch(SidecarRequest req)
     }
     return new SidecarResponse(req.Id, new { results, total = deviceClasses.Count, exported = exportedCount });
 }
+
+static SidecarResponse HandleAnalyzeLevelSystems(SidecarRequest req)
+{
+    var result = BuildActiveProjectServices(out var errorResponse, req.Id);
+    if (result == null) return errorResponse!;
+    var (cfg, _, deviceService, _) = result.Value;
+
+    var levelPath = req.Params?.GetProperty("levelPath").GetString() ?? throw new ArgumentException("Missing 'levelPath'");
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var extractor = new SystemExtractor(cfg, deviceService, loggerFactory.CreateLogger<SystemExtractor>());
+    var analysis = extractor.AnalyzeLevel(levelPath);
+    return new SidecarResponse(req.Id, new
+    {
+        levelPath = Path.GetFileName(analysis.LevelPath),
+        totalDevices = analysis.TotalDevices,
+        systemsFound = analysis.Systems.Count,
+        systems = analysis.Systems.Select(s => new
+        {
+            s.Name, s.Category, s.DetectionMethod, s.Confidence, s.DeviceCount,
+            devices = s.Devices.Select(d => new { d.Role, d.DeviceClass, d.DeviceType, d.Label, offset = d.Offset.ToString(), propertyCount = d.Properties.Count }),
+            wiring = s.Wiring.Select(w => new { connection = $"{w.SourceRole}.{w.OutputEvent} → {w.TargetRole}.{w.InputAction}", w.Channel })
+        }),
+        errors = analysis.Errors
+    });
+}
+
+static SidecarResponse HandleAnalyzeProjectSystems(SidecarRequest req)
+{
+    var result = BuildActiveProjectServices(out var errorResponse, req.Id);
+    if (result == null) return errorResponse!;
+    var (cfg, _, deviceService, _) = result.Value;
+
+    var projectPath = cfg.ProjectPath;
+    if (req.Params?.TryGetProperty("projectPath", out var ppEl) == true)
+        projectPath = ppEl.GetString() ?? projectPath;
+
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var extractor = new SystemExtractor(cfg, deviceService, loggerFactory.CreateLogger<SystemExtractor>());
+    var analysis = extractor.AnalyzeProject(projectPath);
+    return new SidecarResponse(req.Id, new
+    {
+        projectPath = Path.GetFileName(analysis.ProjectPath),
+        levelsScanned = analysis.LevelCount,
+        totalSystems = analysis.Systems.Count,
+        uniquePatterns = analysis.UniqueSystems.Count,
+        systems = analysis.UniqueSystems.Select(s => new
+        {
+            s.Name, s.Category, s.DetectionMethod, s.Confidence, s.DeviceCount, s.Frequency,
+            sourceLevel = Path.GetFileName(s.SourceLevel ?? ""),
+            deviceTypes = s.Devices.Select(d => d.DeviceType).Distinct(),
+            wiringConnections = s.Wiring.Count
+        }),
+        errors = analysis.Errors
+    });
+}
+
+// ========= Device Encyclopedia Handlers =========
+
+static SidecarResponse HandleEncyclopediaSearch(SidecarRequest req)
+{
+    var query = req.Params?.GetProperty("query").GetString()
+        ?? throw new ArgumentException("Missing 'query' parameter");
+
+    var encyclopedia = BuildEncyclopediaService();
+    var results = encyclopedia.SearchDevices(query);
+
+    return new SidecarResponse(req.Id, new
+    {
+        query,
+        resultCount = results.Count,
+        results = results.Select(r => new
+        {
+            r.DeviceName,
+            r.DisplayName,
+            r.ParentClass,
+            r.PropertyCount,
+            r.EventCount,
+            r.FunctionCount,
+            r.HasCommonConfigs,
+            r.UsageCount,
+            matchedProperties = r.MatchedProperties.Count > 0 ? r.MatchedProperties : null,
+            matchedEvents = r.MatchedEvents.Count > 0 ? r.MatchedEvents : null,
+            r.MatchContext
+        })
+    });
+}
+
+static SidecarResponse HandleEncyclopediaDeviceReference(SidecarRequest req)
+{
+    var deviceClass = req.Params?.GetProperty("deviceClass").GetString()
+        ?? throw new ArgumentException("Missing 'deviceClass' parameter");
+
+    var encyclopedia = BuildEncyclopediaService();
+    var reference = encyclopedia.GetDeviceReference(deviceClass);
+
+    if (reference == null)
+    {
+        var suggestions = encyclopedia.SearchDevices(deviceClass);
+        return new SidecarResponse(req.Id, new
+        {
+            error = $"No reference found for '{deviceClass}'.",
+            suggestions = suggestions.Take(5).Select(s => new { s.DeviceName, s.DisplayName })
+        });
+    }
+
+    return new SidecarResponse(req.Id, new
+    {
+        reference.DeviceName,
+        reference.DisplayName,
+        reference.ParentClass,
+        reference.Description,
+        reference.SourceFile,
+        reference.TotalUsageCount,
+        reference.ProjectsUsedIn,
+        properties = reference.Properties.Select(p => new
+        {
+            p.Name,
+            p.Type,
+            p.DefaultValue,
+            p.IsEditable,
+            p.Description,
+            usagePercent = p.UsagePercent > 0 ? p.UsagePercent : (double?)null,
+            commonValues = p.CommonValues.Count > 0 ? p.CommonValues : null,
+            relatedProperties = p.RelatedProperties.Count > 0 ? p.RelatedProperties : null
+        }),
+        reference.Events,
+        reference.Functions,
+        commonConfigurations = reference.CommonConfigurations.Count > 0
+            ? reference.CommonConfigurations.Select(c => new
+            {
+                c.Name,
+                c.Description,
+                c.Properties,
+                c.Tags
+            })
+            : null
+    });
+}
+
+static SidecarResponse HandleEncyclopediaCommonConfigs(SidecarRequest req)
+{
+    var deviceClass = req.Params?.GetProperty("deviceClass").GetString()
+        ?? throw new ArgumentException("Missing 'deviceClass' parameter");
+
+    var encyclopedia = BuildEncyclopediaService();
+    var configs = encyclopedia.GetCommonConfigurations(deviceClass);
+
+    if (configs.Count == 0)
+    {
+        var allDevices = encyclopedia.ListAllDevices();
+        var withConfigs = allDevices.Where(d => d.HasCommonConfigs).Select(d => d.DisplayName).ToList();
+        return new SidecarResponse(req.Id, new
+        {
+            error = $"No common configurations found for '{deviceClass}'.",
+            devicesWithConfigs = withConfigs
+        });
+    }
+
+    return new SidecarResponse(req.Id, new
+    {
+        deviceClass,
+        configCount = configs.Count,
+        configurations = configs.Select(c => new
+        {
+            c.Name,
+            c.Description,
+            c.Properties,
+            c.Tags
+        })
+    });
+}
+
+static SidecarResponse HandleEncyclopediaListDevices(SidecarRequest req)
+{
+    var encyclopedia = BuildEncyclopediaService();
+    var devices = encyclopedia.ListAllDevices();
+
+    return new SidecarResponse(req.Id, new
+    {
+        deviceCount = devices.Count,
+        devices = devices.Select(d => new
+        {
+            d.Name,
+            d.DisplayName,
+            d.ParentClass,
+            d.PropertyCount,
+            d.EventCount,
+            d.FunctionCount,
+            d.UsageCount,
+            d.HasCommonConfigs
+        })
+    });
+}
+
+static DeviceEncyclopedia BuildEncyclopediaService()
+{
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var indexer = new LibraryIndexer(loggerFactory.CreateLogger<LibraryIndexer>());
+
+    // Try to load active library index for usage stats
+    var lm = _sidecarLibraries;
+    if (lm != null)
+    {
+        var lib = lm.GetActiveLibrary();
+        if (lib != null)
+        {
+            var indexPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".wellversed", $"library-index-{lib.Id}.json");
+            indexer.LoadIndex(indexPath);
+        }
+    }
+
+    // Build digest service from active project
+    DigestService digestService;
+    var pm = _sidecarProjects;
+    var active = pm?.GetActiveProject();
+    if (active != null)
+    {
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
+        digestService = new DigestService(cfg, loggerFactory.CreateLogger<DigestService>());
+    }
+    else
+    {
+        digestService = new DigestService(new WellVersedConfig(), loggerFactory.CreateLogger<DigestService>());
+    }
+
+    var encyclopedia = new DeviceEncyclopedia(digestService, indexer, loggerFactory.CreateLogger<DeviceEncyclopedia>());
+    return encyclopedia;
+}
+
+// ========= Project Diff / Snapshot Handlers =========
+
+static SidecarResponse HandleTakeSnapshot(SidecarRequest req)
+{
+    var pm = _sidecarProjects!;
+    var active = pm.GetActiveProject();
+    if (active == null)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+    string? description = null;
+    if (req.Params?.TryGetProperty("description", out var descEl) == true)
+        description = descEl.GetString();
+
+    var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+    var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+    var diffService = new ProjectDiffService(cfg, fileAccess, loggerFactory.CreateLogger<ProjectDiffService>());
+
+    var snapshot = diffService.TakeSnapshot(active.ProjectPath, description);
+
+    return new SidecarResponse(req.Id, new
+    {
+        id = snapshot.Id,
+        description = snapshot.Description,
+        timestamp = snapshot.Timestamp,
+        projectName = snapshot.ProjectName,
+        fileCount = snapshot.Files.Count,
+        uassetCount = snapshot.UassetCount,
+        verseCount = snapshot.VerseCount,
+        snapshotPath = snapshot.SnapshotPath,
+    });
+}
+
+static SidecarResponse HandleListSnapshots(SidecarRequest req)
+{
+    var pm = _sidecarProjects!;
+    var active = pm.GetActiveProject();
+    if (active == null)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+    var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+    var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+    var diffService = new ProjectDiffService(cfg, fileAccess, loggerFactory.CreateLogger<ProjectDiffService>());
+
+    var snapshots = diffService.ListSnapshots(active.ProjectPath);
+
+    return new SidecarResponse(req.Id, new
+    {
+        count = snapshots.Count,
+        snapshots = snapshots.Select(s => new
+        {
+            s.Id,
+            s.Description,
+            s.Timestamp,
+            s.ProjectName,
+            s.FileCount,
+            s.UassetCount,
+            s.VerseCount,
+            s.SnapshotPath,
+        })
+    });
+}
+
+static SidecarResponse HandleCompareSnapshot(SidecarRequest req)
+{
+    var pm = _sidecarProjects!;
+    var active = pm.GetActiveProject();
+    if (active == null)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+    var snapshotId = req.Params?.GetProperty("snapshotId").GetString()
+        ?? throw new ArgumentException("Missing 'snapshotId' parameter");
+
+    var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+    var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+    var diffService = new ProjectDiffService(cfg, fileAccess, loggerFactory.CreateLogger<ProjectDiffService>());
+
+    // Resolve snapshot ID to path
+    string? snapshotPath = null;
+    if (File.Exists(snapshotId))
+    {
+        snapshotPath = snapshotId;
+    }
+    else
+    {
+        var snapshots = diffService.ListSnapshots(active.ProjectPath);
+        var match = snapshots.FirstOrDefault(s =>
+            s.Id.Equals(snapshotId, StringComparison.OrdinalIgnoreCase));
+        snapshotPath = match?.SnapshotPath;
+    }
+
+    if (snapshotPath == null)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", $"Snapshot not found: {snapshotId}"));
+
+    var diff = diffService.CompareToSnapshot(active.ProjectPath, snapshotPath);
+
+    return new SidecarResponse(req.Id, new
+    {
+        diff.Description,
+        olderTimestamp = diff.OlderTimestamp,
+        newerTimestamp = diff.NewerTimestamp,
+        summary = new
+        {
+            added = diff.AddedCount,
+            modified = diff.ModifiedCount,
+            deleted = diff.DeletedCount,
+            totalPropertyChanges = diff.TotalPropertyChanges,
+        },
+        changes = diff.Changes.Select(c => new
+        {
+            filePath = c.FilePath,
+            type = c.Type.ToString(),
+            c.ActorClass,
+            c.ActorName,
+            oldSize = c.OldSize,
+            newSize = c.NewSize,
+            linesAdded = c.LinesAdded,
+            linesRemoved = c.LinesRemoved,
+            propertyChanges = c.PropertyChanges?.Select(p => new
+            {
+                p.ActorName,
+                p.PropertyName,
+                p.OldValue,
+                p.NewValue
+            })
+        })
+    });
+}
+
+// ========= File Watcher Integration Handlers =========
+
+static SidecarResponse HandleWatchProject(SidecarRequest req)
+{
+    var pm = _sidecarProjects!;
+    var active = pm.GetActiveProject();
+    if (active == null)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+    // The Rust side handles the actual file watching.
+    // This handler acknowledges the intent and takes an initial snapshot.
+    var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath };
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+    var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+    var diffService = new ProjectDiffService(cfg, fileAccess, loggerFactory.CreateLogger<ProjectDiffService>());
+
+    try
+    {
+        var snapshot = diffService.TakeSnapshot(active.ProjectPath, "Watch started — baseline snapshot");
+        return new SidecarResponse(req.Id, new
+        {
+            watching = true,
+            projectPath = active.ProjectPath,
+            baselineSnapshot = new
+            {
+                id = snapshot.Id,
+                description = snapshot.Description,
+                timestamp = snapshot.Timestamp,
+                fileCount = snapshot.Files.Count,
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        // Still report watching even if baseline snapshot fails
+        return new SidecarResponse(req.Id, new
+        {
+            watching = true,
+            projectPath = active.ProjectPath,
+            baselineSnapshotError = ex.Message
+        });
+    }
+}
+
+static SidecarResponse HandleUnwatchProject(SidecarRequest req)
+{
+    return new SidecarResponse(req.Id, new { watching = false });
+}
+
+// ========= UEFN Bridge Handlers =========
+
+private static UefnBridge EnsureBridge()
+{
+    if (_uefnBridge == null)
+    {
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        _uefnBridge = new UefnBridge(loggerFactory.CreateLogger<UefnBridge>());
+    }
+    return _uefnBridge;
+}
+
+private static SidecarResponse HandleBridgeConnect(SidecarRequest req)
+{
+    var bridge = EnsureBridge();
+    int port = 9220;
+    if (req.Params.HasValue)
+    {
+        try
+        {
+            if (req.Params.Value.TryGetProperty("port", out var portEl))
+                port = portEl.GetInt32();
+        }
+        catch { }
+    }
+
+    var result = bridge.Connect(port).GetAwaiter().GetResult();
+    return new SidecarResponse(req.Id, new
+    {
+        connected = result.IsOk,
+        status = result.Status,
+        error = result.Error,
+        data = result.Data
+    });
+}
+
+private static SidecarResponse HandleBridgeStatus(SidecarRequest req)
+{
+    var bridge = EnsureBridge();
+    var connected = bridge.IsConnected().GetAwaiter().GetResult();
+    if (!connected)
+    {
+        return new SidecarResponse(req.Id, new
+        {
+            connected = false,
+            message = "Bridge not connected"
+        });
+    }
+
+    var status = bridge.SendCommand("status").GetAwaiter().GetResult();
+    return new SidecarResponse(req.Id, new
+    {
+        connected = true,
+        bridgeStatus = status.Status,
+        data = status.Data,
+        error = status.Error
+    });
+}
+
+private static SidecarResponse HandleBridgeCommand(SidecarRequest req)
+{
+    var bridge = EnsureBridge();
+    if (!bridge.IsConnected().GetAwaiter().GetResult())
+    {
+        return new SidecarResponse(req.Id, Error: new SidecarError("NOT_CONNECTED", "UEFN bridge not connected. Call bridge-connect first."));
+    }
+
+    string command = "status";
+    object? @params = null;
+
+    if (req.Params.HasValue)
+    {
+        try
+        {
+            if (req.Params.Value.TryGetProperty("command", out var cmdEl))
+                command = cmdEl.GetString() ?? "status";
+            if (req.Params.Value.TryGetProperty("params", out var paramsEl))
+                @params = paramsEl;
+        }
+        catch { }
+    }
+
+    var result = bridge.SendCommand(command, @params).GetAwaiter().GetResult();
+    return new SidecarResponse(req.Id, new
+    {
+        success = result.IsOk,
+        status = result.Status,
+        data = result.Data,
+        error = result.Error
+    });
+}
+
+// ========= Device Behavior Simulator Handlers =========
+
+static SidecarResponse HandleSimulateGameLoop(SidecarRequest req)
+{
+    var svcResult = BuildActiveProjectServices(out var errorResponse, req.Id);
+    if (svcResult == null) return errorResponse!;
+    var (cfg, _, deviceService, fileAccess) = svcResult.Value;
+
+    try
+    {
+        var levelPath = req.Params?.GetProperty("levelPath").GetString()
+            ?? throw new ArgumentException("Missing 'levelPath'");
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var digestService = new DigestService(cfg, loggerFactory.CreateLogger<DigestService>());
+        var simulator = new DeviceSimulator(cfg, deviceService, digestService, loggerFactory.CreateLogger<DeviceSimulator>());
+
+        var simResult = simulator.SimulateGameLoop(levelPath);
+
+        return new SidecarResponse(req.Id, new
+        {
+            initialTrigger = simResult.InitialTrigger,
+            stepCount = simResult.Steps.Count,
+            totalSimulatedTime = simResult.TotalSimulatedTime,
+            reachesEndGame = simResult.ReachesEndGame,
+            warnings = simResult.Warnings,
+            dfa = simResult.DFA == null ? null : new
+            {
+                nodes = simResult.DFA.Nodes.Select(n => new
+                {
+                    n.DeviceName, n.DeviceClass, n.DeviceType,
+                    currentPhase = n.CurrentPhase.ToString(),
+                    n.AvailableEvents, n.AvailableActions, n.X, n.Y
+                }),
+                edges = simResult.DFA.Edges.Select(e => new
+                {
+                    e.SourceDevice, e.Event, e.TargetDevice, e.Action,
+                    resultingPhase = e.ResultingPhase.ToString(),
+                    e.IsConditional, e.Condition
+                }),
+                simResult.DFA.StateHash,
+                historyCount = simResult.DFA.History.Count
+            },
+            steps = simResult.Steps.Select(s => new
+            {
+                s.StepNumber, s.SimulatedTime, triggerDevice = s.TriggerDevice,
+                @event = s.Event, targetDevice = s.TargetDevice, action = s.Action,
+                oldPhase = s.OldPhase.ToString(), newPhase = s.NewPhase.ToString(),
+                s.Description, s.VerseHandlersCalled, s.IsConditional, s.Condition
+            }),
+            finalStates = simResult.FinalStates.ToDictionary(
+                kvp => kvp.Key, kvp => kvp.Value.ToString())
+        });
+    }
+    finally
+    {
+        fileAccess.Dispose();
+    }
+}
+
+static SidecarResponse HandleSimulateEvent(SidecarRequest req)
+{
+    var svcResult = BuildActiveProjectServices(out var errorResponse, req.Id);
+    if (svcResult == null) return errorResponse!;
+    var (cfg, _, deviceService, fileAccess) = svcResult.Value;
+
+    try
+    {
+        var levelPath = req.Params?.GetProperty("levelPath").GetString()
+            ?? throw new ArgumentException("Missing 'levelPath'");
+        var deviceName = req.Params?.GetProperty("deviceName").GetString()
+            ?? throw new ArgumentException("Missing 'deviceName'");
+        var eventName = req.Params?.GetProperty("eventName").GetString()
+            ?? throw new ArgumentException("Missing 'eventName'");
+
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var digestService = new DigestService(cfg, loggerFactory.CreateLogger<DigestService>());
+        var simulator = new DeviceSimulator(cfg, deviceService, digestService, loggerFactory.CreateLogger<DeviceSimulator>());
+
+        var world = simulator.BuildSimulation(levelPath);
+        var simResult = simulator.SimulateEvent(world, deviceName, eventName);
+
+        return new SidecarResponse(req.Id, new
+        {
+            initialTrigger = simResult.InitialTrigger,
+            stepCount = simResult.Steps.Count,
+            totalSimulatedTime = simResult.TotalSimulatedTime,
+            reachesEndGame = simResult.ReachesEndGame,
+            warnings = simResult.Warnings,
+            steps = simResult.Steps.Select(s => new
+            {
+                s.StepNumber, s.SimulatedTime, triggerDevice = s.TriggerDevice,
+                @event = s.Event, targetDevice = s.TargetDevice, action = s.Action,
+                oldPhase = s.OldPhase.ToString(), newPhase = s.NewPhase.ToString(),
+                s.Description, s.VerseHandlersCalled, s.IsConditional, s.Condition
+            }),
+            finalStates = simResult.FinalStates.ToDictionary(
+                kvp => kvp.Key, kvp => kvp.Value.ToString())
+        });
+    }
+    finally
+    {
+        fileAccess.Dispose();
+    }
+}
+
 }
 
 internal record ServiceBundle(
@@ -2287,7 +2925,7 @@ internal class SidecarProjectManager
     {
         _storagePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", "projects.json");
+            ".wellversed", "projects.json");
         _store = Load();
     }
 
@@ -2306,7 +2944,7 @@ internal class SidecarProjectManager
         if (existing != null)
             return existing;
 
-        var config = new ForgeConfig { ProjectPath = fullPath };
+        var config = new WellVersedConfig { ProjectPath = fullPath };
         var entry = new SidecarProjectEntry
         {
             Id = Guid.NewGuid().ToString("N")[..8],
@@ -2365,10 +3003,10 @@ internal class SidecarProjectManager
 
     public List<SidecarDiscoveredProject> ScanDirectory(string searchPath)
     {
-        var projectPaths = ForgeConfig.DiscoverProjects(searchPath);
+        var projectPaths = WellVersedConfig.DiscoverProjects(searchPath);
         return projectPaths.Select(p =>
         {
-            var cfg = new ForgeConfig { ProjectPath = p };
+            var cfg = new WellVersedConfig { ProjectPath = p };
             var alreadyAdded = _store.Projects.Any(ex =>
                 string.Equals(Path.GetFullPath(ex.ProjectPath), Path.GetFullPath(p), StringComparison.OrdinalIgnoreCase));
 
@@ -2475,7 +3113,7 @@ internal class SidecarLibraryManager
     {
         _storagePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", "libraries.json");
+            ".wellversed", "libraries.json");
         _store = Load();
     }
 

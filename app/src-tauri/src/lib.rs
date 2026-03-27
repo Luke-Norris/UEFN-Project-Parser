@@ -1,4 +1,5 @@
 mod commands;
+mod file_watcher;
 mod lsp_bridge;
 mod sidecar;
 
@@ -6,7 +7,7 @@ use commands::AppState;
 use lsp_bridge::LspBridge;
 use sidecar::ForgeBridge;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
 pub fn run() {
@@ -57,6 +58,7 @@ pub fn run() {
                 lsp,
                 assets_dir,
                 fonts_dir,
+                file_watcher: Mutex::new(None),
             });
 
             Ok(())
@@ -98,6 +100,21 @@ pub fn run() {
             commands::forge_get_library_assets_by_type,
             commands::forge_browse_library_dir,
             commands::forge_search_library_index,
+            // Device Encyclopedia commands
+            commands::forge_encyclopedia_search,
+            commands::forge_encyclopedia_device_reference,
+            commands::forge_encyclopedia_common_configs,
+            commands::forge_encyclopedia_list_devices,
+            // Device Behavior Simulator commands
+            commands::forge_simulate_game_loop,
+            commands::forge_simulate_event,
+            // System extraction commands
+            commands::forge_analyze_level_systems,
+            commands::forge_analyze_project_systems,
+            // Project diff / snapshot commands
+            commands::forge_take_snapshot,
+            commands::forge_list_snapshots,
+            commands::forge_compare_snapshot,
             // CUE4Parse preview commands
             commands::forge_preview_init,
             commands::forge_preview_status,
@@ -129,6 +146,14 @@ pub fn run() {
             commands::lsp_definition,
             commands::lsp_document_symbols,
             commands::lsp_signature_help,
+            // File watcher commands
+            commands::start_file_watcher,
+            commands::stop_file_watcher,
+            commands::file_watcher_status,
+            // UEFN Bridge commands
+            commands::forge_bridge_connect,
+            commands::forge_bridge_status,
+            commands::forge_bridge_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running WellVersed");

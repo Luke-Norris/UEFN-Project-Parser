@@ -1,14 +1,14 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class DigestServiceTests : IDisposable
 {
     private readonly string _tempDir;
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly DigestService _service;
 
     public DigestServiceTests()
@@ -19,7 +19,7 @@ public class DigestServiceTests : IDisposable
         var contentDir = Path.Combine(_tempDir, "Content");
         Directory.CreateDirectory(contentDir);
 
-        _config = new ForgeConfig { ProjectPath = _tempDir };
+        _config = new WellVersedConfig { ProjectPath = _tempDir };
         _service = new DigestService(_config, NullLogger<DigestService>.Instance);
     }
 

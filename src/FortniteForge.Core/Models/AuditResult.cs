@@ -1,4 +1,4 @@
-namespace FortniteForge.Core.Models;
+namespace WellVersed.Core.Models;
 
 /// <summary>
 /// Result of an audit operation.
@@ -25,9 +25,15 @@ public class AuditResult
     /// </summary>
     public string Summary => Findings.Count == 0
         ? "No issues found."
-        : $"{Findings.Count(f => f.Severity == AuditSeverity.Error)} errors, " +
+        : $"{Findings.Count(f => f.Severity == AuditSeverity.Critical)} critical, " +
+          $"{Findings.Count(f => f.Severity == AuditSeverity.Error)} errors, " +
           $"{Findings.Count(f => f.Severity == AuditSeverity.Warning)} warnings, " +
           $"{Findings.Count(f => f.Severity == AuditSeverity.Info)} info items.";
+
+    /// <summary>
+    /// Health score computed after auditing (null if not yet computed).
+    /// </summary>
+    public HealthScore? HealthScore { get; set; }
 }
 
 public class AuditFinding
@@ -69,5 +75,27 @@ public enum AuditSeverity
 {
     Info,
     Warning,
-    Error
+    Error,
+    Critical
+}
+
+/// <summary>
+/// Health score for a project or level audit, computed from findings.
+/// </summary>
+public class HealthScore
+{
+    /// <summary>
+    /// Numeric score from 0 to 100.
+    /// </summary>
+    public int Score { get; set; }
+
+    /// <summary>
+    /// Letter grade: A+, A, B+, B, C, D, F.
+    /// </summary>
+    public string Grade { get; set; } = "";
+
+    /// <summary>
+    /// Human-readable summary of the health assessment.
+    /// </summary>
+    public string Summary { get; set; } = "";
 }

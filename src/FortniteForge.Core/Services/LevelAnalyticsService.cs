@@ -1,5 +1,5 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
@@ -7,7 +7,7 @@ using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Analyzes level files to provide performance insights, complexity scoring,
@@ -15,7 +15,7 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class LevelAnalyticsService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<LevelAnalyticsService> _logger;
 
     // Device class patterns (same as DeviceService)
@@ -24,7 +24,7 @@ public class LevelAnalyticsService
         "teleporter", "zone", "volume", "prop_mover", "BP_", "PBWA_"
     };
 
-    public LevelAnalyticsService(ForgeConfig config, ILogger<LevelAnalyticsService> logger)
+    public LevelAnalyticsService(WellVersedConfig config, ILogger<LevelAnalyticsService> logger)
     {
         _config = config;
         _logger = logger;

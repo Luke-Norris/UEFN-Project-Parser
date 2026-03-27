@@ -120,7 +120,7 @@ export const IPC_CHANNELS = {
   GET_FONT_DATA: 'fonts:getData',
   IMPORT_WIDGET_SPEC: 'widget:importSpec',
   EXPORT_WIDGET_SPEC: 'widget:exportSpec',
-  // FortniteForge .NET sidecar bridge
+  // WellVersed .NET sidecar bridge
   FORGE_PING: 'forge:ping',
   FORGE_VALIDATE_SPEC: 'forge:validateSpec',
   FORGE_BUILD_UASSET: 'forge:buildUasset',
@@ -160,8 +160,8 @@ export const IPC_CHANNELS = {
   FORGE_LIST_DIRECTORY: 'forge:listDirectory'
 } as const
 
-// FortniteForge project types
-export interface ForgeStatus {
+// WellVersed project types
+export interface WellVersedStatus {
   isConfigured: boolean
   projectName: string
   projectPath?: string
@@ -182,7 +182,7 @@ export interface ForgeStatus {
   readOnly?: boolean
 }
 
-export interface ForgeProject {
+export interface WellVersedProject {
   id: string
   projectPath: string
   name: string
@@ -197,12 +197,12 @@ export interface ForgeProject {
   addedAt: string
 }
 
-export interface ForgeProjectList {
+export interface WellVersedProjectList {
   activeProjectId: string | null
-  projects: ForgeProject[]
+  projects: WellVersedProject[]
 }
 
-export interface ForgeDiscoveredProject {
+export interface WellVersedDiscoveredProject {
   projectPath: string
   projectName: string
   isUefnProject: boolean
@@ -214,7 +214,7 @@ export interface ForgeDiscoveredProject {
   alreadyAdded: boolean
 }
 
-export interface ForgeLevel {
+export interface WellVersedLevel {
   filePath: string
   relativePath: string
   name: string
@@ -354,6 +354,66 @@ export interface StagedListResult {
   totalSize: number
 }
 
+// Project diff / snapshot types
+export interface SnapshotResult {
+  id: string
+  description: string
+  timestamp: string
+  projectName: string
+  fileCount: number
+  uassetCount: number
+  verseCount: number
+  snapshotPath: string
+}
+
+export interface SnapshotSummary {
+  id: string
+  description: string
+  timestamp: string
+  projectName: string
+  fileCount: number
+  uassetCount: number
+  verseCount: number
+  snapshotPath: string
+}
+
+export interface SnapshotListResult {
+  count: number
+  snapshots: SnapshotSummary[]
+}
+
+export interface PropertyDiffEntry {
+  actorName: string
+  propertyName: string
+  oldValue: string | null
+  newValue: string | null
+}
+
+export interface FileDiffEntry {
+  filePath: string
+  type: 'Added' | 'Modified' | 'Deleted' | 'Unchanged'
+  actorClass: string | null
+  actorName: string | null
+  oldSize: number | null
+  newSize: number | null
+  linesAdded: number | null
+  linesRemoved: number | null
+  propertyChanges: PropertyDiffEntry[] | null
+}
+
+export interface DiffResult {
+  description: string
+  olderTimestamp: string
+  newerTimestamp: string
+  summary: {
+    added: number
+    modified: number
+    deleted: number
+    totalPropertyChanges: number
+  }
+  changes: FileDiffEntry[]
+}
+
 // Library management types (reference collections — NOT projects)
 export interface LibraryEntry {
   id: string
@@ -445,4 +505,84 @@ export interface BatchExportOptions {
   variants: Record<string, string[]> // layerId -> array of asset paths
   width: number
   height: number
+}
+
+// ─── Device Encyclopedia Types ──────────────────────────────────────────────
+
+export interface EncyclopediaSearchResult {
+  deviceName: string
+  displayName: string
+  parentClass: string
+  propertyCount: number
+  eventCount: number
+  functionCount: number
+  hasCommonConfigs: boolean
+  usageCount: number
+  matchedProperties?: string[]
+  matchedEvents?: string[]
+  matchContext?: string
+}
+
+export interface EncyclopediaSearchResponse {
+  query: string
+  resultCount: number
+  results: EncyclopediaSearchResult[]
+}
+
+export interface PropertyReference {
+  name: string
+  type: string
+  defaultValue?: string
+  isEditable: boolean
+  description: string
+  usagePercent?: number
+  commonValues?: Array<{ value: string; count: number; percent: number }>
+  relatedProperties?: string[]
+}
+
+export interface CommonConfiguration {
+  name: string
+  description: string
+  properties: Record<string, string>
+  tags: string[]
+}
+
+export interface DeviceReferenceResponse {
+  deviceName: string
+  displayName: string
+  parentClass: string
+  description: string
+  sourceFile: string
+  totalUsageCount: number
+  projectsUsedIn: number
+  properties: PropertyReference[]
+  events: string[]
+  functions: string[]
+  commonConfigurations?: CommonConfiguration[]
+  error?: string
+  suggestions?: Array<{ deviceName: string; displayName: string }>
+}
+
+export interface CommonConfigsResponse {
+  deviceClass: string
+  configCount: number
+  configurations: CommonConfiguration[]
+  error?: string
+  devicesWithConfigs?: string[]
+}
+
+export interface DeviceSummary {
+  name: string
+  displayName: string
+  parentClass: string
+  propertyCount: number
+  eventCount: number
+  functionCount: number
+  usageCount: number
+  hasCommonConfigs: boolean
+}
+
+export interface DeviceListingResponse {
+  deviceCount: number
+  devices: DeviceSummary[]
 }

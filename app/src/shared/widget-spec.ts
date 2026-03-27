@@ -1,7 +1,7 @@
 /**
- * Widget Spec v1 — shared JSON format between FortniteForge and the UEFN UI Component Creator.
+ * Widget Spec v1 — shared JSON format between WellVersed and the UEFN UI Component Creator.
  *
- * FortniteForge generates this JSON from WidgetSpec (C#) and can consume it back to build .uasset files.
+ * WellVersed generates this JSON from WidgetSpec (C#) and can consume it back to build .uasset files.
  * The Component Creator imports this JSON, converts it to a visual template with variable bindings,
  * and can export the edited state back to this format.
  */

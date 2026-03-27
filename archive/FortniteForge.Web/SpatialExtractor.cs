@@ -1,12 +1,12 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Web;
+namespace WellVersed.Web;
 
 /// <summary>
 /// Extracts actor info from UEFN external actor files.
@@ -14,7 +14,7 @@ namespace FortniteForge.Web;
 /// </summary>
 public static class SpatialExtractor
 {
-    public static SpatialData ExtractActorPositions(string levelPath, ForgeConfig config, AssetService assetService)
+    public static SpatialData ExtractActorPositions(string levelPath, WellVersedConfig config, AssetService assetService)
     {
         var result = new SpatialData();
         var levelName = Path.GetFileNameWithoutExtension(levelPath);

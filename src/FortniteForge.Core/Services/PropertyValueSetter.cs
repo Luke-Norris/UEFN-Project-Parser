@@ -2,7 +2,7 @@ using UAssetAPI;
 using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Sets property values on UAsset properties by parsing string values.

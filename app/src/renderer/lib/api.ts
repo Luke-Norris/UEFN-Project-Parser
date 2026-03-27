@@ -11,11 +11,11 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 
 import type {
   AssetIndex,
-  ForgeStatus,
-  ForgeProjectList,
-  ForgeProject,
-  ForgeDiscoveredProject,
-  ForgeLevel,
+  WellVersedStatus,
+  WellVersedProjectList,
+  WellVersedProject,
+  WellVersedDiscoveredProject,
+  WellVersedLevel,
   AuditResult,
   ContentBrowseResult,
   AssetInspectResult,
@@ -25,12 +25,19 @@ import type {
   EpicAssetListResult,
   VerseFileContent,
   StagedListResult,
+  SnapshotResult,
+  SnapshotListResult,
+  DiffResult,
   LibraryList,
   LibraryEntry,
   LibraryIndexResult,
   LibAssetGroup,
   LibrarySearchResult,
   LibVerseFileEntry,
+  EncyclopediaSearchResponse,
+  DeviceReferenceResponse,
+  CommonConfigsResponse,
+  DeviceListingResponse,
 } from '../../shared/types'
 
 // ─── Asset management (local file system via Rust) ───────────────────────────
@@ -193,7 +200,7 @@ export async function exportWidgetSpec(
   }
 }
 
-// ─── FortniteForge .NET bridge (via Rust sidecar) ────────────────────────────
+// ─── WellVersed .NET bridge (via Rust sidecar) ────────────────────────────
 
 export async function forgePing(): Promise<{ pong: boolean } | { error: string }> {
   return invoke('forge_ping')
@@ -252,18 +259,18 @@ export async function forgeListLibraryWidgets(): Promise<{ widgets: WidgetSummar
 }
 
 // Project management
-export async function forgeStatus(): Promise<ForgeStatus> {
+export async function wellVersedStatus(): Promise<WellVersedStatus> {
   return invoke('forge_status')
 }
 
-export async function forgeListProjects(): Promise<ForgeProjectList> {
+export async function wellVersedListProjects(): Promise<WellVersedProjectList> {
   return invoke('forge_list_projects')
 }
 
 export async function forgeAddProject(
   path: string,
   type: string
-): Promise<ForgeProject> {
+): Promise<WellVersedProject> {
   return invoke('forge_add_project', { path, projectType: type })
 }
 
@@ -273,17 +280,17 @@ export async function forgeRemoveProject(
   return invoke('forge_remove_project', { id })
 }
 
-export async function forgeActivateProject(id: string): Promise<ForgeProject> {
+export async function wellVersedActivateProject(id: string): Promise<WellVersedProject> {
   return invoke('forge_activate_project', { id })
 }
 
 export async function forgeScanProjects(
   path: string
-): Promise<ForgeDiscoveredProject[]> {
+): Promise<WellVersedDiscoveredProject[]> {
   return invoke('forge_scan_projects', { path })
 }
 
-export async function forgeListLevels(): Promise<ForgeLevel[]> {
+export async function forgeListLevels(): Promise<WellVersedLevel[]> {
   return invoke('forge_list_levels')
 }
 
@@ -343,6 +350,33 @@ export async function forgeDiscardStaged(): Promise<{ discarded: number }> {
   return invoke('forge_discard_staged')
 }
 
+// Project diff / snapshots
+export async function forgeTakeSnapshot(description?: string): Promise<SnapshotResult> {
+  const params = description ? { description } : {}
+  return invoke('forge_take_snapshot', params)
+}
+
+export async function forgeListSnapshots(): Promise<SnapshotListResult> {
+  return invoke('forge_list_snapshots')
+}
+
+export async function forgeCompareSnapshot(snapshotId: string): Promise<DiffResult> {
+  return invoke('forge_compare_snapshot', { snapshotId })
+}
+
+// File watcher
+export async function startFileWatcher(projectPath: string): Promise<{ watching: boolean; projectPath: string }> {
+  return invoke('start_file_watcher', { projectPath })
+}
+
+export async function stopFileWatcher(): Promise<{ stopped: boolean }> {
+  return invoke('stop_file_watcher')
+}
+
+export async function fileWatcherStatus(): Promise<{ watching: boolean; projectPath: string | null }> {
+  return invoke('file_watcher_status')
+}
+
 // Library management
 export async function forgeListLibraries(): Promise<LibraryList> {
   return invoke('forge_list_libraries')
@@ -398,6 +432,29 @@ export async function forgeSearchLibraryIndex(
   query: string
 ): Promise<LibrarySearchResult> {
   return invoke('forge_search_library_index', { query })
+}
+
+// Device Encyclopedia
+export async function forgeEncyclopediaSearch(
+  query: string
+): Promise<EncyclopediaSearchResponse> {
+  return invoke('forge_encyclopedia_search', { query })
+}
+
+export async function forgeEncyclopediaDeviceReference(
+  deviceClass: string
+): Promise<DeviceReferenceResponse> {
+  return invoke('forge_encyclopedia_device_reference', { deviceClass })
+}
+
+export async function forgeEncyclopediaCommonConfigs(
+  deviceClass: string
+): Promise<CommonConfigsResponse> {
+  return invoke('forge_encyclopedia_common_configs', { deviceClass })
+}
+
+export async function forgeEncyclopediaListDevices(): Promise<DeviceListingResponse> {
+  return invoke('forge_encyclopedia_list_devices')
 }
 
 // General file reading
@@ -485,6 +542,192 @@ export async function previewExportMeshBatch(
   return invoke('forge_preview_export_mesh_batch', { deviceClasses })
 }
 
+// ─── Game Designer API ──────────────────────────────────────────────────────
+
+export async function forgeDesignGame(
+  description: string,
+  playerCount?: number,
+  teamCount?: number
+): Promise<Record<string, unknown>> {
+  return invoke('forge_design_game', {
+    description,
+    playerCount: playerCount ?? null,
+    teamCount: teamCount ?? null,
+  })
+}
+
+// ─── Stamp API ──────────────────────────────────────────────────────────────
+
+export async function forgeStampList(): Promise<{
+  stamps: Array<{
+    name: string
+    actorCount: number
+    createdAt: string
+    description?: string
+    tags?: string[]
+  }>
+}> {
+  return invoke('forge_stamp_list')
+}
+
+export async function forgeStampSave(name: string): Promise<{ success: boolean; name: string }> {
+  return invoke('forge_stamp_save', { name })
+}
+
+export async function forgeStampPlace(
+  name: string,
+  x: number,
+  y: number,
+  z: number
+): Promise<{ success: boolean }> {
+  return invoke('forge_stamp_place', { name, x, y, z })
+}
+
+// ─── Publish Audit API ──────────────────────────────────────────────────────
+
+export async function forgeRunPublishAudit(): Promise<Record<string, unknown>> {
+  return invoke('forge_run_publish_audit')
+}
+
+// ─── Device Behavior Simulator (DFA model) ───────────────────────────────────
+
+export interface DFANode {
+  deviceName: string
+  deviceClass: string
+  deviceType: string
+  phase: string
+  events: string[]
+  actions: string[]
+  x: number
+  y: number
+}
+
+export interface DFAEdge {
+  sourceDevice: string
+  event: string
+  targetDevice: string
+  action: string
+  resultingPhase: string
+  isConditional: boolean
+  condition?: string
+}
+
+export interface DFASnapshot {
+  stepNumber: number
+  simulatedTime: number
+  firedEdgeSource: string
+  firedEdgeEvent: string
+  stateHash: string
+  devicePhases: Record<string, string>
+}
+
+export interface GameLoopResult {
+  initialTrigger: string
+  stepCount: number
+  totalSimulatedTime: number
+  reachesEndGame: boolean
+  warnings: string[]
+  nodes: DFANode[]
+  edges: DFAEdge[]
+  history: DFASnapshot[]
+  finalStates: Record<string, string>
+}
+
+export interface SimulateEventResult {
+  initialTrigger: string
+  stepCount: number
+  totalSimulatedTime: number
+  reachesEndGame: boolean
+  warnings: string[]
+  nodes: DFANode[]
+  edges: DFAEdge[]
+  history: DFASnapshot[]
+  finalStates: Record<string, string>
+}
+
+export async function forgeSimulateGameLoop(
+  levelPath: string
+): Promise<GameLoopResult> {
+  return invoke('forge_simulate_game_loop', { levelPath })
+}
+
+export async function forgeSimulateEvent(
+  levelPath: string,
+  deviceName: string,
+  eventName: string
+): Promise<SimulateEventResult> {
+  return invoke('forge_simulate_event', { levelPath, deviceName, eventName })
+}
+
+// ─── System extraction ──────────────────────────────────────────────────────
+
+export async function forgeAnalyzeLevelSystems(
+  levelPath: string
+): Promise<{
+  levelPath: string
+  totalDevices: number
+  systemsFound: number
+  systems: Array<{
+    name: string
+    category: string
+    detectionMethod: string
+    confidence: number
+    deviceCount: number
+    devices: Array<{ role: string; deviceClass: string; deviceType: string; label: string }>
+    wiring: Array<{ connection: string; channel: string | null }>
+  }>
+  errors: string[]
+}> {
+  return invoke('forge_analyze_level_systems', { levelPath })
+}
+
+export async function forgeAnalyzeProjectSystems(): Promise<{
+  projectPath: string
+  levelsScanned: number
+  totalSystems: number
+  uniquePatterns: number
+  systems: Array<{
+    name: string
+    category: string
+    confidence: number
+    deviceCount: number
+    frequency: number
+  }>
+  errors: string[]
+}> {
+  return invoke('forge_analyze_project_systems')
+}
+
+// ─── UEFN Bridge (live connection to running UEFN instance) ─────────────────
+
+export async function forgeBridgeConnect(
+  port?: number
+): Promise<{ connected: boolean; status?: string; error?: string; data?: unknown }> {
+  return invoke('forge_bridge_connect', { port: port ?? null })
+}
+
+export async function forgeBridgeStatus(): Promise<{
+  connected: boolean
+  bridgeStatus?: string
+  data?: unknown
+  message?: string
+  error?: string
+}> {
+  return invoke('forge_bridge_status')
+}
+
+export async function forgeBridgeCommand(
+  command: string,
+  params?: Record<string, unknown>
+): Promise<{
+  success: boolean
+  status?: string
+  data?: unknown
+  error?: string
+}> {
+  return invoke('forge_bridge_command', { command, params: params ?? null })
+}
+
 // ─── Backward-compatible shim ────────────────────────────────────────────────
 // This allows existing code that calls window.electronAPI.* to work during
 // the migration. New code should import directly from this module.
@@ -511,11 +754,11 @@ const api = {
   forgeParseWidget,
   forgeWidgetTexture,
   forgeListLibraryWidgets,
-  forgeStatus,
-  forgeListProjects,
+  wellVersedStatus,
+  wellVersedListProjects,
   forgeAddProject,
   forgeRemoveProject,
-  forgeActivateProject,
+  wellVersedActivateProject,
   forgeScanProjects,
   forgeListLevels,
   forgeAudit,
@@ -529,6 +772,14 @@ const api = {
   forgeListStaged,
   forgeApplyStaged,
   forgeDiscardStaged,
+  // Project diff / snapshots
+  forgeTakeSnapshot,
+  forgeListSnapshots,
+  forgeCompareSnapshot,
+  // File watcher
+  startFileWatcher,
+  stopFileWatcher,
+  fileWatcherStatus,
   forgeListLibraries,
   forgeAddLibrary,
   forgeRemoveLibrary,
@@ -538,6 +789,11 @@ const api = {
   forgeGetLibraryAssetsByType,
   forgeBrowseLibraryDir,
   forgeSearchLibraryIndex,
+  // Device Encyclopedia
+  forgeEncyclopediaSearch,
+  forgeEncyclopediaDeviceReference,
+  forgeEncyclopediaCommonConfigs,
+  forgeEncyclopediaListDevices,
   forgeReadTextFile,
   forgeListDirectory,
   // CUE4Parse preview
@@ -548,6 +804,21 @@ const api = {
   previewMeshInfo,
   previewExportMesh,
   previewExportMeshBatch,
+  // UEFN Bridge
+  forgeBridgeConnect,
+  forgeBridgeStatus,
+  forgeBridgeCommand,
+  // Game Designer
+  forgeDesignGame,
+  // Stamps
+  forgeStampList,
+  forgeStampSave,
+  forgeStampPlace,
+  // Publish
+  forgeRunPublishAudit,
+  // Device Behavior Simulator
+  forgeSimulateGameLoop,
+  forgeSimulateEvent,
 }
 
 // ─── Verse LSP API ──────────────────────────────────────────────────────────

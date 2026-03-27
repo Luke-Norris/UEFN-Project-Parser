@@ -1,9 +1,10 @@
+use crate::file_watcher::FileWatcher;
 use crate::lsp_bridge::LspBridge;
 use crate::sidecar::ForgeBridge;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::State;
 
 pub struct AppState {
@@ -11,6 +12,7 @@ pub struct AppState {
     pub lsp: Arc<LspBridge>,
     pub assets_dir: PathBuf,
     pub fonts_dir: PathBuf,
+    pub file_watcher: Mutex<Option<FileWatcher>>,
 }
 
 // ─── Sidecar passthrough commands ────────────────────────────────────────────
@@ -397,6 +399,155 @@ pub async fn forge_search_library_index(
     state
         .bridge
         .call("search-library-index", json!({"query": query}))
+        .await
+}
+
+// ─── Device Encyclopedia commands ────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_encyclopedia_search(
+    state: State<'_, AppState>,
+    query: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("encyclopedia-search", json!({"query": query}))
+        .await
+        .or_else(|_| Ok(json!({"query": query, "resultCount": 0, "results": []})))
+}
+
+#[tauri::command]
+pub async fn forge_encyclopedia_device_reference(
+    state: State<'_, AppState>,
+    device_class: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call(
+            "encyclopedia-device-reference",
+            json!({"deviceClass": device_class}),
+        )
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_encyclopedia_common_configs(
+    state: State<'_, AppState>,
+    device_class: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call(
+            "encyclopedia-common-configs",
+            json!({"deviceClass": device_class}),
+        )
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_encyclopedia_list_devices(
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("encyclopedia-list-devices", json!({}))
+        .await
+        .or_else(|_| Ok(json!({"deviceCount": 0, "devices": []})))
+}
+
+// ─── System extraction commands ──────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_analyze_level_systems(
+    state: State<'_, AppState>,
+    level_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("analyze-level-systems", json!({"levelPath": level_path}))
+        .await
+}
+
+#[tauri::command]
+pub async fn forge_analyze_project_systems(
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("analyze-project-systems", json!({}))
+        .await
+}
+
+// ─── Device Behavior Simulator commands ──────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_simulate_game_loop(
+    state: State<'_, AppState>,
+    level_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("simulate-game-loop", json!({"levelPath": level_path}))
+        .await
+        .or_else(|_| {
+            Ok(
+                json!({"initialTrigger": "GameStart", "stepCount": 0, "steps": [], "warnings": ["Simulation failed"], "gameLoop": {"phases": [], "transitions": []}}),
+            )
+        })
+}
+
+#[tauri::command]
+pub async fn forge_simulate_event(
+    state: State<'_, AppState>,
+    level_path: String,
+    device_name: String,
+    event_name: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call(
+            "simulate-event",
+            json!({"levelPath": level_path, "deviceName": device_name, "eventName": event_name}),
+        )
+        .await
+        .or_else(|_| {
+            Ok(
+                json!({"initialTrigger": "", "stepCount": 0, "steps": [], "warnings": ["Simulation failed"]}),
+            )
+        })
+}
+
+// ─── Project diff / snapshot commands ────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_take_snapshot(
+    state: State<'_, AppState>,
+    description: Option<String>,
+) -> Result<Value, String> {
+    let params = match description {
+        Some(d) => json!({"description": d}),
+        None => json!({}),
+    };
+    state.bridge.call("take-snapshot", params).await
+}
+
+#[tauri::command]
+pub async fn forge_list_snapshots(state: State<'_, AppState>) -> Result<Value, String> {
+    state
+        .bridge
+        .call("list-snapshots", json!({}))
+        .await
+        .or_else(|_| Ok(json!({"count": 0, "snapshots": []})))
+}
+
+#[tauri::command]
+pub async fn forge_compare_snapshot(
+    state: State<'_, AppState>,
+    snapshot_id: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("compare-snapshot", json!({"snapshotId": snapshot_id}))
         .await
 }
 
@@ -948,4 +1099,114 @@ pub async fn lsp_signature_help(state: State<'_, AppState>, uri: String, line: u
         "position": { "line": line, "character": character },
     }))?;
     rx.await.map_err(|_| "LSP signature help request cancelled".to_string())
+}
+
+// ─── File watcher commands ──────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn start_file_watcher(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+    project_path: String,
+) -> Result<Value, String> {
+    // Stop any existing watcher first
+    {
+        let mut guard = state.file_watcher.lock().map_err(|e| e.to_string())?;
+        if let Some(existing) = guard.take() {
+            drop(existing);
+        }
+    }
+
+    let bridge = Arc::clone(&state.bridge);
+    let watcher = FileWatcher::start(app, &project_path, bridge)?;
+
+    {
+        let mut guard = state.file_watcher.lock().map_err(|e| e.to_string())?;
+        *guard = Some(watcher);
+    }
+
+    Ok(json!({
+        "watching": true,
+        "projectPath": project_path,
+    }))
+}
+
+#[tauri::command]
+pub async fn stop_file_watcher(state: State<'_, AppState>) -> Result<Value, String> {
+    let mut guard = state.file_watcher.lock().map_err(|e| e.to_string())?;
+    let was_watching = guard.is_some();
+    *guard = None;
+    Ok(json!({
+        "stopped": was_watching,
+    }))
+}
+
+#[tauri::command]
+pub async fn file_watcher_status(state: State<'_, AppState>) -> Result<Value, String> {
+    let guard = state.file_watcher.lock().map_err(|e| e.to_string())?;
+    match &*guard {
+        Some(watcher) => Ok(json!({
+            "watching": true,
+            "projectPath": watcher.project_path(),
+        })),
+        None => Ok(json!({
+            "watching": false,
+            "projectPath": null,
+        })),
+    }
+}
+
+// ─── UEFN Bridge commands ────────────────────────────────────────────────────
+
+#[tauri::command]
+pub async fn forge_bridge_connect(
+    state: State<'_, AppState>,
+    port: Option<u16>,
+) -> Result<Value, String> {
+    let params = match port {
+        Some(p) => json!({"port": p}),
+        None => json!({}),
+    };
+    state
+        .bridge
+        .call("bridge-connect", params)
+        .await
+        .or_else(|_| {
+            Ok(json!({
+                "connected": false,
+                "error": "Sidecar not running"
+            }))
+        })
+}
+
+#[tauri::command]
+pub async fn forge_bridge_status(state: State<'_, AppState>) -> Result<Value, String> {
+    state
+        .bridge
+        .call("bridge-status", json!({}))
+        .await
+        .or_else(|_| {
+            Ok(json!({
+                "connected": false,
+                "message": "Sidecar not running"
+            }))
+        })
+}
+
+#[tauri::command]
+pub async fn forge_bridge_command(
+    state: State<'_, AppState>,
+    command: String,
+    params: Option<Value>,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call(
+            "bridge-command",
+            json!({
+                "command": command,
+                "params": params.unwrap_or(json!({}))
+            }),
+        )
+        .await
 }

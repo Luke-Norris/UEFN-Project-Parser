@@ -9,7 +9,7 @@
 **Goal**: Maps aren't flat. Generate height variation using noise + terrain piece tiling.
 
 ### New Files
-- `src/FortniteForge.Core/Services/MapGeneration/TerrainEngine.cs`
+- `src/WellVersed.Core/Services/MapGeneration/TerrainEngine.cs`
 
 ### What it does
 - `HeightMap` class: generates Perlin-style noise heightmap for a given map size
@@ -33,9 +33,9 @@
 **Goal**: Compare two versions of a level and get structured diff.
 
 ### New Files
-- `src/FortniteForge.Core/Services/DiffService.cs`
-- `src/FortniteForge.Core/Models/DiffResult.cs`
-- `src/FortniteForge.MCP/Tools/DiffTools.cs`
+- `src/WellVersed.Core/Services/DiffService.cs`
+- `src/WellVersed.Core/Models/DiffResult.cs`
+- `src/WellVersed.MCP/Tools/DiffTools.cs`
 
 ### DiffResult model
 - `LevelDiff`: actors added, removed, moved, property changes
@@ -60,9 +60,9 @@
 **Goal**: Parse all wiring, build a graph, detect dead ends, suggest/auto-wire connections.
 
 ### New Files
-- `src/FortniteForge.Core/Services/WiringService.cs`
-- `src/FortniteForge.Core/Models/WiringGraph.cs`
-- `src/FortniteForge.MCP/Tools/WiringTools.cs`
+- `src/WellVersed.Core/Services/WiringService.cs`
+- `src/WellVersed.Core/Models/WiringGraph.cs`
+- `src/WellVersed.MCP/Tools/WiringTools.cs`
 
 ### WiringGraph model
 - `WiringGraph`: nodes (devices) + edges (signal connections)
@@ -89,9 +89,9 @@
 **Goal**: Map every reference between assets — know what depends on what.
 
 ### New Files
-- `src/FortniteForge.Core/Services/DependencyService.cs`
-- `src/FortniteForge.Core/Models/DependencyGraph.cs`
-- `src/FortniteForge.MCP/Tools/DependencyTools.cs`
+- `src/WellVersed.Core/Services/DependencyService.cs`
+- `src/WellVersed.Core/Models/DependencyGraph.cs`
+- `src/WellVersed.MCP/Tools/DependencyTools.cs`
 
 ### DependencyGraph model
 - `DependencyGraph`: nodes (assets) + edges (references)
@@ -117,9 +117,9 @@
 **Goal**: Save groups of configured, wired devices as reusable templates. Drop them into any level.
 
 ### New Files
-- `src/FortniteForge.Core/Services/TemplateService.cs`
-- `src/FortniteForge.Core/Models/PrefabTemplate.cs`
-- `src/FortniteForge.MCP/Tools/TemplateTools.cs`
+- `src/WellVersed.Core/Services/TemplateService.cs`
+- `src/WellVersed.Core/Models/PrefabTemplate.cs`
+- `src/WellVersed.MCP/Tools/TemplateTools.cs`
 
 ### PrefabTemplate model
 - `PrefabTemplate`: name, description, list of `TemplateActor` entries, wiring definitions
@@ -147,9 +147,9 @@
 **Goal**: Export level state as a structured handoff file for the Verse Claude Code session.
 
 ### New Files
-- `src/FortniteForge.Core/Services/BridgeService.cs`
-- `src/FortniteForge.Core/Models/BridgeHandoff.cs`
-- `src/FortniteForge.MCP/Tools/BridgeTools.cs`
+- `src/WellVersed.Core/Services/BridgeService.cs`
+- `src/WellVersed.Core/Models/BridgeHandoff.cs`
+- `src/WellVersed.MCP/Tools/BridgeTools.cs`
 
 ### BridgeHandoff model
 - `BridgeHandoff`: timestamp, project path, levels, devices with full context
@@ -174,9 +174,9 @@
 **Goal**: Copy specific actors (with wiring and config) from one level to another.
 
 ### New Files
-- `src/FortniteForge.Core/Services/MigrationService.cs`
-- `src/FortniteForge.Core/Models/MigrationResult.cs`
-- `src/FortniteForge.MCP/Tools/MigrationTools.cs`
+- `src/WellVersed.Core/Services/MigrationService.cs`
+- `src/WellVersed.Core/Models/MigrationResult.cs`
+- `src/WellVersed.MCP/Tools/MigrationTools.cs`
 
 ### MigrationResult model
 - `MigrationResult`: success, actors migrated, wiring recreated, warnings
@@ -199,9 +199,9 @@
 **Goal**: Auto-rename actors to meaningful names. Enforce naming conventions.
 
 ### New Files
-- `src/FortniteForge.Core/Services/NamingService.cs`
-- `src/FortniteForge.Core/Models/NamingResult.cs`
-- `src/FortniteForge.MCP/Tools/NamingTools.cs`
+- `src/WellVersed.Core/Services/NamingService.cs`
+- `src/WellVersed.Core/Models/NamingResult.cs`
+- `src/WellVersed.MCP/Tools/NamingTools.cs`
 
 ### NamingResult model
 - `NamingPlan`: list of proposed renames (old name → new name, reason)
@@ -228,8 +228,8 @@
 
 ## DI Registration
 All new services registered as singletons in:
-- `src/FortniteForge.MCP/Program.cs` — `builder.Services.AddSingleton<T>()`
-- `src/FortniteForge.CLI/Program.cs` — manual construction + `ServiceBundle` record
+- `src/WellVersed.MCP/Program.cs` — `builder.Services.AddSingleton<T>()`
+- `src/WellVersed.CLI/Program.cs` — manual construction + `ServiceBundle` record
 
 New services to register:
 - `TerrainEngine`

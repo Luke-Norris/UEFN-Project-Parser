@@ -1,11 +1,11 @@
-using FortniteForge.Core.Models;
+using WellVersed.Core.Models;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Parses Widget Blueprint .uasset files into WidgetSpec objects.

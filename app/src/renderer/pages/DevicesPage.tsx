@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import type {
-  ForgeLevel,
+  WellVersedLevel,
   DeviceEntry,
   DeviceListResult,
   DeviceInspectResult
@@ -11,7 +11,7 @@ interface DevicesPageProps {
 }
 
 export function DevicesPage({ selectedLevel: selectedLevelProp }: DevicesPageProps) {
-  const [levels, setLevels] = useState<ForgeLevel[]>([])
+  const [levels, setLevels] = useState<WellVersedLevel[]>([])
   const [activeLevelPath, setActiveLevelPath] = useState<string | null>(null)
   const [deviceData, setDeviceData] = useState<DeviceListResult | null>(null)
   const [selectedDevice, setSelectedDevice] = useState<DeviceInspectResult | null>(null)

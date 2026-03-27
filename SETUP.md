@@ -1,4 +1,4 @@
-# FortniteForge Setup Guide
+# WellVersed Setup Guide
 
 **"The Model Context Protocol for Master Control of your Creative Projects"**
 
@@ -42,7 +42,7 @@ Edit `forge.config.json` and set:
 #### Option A: Claude Code CLI
 
 ```bash
-claude mcp add fortniteforge -- dotnet run --project /path/to/UEFN-Project-Parser/src/FortniteForge.MCP -- /path/to/forge.config.json
+claude mcp add wellversed -- dotnet run --project /path/to/UEFN-Project-Parser/src/FortniteForge.MCP -- /path/to/forge.config.json
 ```
 
 #### Option B: VS Code Extension
@@ -52,7 +52,7 @@ Add to your `.claude/settings.json`:
 ```json
 {
   "mcpServers": {
-    "fortniteforge": {
+    "wellversed": {
       "command": "dotnet",
       "args": [
         "run",
@@ -68,15 +68,15 @@ Add to your `.claude/settings.json`:
 
 #### Option C: Environment Variable
 
-Set the `FORTNITEFORGE_CONFIG` environment variable to your config file path, then:
+Set the `WELLVERSED_CONFIG` environment variable to your config file path, then:
 
 ```bash
-claude mcp add fortniteforge -- dotnet run --project /path/to/FortniteForge.MCP
+claude mcp add wellversed -- dotnet run --project /path/to/src/FortniteForge.MCP
 ```
 
 ### 4. Verify it works
 
-In Claude Code, you should now see FortniteForge tools available. Try:
+In Claude Code, you should now see WellVersed tools available. Try:
 
 > "List all assets in my UEFN project"
 
@@ -175,7 +175,7 @@ Once connected, Claude Code has access to these tools:
 
 ## Safety
 
-FortniteForge has multiple safety layers:
+WellVersed has multiple safety layers:
 
 1. **Cooked Asset Detection** — Checks binary headers to identify Epic's assets. These are NEVER modified.
 2. **Path Validation** — Only modifies files in your configured folders.
@@ -188,14 +188,14 @@ FortniteForge has multiple safety layers:
 ```
 FortniteForge.sln
 ├── src/
-│   ├── FortniteForge.Core/        # All business logic
+│   ├── FortniteForge.Core/        # All business logic (namespace: WellVersed.Core)
 │   │   ├── Config/                 # Configuration system
 │   │   ├── Models/                 # Data models
 │   │   ├── Safety/                 # Cooked detection, path guards
 │   │   └── Services/              # Asset, Device, Audit, Build, etc.
-│   ├── FortniteForge.MCP/         # MCP Server (Claude's interface)
+│   ├── FortniteForge.MCP/         # MCP Server (namespace: WellVersed.MCP)
 │   │   └── Tools/                  # Tool definitions
-│   └── FortniteForge.CLI/         # Command-line interface
+│   └── FortniteForge.CLI/         # Command-line interface (namespace: WellVersed.CLI)
 └── tests/
-    └── FortniteForge.Tests/
+    └── FortniteForge.Tests/       # (namespace: WellVersed.Tests)
 ```

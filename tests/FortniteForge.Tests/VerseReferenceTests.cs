@@ -1,11 +1,11 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class VerseReferenceServiceTests : IDisposable
 {
@@ -25,7 +25,7 @@ public class VerseReferenceServiceTests : IDisposable
 
     private VerseReferenceService CreateService(string? path = null)
     {
-        var config = new ForgeConfig { ReferenceLibraryPath = path ?? _tempDir };
+        var config = new WellVersedConfig { ReferenceLibraryPath = path ?? _tempDir };
         return new VerseReferenceService(config, NullLogger<VerseReferenceService>.Instance);
     }
 
@@ -48,7 +48,7 @@ public class VerseReferenceServiceTests : IDisposable
     [Fact]
     public void BuildIndex_NullPath_Succeeds()
     {
-        var config = new ForgeConfig { ReferenceLibraryPath = null };
+        var config = new WellVersedConfig { ReferenceLibraryPath = null };
         var service = new VerseReferenceService(config, NullLogger<VerseReferenceService>.Instance);
         service.BuildIndex();
         var stats = service.GetStats();
@@ -314,7 +314,7 @@ public class VerseReferenceIntegrationTests
 
     private VerseReferenceService CreateRealService()
     {
-        var config = new ForgeConfig { ReferenceLibraryPath = LibraryPath };
+        var config = new WellVersedConfig { ReferenceLibraryPath = LibraryPath };
         return new VerseReferenceService(config, NullLogger<VerseReferenceService>.Instance);
     }
 

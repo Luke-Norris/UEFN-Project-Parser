@@ -1,10 +1,10 @@
 using System.ComponentModel;
 using System.Text.Json;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services;
 using ModelContextProtocol.Server;
 
-namespace FortniteForge.MCP.Tools;
+namespace WellVersed.MCP.Tools;
 
 [McpServerToolType]
 public class VerseReferenceTools

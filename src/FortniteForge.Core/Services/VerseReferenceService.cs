@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Indexes and searches a library of .verse files for reference and examples.
@@ -11,7 +11,7 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class VerseReferenceService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly ILogger<VerseReferenceService> _logger;
     private Dictionary<string, VerseFileIndex>? _index;
     private bool _loaded;
@@ -32,7 +32,7 @@ public class VerseReferenceService
     private static readonly Regex DeviceTypeRegex = new(
         @":\s*(?:\[\])?(\w+_device)\b", RegexOptions.Compiled);
 
-    public VerseReferenceService(ForgeConfig config, ILogger<VerseReferenceService> logger)
+    public VerseReferenceService(WellVersedConfig config, ILogger<VerseReferenceService> logger)
     {
         _config = config;
         _logger = logger;

@@ -1,13 +1,13 @@
 import { create } from 'zustand'
-import type { ForgeStatus, ForgeProjectList, ForgeLevel, EpicAssetListResult, UserAssetListResult } from '../../shared/types'
+import type { WellVersedStatus, WellVersedProjectList, WellVersedLevel, EpicAssetListResult, UserAssetListResult } from '../../shared/types'
 
 const CACHE_TTL_MS = 60_000 // 60 seconds — longer TTL since project data doesn't change often
 
 interface ForgeState {
   // Cached data
-  status: ForgeStatus | null
-  projectList: ForgeProjectList | null
-  levels: ForgeLevel[] | null
+  status: WellVersedStatus | null
+  projectList: WellVersedProjectList | null
+  levels: WellVersedLevel[] | null
   userAssets: UserAssetListResult | null
   epicAssets: EpicAssetListResult | null
 
@@ -84,8 +84,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     set({ statusLoading: true, statusError: null })
     try {
       const result = await Promise.race([
-        window.electronAPI.forgeStatus(),
-        new Promise<ForgeStatus>((_, reject) =>
+        window.electronAPI.wellVersedStatus(),
+        new Promise<WellVersedStatus>((_, reject) =>
           setTimeout(() => reject(new Error('Sidecar connection timeout')), 20_000)
         ),
       ])
@@ -103,7 +103,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
           mode: 'None',
           assetCount: 0,
           verseCount: 0,
-        } as ForgeStatus,
+        } as WellVersedStatus,
         statusLoading: false,
         statusFetchedAt: Date.now(),
         statusError: err instanceof Error ? err.message : 'Failed to fetch status',
@@ -118,7 +118,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
     set({ projectListLoading: true, projectListError: null })
     try {
-      const result = await window.electronAPI.forgeListProjects()
+      const result = await window.electronAPI.wellVersedListProjects()
       set({
         projectList: result,
         projectListLoading: false,

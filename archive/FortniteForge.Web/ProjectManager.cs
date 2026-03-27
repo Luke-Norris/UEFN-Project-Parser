@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FortniteForge.Core.Config;
+using WellVersed.Core.Config;
 
-namespace FortniteForge.Web;
+namespace WellVersed.Web;
 
 /// <summary>
 /// Manages a persistent list of UEFN projects with safety tiers.
@@ -23,7 +23,7 @@ public class ProjectManager
     {
         _storagePath = storagePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".fortniteforge", "projects.json");
+            ".wellversed", "projects.json");
         _store = Load();
     }
 
@@ -42,7 +42,7 @@ public class ProjectManager
         // Auto-detect: if the selected folder isn't a project root, look for one inside it
         if (!Directory.GetFiles(fullPath, "*.uefnproject").Any() && !Directory.GetFiles(fullPath, "*.uproject").Any())
         {
-            var nested = ForgeConfig.DiscoverProjects(fullPath, maxDepth: 2);
+            var nested = WellVersedConfig.DiscoverProjects(fullPath, maxDepth: 2);
             if (nested.Count == 1)
             {
                 // Single project inside — use that as the root
@@ -67,7 +67,7 @@ public class ProjectManager
         if (existing != null)
             return existing;
 
-        var config = new ForgeConfig { ProjectPath = fullPath };
+        var config = new WellVersedConfig { ProjectPath = fullPath };
 
         var entry = new ProjectEntry
         {
@@ -126,11 +126,11 @@ public class ProjectManager
     }
 
     /// <summary>
-    /// Builds a ForgeConfig for a specific project with appropriate safety settings.
+    /// Builds a WellVersedConfig for a specific project with appropriate safety settings.
     /// </summary>
-    public ForgeConfig BuildConfig(ProjectEntry project)
+    public WellVersedConfig BuildConfig(ProjectEntry project)
     {
-        return new ForgeConfig
+        return new WellVersedConfig
         {
             ProjectPath = project.ProjectPath,
             ReadOnly = project.Type == ProjectType.Library,
@@ -143,10 +143,10 @@ public class ProjectManager
     /// </summary>
     public List<DiscoveredProject> ScanDirectory(string searchPath)
     {
-        var projectPaths = ForgeConfig.DiscoverProjects(searchPath);
+        var projectPaths = WellVersedConfig.DiscoverProjects(searchPath);
         return projectPaths.Select(p =>
         {
-            var cfg = new ForgeConfig { ProjectPath = p };
+            var cfg = new WellVersedConfig { ProjectPath = p };
             var alreadyAdded = _store.Projects.Any(ex =>
                 string.Equals(Path.GetFullPath(ex.ProjectPath), Path.GetFullPath(p), StringComparison.OrdinalIgnoreCase));
 

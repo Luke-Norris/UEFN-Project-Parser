@@ -1,5 +1,5 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
@@ -8,7 +8,7 @@ using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 /// <summary>
 /// Tests for Widget Blueprint creation and modification.
@@ -20,7 +20,7 @@ public class WidgetBlueprintTests : IDisposable
 
     public WidgetBlueprintTests()
     {
-        _testDir = Path.Combine(Path.GetTempPath(), "FortniteForge_WidgetTests_" + Guid.NewGuid().ToString("N")[..8]);
+        _testDir = Path.Combine(Path.GetTempPath(), "WellVersed_WidgetTests_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_testDir);
     }
 
@@ -30,7 +30,7 @@ public class WidgetBlueprintTests : IDisposable
             Directory.Delete(_testDir, true);
     }
 
-    private static readonly string SandboxPath = Environment.GetEnvironmentVariable("FORTNITEFORGE_SANDBOX") ?? "";
+    private static readonly string SandboxPath = Environment.GetEnvironmentVariable("WELLVERSED_SANDBOX") ?? "";
     private static bool HasSandbox => !string.IsNullOrEmpty(SandboxPath) && Directory.Exists(SandboxPath);
 
     /// <summary>
@@ -40,10 +40,10 @@ public class WidgetBlueprintTests : IDisposable
     {
         if (!HasSandbox) return null;
 
-        var projects = ForgeConfig.DiscoverProjects(SandboxPath);
+        var projects = WellVersedConfig.DiscoverProjects(SandboxPath);
         foreach (var proj in projects)
         {
-            var config = new ForgeConfig { ProjectPath = proj };
+            var config = new WellVersedConfig { ProjectPath = proj };
             if (!Directory.Exists(config.ContentPath)) continue;
 
             foreach (var file in Directory.EnumerateFiles(config.ContentPath, "*.uasset", SearchOption.AllDirectories)
@@ -65,7 +65,7 @@ public class WidgetBlueprintTests : IDisposable
     [SkippableFact]
     public void CanParseWidgetBlueprint()
     {
-        Skip.IfNot(HasSandbox, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(HasSandbox, "WELLVERSED_SANDBOX not set");
         var template = FindWidgetTemplate();
         Skip.If(template == null, "No Widget Blueprint found in sandbox");
 
@@ -87,7 +87,7 @@ public class WidgetBlueprintTests : IDisposable
     [SkippableFact]
     public void CanCloneWidgetBlueprint()
     {
-        Skip.IfNot(HasSandbox, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(HasSandbox, "WELLVERSED_SANDBOX not set");
         var template = FindWidgetTemplate();
         Skip.If(template == null, "No Widget Blueprint found in sandbox");
 
@@ -109,7 +109,7 @@ public class WidgetBlueprintTests : IDisposable
     [SkippableFact]
     public void CanModifyTextInWidgetBlueprint()
     {
-        Skip.IfNot(HasSandbox, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(HasSandbox, "WELLVERSED_SANDBOX not set");
         var template = FindWidgetTemplate();
         Skip.If(template == null, "No Widget Blueprint found in sandbox");
 
@@ -127,7 +127,7 @@ public class WidgetBlueprintTests : IDisposable
                 if (prop is TextPropertyData textProp && prop.Name?.ToString() == "Text")
                 {
                     // Modify the text
-                    textProp.Value = FString.FromString("Modified by FortniteForge!");
+                    textProp.Value = FString.FromString("Modified by WellVersed!");
                     textModified++;
                 }
             }
@@ -143,7 +143,7 @@ public class WidgetBlueprintTests : IDisposable
             var hasModifiedText = reloaded.Exports.OfType<NormalExport>()
                 .SelectMany(e => e.Data)
                 .OfType<TextPropertyData>()
-                .Any(t => t.Value?.ToString()?.Contains("FortniteForge") == true);
+                .Any(t => t.Value?.ToString()?.Contains("WellVersed") == true);
             Assert.True(hasModifiedText, "Text modification should persist after save");
         }
     }
@@ -151,7 +151,7 @@ public class WidgetBlueprintTests : IDisposable
     [SkippableFact]
     public void CanModifyWidgetLayoutProperties()
     {
-        Skip.IfNot(HasSandbox, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(HasSandbox, "WELLVERSED_SANDBOX not set");
         var template = FindWidgetTemplate();
         Skip.If(template == null, "No Widget Blueprint found in sandbox");
 
@@ -196,7 +196,7 @@ public class WidgetBlueprintTests : IDisposable
     [SkippableFact]
     public void CanEnumerateAllWidgetTypes()
     {
-        Skip.IfNot(HasSandbox, "FORTNITEFORGE_SANDBOX not set");
+        Skip.IfNot(HasSandbox, "WELLVERSED_SANDBOX not set");
         var template = FindWidgetTemplate();
         Skip.If(template == null, "No Widget Blueprint found in sandbox");
 

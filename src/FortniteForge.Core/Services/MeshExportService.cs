@@ -5,7 +5,7 @@ using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Meshes;
 using Microsoft.Extensions.Logging;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Exports device meshes as GLB from Fortnite PAK files via CUE4Parse.

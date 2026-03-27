@@ -241,7 +241,7 @@ export function TemplatePanel() {
             onClick={handleImportWidgetSpec}
           >
             <div className="font-medium">Import Widget Spec</div>
-            <div className="text-gray-500 text-[10px] mt-0.5">Load a .json from FortniteForge</div>
+            <div className="text-gray-500 text-[10px] mt-0.5">Load a .json from WellVersed</div>
           </button>
           {activeTemplate?.category === 'umg' && (
             <button
@@ -249,7 +249,7 @@ export function TemplatePanel() {
               onClick={handleExportWidgetSpec}
             >
               <div className="font-medium">Export Widget Spec</div>
-              <div className="text-fn-epic/60 text-[10px] mt-0.5">Save .json for FortniteForge to build .uasset</div>
+              <div className="text-fn-epic/60 text-[10px] mt-0.5">Save .json for WellVersed to build .uasset</div>
             </button>
           )}
         </div>

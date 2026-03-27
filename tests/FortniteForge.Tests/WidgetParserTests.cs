@@ -1,6 +1,6 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
@@ -8,7 +8,7 @@ using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.UnrealTypes;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 /// <summary>
 /// Tests for WidgetBlueprintParser — parsing existing .uasset Widget Blueprints into WidgetSpec.
@@ -20,7 +20,7 @@ public class WidgetParserTests : IDisposable
 
     public WidgetParserTests()
     {
-        _testDir = Path.Combine(Path.GetTempPath(), "FortniteForge_ParserTests_" + Guid.NewGuid().ToString("N")[..8]);
+        _testDir = Path.Combine(Path.GetTempPath(), "WellVersed_ParserTests_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_testDir);
     }
 
@@ -30,7 +30,7 @@ public class WidgetParserTests : IDisposable
             Directory.Delete(_testDir, true);
     }
 
-    private static readonly string SandboxPath = Environment.GetEnvironmentVariable("FORTNITEFORGE_SANDBOX") ?? "";
+    private static readonly string SandboxPath = Environment.GetEnvironmentVariable("WELLVERSED_SANDBOX") ?? "";
     private static bool HasSandbox => !string.IsNullOrEmpty(SandboxPath) && Directory.Exists(SandboxPath);
 
     // Path to the widget library — resolve from git repo root
@@ -60,7 +60,7 @@ public class WidgetParserTests : IDisposable
 
     private SafeFileAccess CreateFileAccess()
     {
-        var config = new ForgeConfig { ProjectPath = _testDir, ReadOnly = true };
+        var config = new WellVersedConfig { ProjectPath = _testDir, ReadOnly = true };
         var detector = new UefnDetector(config, NullLogger<UefnDetector>.Instance);
         return new SafeFileAccess(config, detector, NullLogger<SafeFileAccess>.Instance);
     }

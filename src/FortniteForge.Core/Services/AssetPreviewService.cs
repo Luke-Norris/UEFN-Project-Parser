@@ -10,7 +10,7 @@ using CUE4Parse_Conversion.Textures;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Extracts asset previews (textures, mesh data) from Fortnite game files using CUE4Parse.

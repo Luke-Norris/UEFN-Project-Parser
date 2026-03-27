@@ -1,13 +1,13 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
+using WellVersed.Core.Services;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
 using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Web;
+namespace WellVersed.Web;
 
 /// <summary>
 /// Classifies external actors as devices vs static meshes/terrain.
@@ -92,7 +92,7 @@ public static class DeviceClassifier
     /// <summary>
     /// Scans all external actors in a level and returns classified results.
     /// </summary>
-    public static LevelContents ClassifyLevel(string levelPath, ForgeConfig config)
+    public static LevelContents ClassifyLevel(string levelPath, WellVersedConfig config)
     {
         var result = new LevelContents { LevelPath = levelPath, LevelName = Path.GetFileNameWithoutExtension(levelPath) };
         var contentDir = Path.GetDirectoryName(levelPath) ?? "";

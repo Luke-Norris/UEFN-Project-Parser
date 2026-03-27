@@ -1,5 +1,5 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Models;
+using WellVersed.Core.Config;
+using WellVersed.Core.Models;
 using Microsoft.Extensions.Logging;
 using UAssetAPI;
 using UAssetAPI.ExportTypes;
@@ -7,7 +7,7 @@ using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.PropertyTypes.Structs;
 using UAssetAPI.UnrealTypes;
 
-namespace FortniteForge.Core.Services;
+namespace WellVersed.Core.Services;
 
 /// <summary>
 /// Specialized service for working with Creative Devices in UEFN levels.
@@ -15,7 +15,7 @@ namespace FortniteForge.Core.Services;
 /// </summary>
 public class DeviceService
 {
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly AssetService _assetService;
     private readonly DigestService _digestService;
     private readonly ILogger<DeviceService> _logger;
@@ -32,7 +32,7 @@ public class DeviceService
     };
 
     public DeviceService(
-        ForgeConfig config,
+        WellVersedConfig config,
         AssetService assetService,
         DigestService digestService,
         ILogger<DeviceService> logger)

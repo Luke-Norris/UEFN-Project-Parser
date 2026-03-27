@@ -1,14 +1,14 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class BackupServiceTests : IDisposable
 {
     private readonly string _tempDir;
-    private readonly ForgeConfig _config;
+    private readonly WellVersedConfig _config;
     private readonly BackupService _service;
 
     public BackupServiceTests()
@@ -19,10 +19,10 @@ public class BackupServiceTests : IDisposable
         var contentDir = Path.Combine(_tempDir, "Content");
         Directory.CreateDirectory(contentDir);
 
-        _config = new ForgeConfig
+        _config = new WellVersedConfig
         {
             ProjectPath = _tempDir,
-            BackupDirectory = ".fortniteforge/backups",
+            BackupDirectory = ".wellversed/backups",
             MaxBackupsPerFile = 3
         };
         _service = new BackupService(_config, NullLogger<BackupService>.Instance);
@@ -87,7 +87,7 @@ public class BackupServiceTests : IDisposable
         var assetPath = CreateTestAsset("Prunable.uasset", "v1");
 
         // Pre-create old backup files with distinct timestamps to simulate history
-        var backupDir = Path.Combine(_tempDir, ".fortniteforge", "backups");
+        var backupDir = Path.Combine(_tempDir, ".wellversed", "backups");
         Directory.CreateDirectory(backupDir);
         for (int i = 0; i < 4; i++)
         {

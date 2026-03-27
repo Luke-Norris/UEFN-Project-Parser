@@ -1,11 +1,11 @@
-using FortniteForge.Core.Config;
-using FortniteForge.Core.Services;
+using WellVersed.Core.Config;
+using WellVersed.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace FortniteForge.Tests;
+namespace WellVersed.Tests;
 
 public class AnalyticsOutputTest
 {
@@ -28,7 +28,7 @@ public class AnalyticsOutputTest
     {
         Skip.IfNot(ProjectExists, "UEFN project not found");
 
-        var config = new ForgeConfig { ProjectPath = ProjectPath };
+        var config = new WellVersedConfig { ProjectPath = ProjectPath };
         var service = new LevelAnalyticsService(config, NullLogger<LevelAnalyticsService>.Instance);
 
         var results = service.AnalyzeProject();
@@ -73,7 +73,7 @@ public class AnalyticsOutputTest
     {
         Skip.IfNot(ProjectExists, "UEFN project not found");
 
-        var config = new ForgeConfig { ProjectPath = ProjectPath };
+        var config = new WellVersedConfig { ProjectPath = ProjectPath };
         var service = new LevelAnalyticsService(config, NullLogger<LevelAnalyticsService>.Instance);
 
         var result = service.AnalyzeLevel(LevelPath);
