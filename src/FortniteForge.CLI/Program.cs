@@ -623,6 +623,8 @@ public class Program
                 // File watcher integration (called from Rust side)
                 "watch-project" => HandleWatchProject(req),
                 "unwatch-project" => HandleUnwatchProject(req),
+                // Bridge installation
+                "install-bridge" => HandleInstallBridge(req),
                 // UEFN Bridge passthrough
                 "bridge-connect" => HandleBridgeConnect(req),
                 "bridge-status" => HandleBridgeStatus(req),
@@ -2676,6 +2678,111 @@ static SidecarResponse HandleWatchProject(SidecarRequest req)
 static SidecarResponse HandleUnwatchProject(SidecarRequest req)
 {
     return new SidecarResponse(req.Id, new { watching = false });
+}
+
+// ========= Bridge Installation =========
+
+static SidecarResponse HandleInstallBridge(SidecarRequest req)
+{
+    var projectPath = req.Params?.GetProperty("projectPath").GetString()
+        ?? throw new ArgumentException("Missing 'projectPath'");
+
+    // Validate it's a UEFN project
+    var uefnFiles = Directory.GetFiles(projectPath, "*.uefnproject");
+    if (uefnFiles.Length == 0)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NOT_UEFN", $"No .uefnproject file found in: {projectPath}"));
+
+    var pythonDir = Path.Combine(projectPath, "Content", "Python");
+    Directory.CreateDirectory(pythonDir);
+
+    // Find our bridge source
+    var repoRoot = AppDomain.CurrentDomain.BaseDirectory;
+    // Walk up from bin/Debug/net8.0 to repo root
+    for (int i = 0; i < 6; i++)
+    {
+        var bridgeDir = Path.Combine(repoRoot, "bridge", "wellversed");
+        if (Directory.Exists(bridgeDir))
+            break;
+        repoRoot = Path.GetDirectoryName(repoRoot) ?? repoRoot;
+    }
+
+    var sourceBridgeDir = Path.Combine(repoRoot, "bridge", "wellversed");
+    var sourceInitFile = Path.Combine(repoRoot, "bridge", "init_unreal.py");
+
+    if (!Directory.Exists(sourceBridgeDir))
+        return new SidecarResponse(req.Id, Error: new SidecarError("BRIDGE_NOT_FOUND", $"Bridge source not found. Expected at: {sourceBridgeDir}"));
+
+    var installed = new List<string>();
+
+    try
+    {
+        // Copy wellversed package
+        var destWellversed = Path.Combine(pythonDir, "wellversed");
+        CopyDirectoryRecursive(sourceBridgeDir, destWellversed);
+        installed.Add("wellversed/ package");
+
+        // Handle init_unreal.py
+        var destInit = Path.Combine(pythonDir, "init_unreal.py");
+        if (File.Exists(destInit))
+        {
+            var content = File.ReadAllText(destInit);
+            if (!content.Contains("wellversed"))
+            {
+                File.AppendAllText(destInit, "\n# WellVersed Bridge auto-start\ntry:\n    import wellversed\n    wellversed.start()\n    print(\"[WellVersed] Bridge started\")\nexcept Exception as e:\n    print(f\"[WellVersed] Failed: {e}\")\n");
+                installed.Add("init_unreal.py (appended)");
+            }
+            else
+            {
+                installed.Add("init_unreal.py (already configured)");
+            }
+        }
+        else if (File.Exists(sourceInitFile))
+        {
+            File.Copy(sourceInitFile, destInit);
+            installed.Add("init_unreal.py");
+        }
+
+        // Clean __pycache__
+        CleanPycache(destWellversed);
+
+        return new SidecarResponse(req.Id, new
+        {
+            success = true,
+            projectPath,
+            pythonDir,
+            installed,
+            message = $"Bridge installed to {pythonDir}. Enable Python Editor Scripting in UEFN and restart."
+        });
+    }
+    catch (Exception ex)
+    {
+        return new SidecarResponse(req.Id, Error: new SidecarError("INSTALL_FAILED", ex.Message));
+    }
+}
+
+static void CopyDirectoryRecursive(string source, string dest)
+{
+    Directory.CreateDirectory(dest);
+    foreach (var file in Directory.GetFiles(source))
+    {
+        var fileName = Path.GetFileName(file);
+        if (fileName.EndsWith(".pyc")) continue; // skip compiled
+        File.Copy(file, Path.Combine(dest, fileName), overwrite: true);
+    }
+    foreach (var dir in Directory.GetDirectories(source))
+    {
+        var dirName = Path.GetFileName(dir);
+        if (dirName == "__pycache__") continue;
+        CopyDirectoryRecursive(dir, Path.Combine(dest, dirName));
+    }
+}
+
+static void CleanPycache(string dir)
+{
+    foreach (var sub in Directory.GetDirectories(dir, "__pycache__", SearchOption.AllDirectories))
+    {
+        try { Directory.Delete(sub, true); } catch { }
+    }
 }
 
 // ========= UEFN Bridge Handlers =========

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { WellVersedProject, WellVersedProjectList, WellVersedDiscoveredProject } from '../../shared/types'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { forgeInstallBridge } from '../lib/api'
 
 export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (page: string) => void; onProjectChanged?: () => void }) {
   const storeProjectList = useForgeStore((s) => s.projectList)
@@ -287,6 +288,33 @@ function ProjectCard({
     ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
     : 'text-fn-rare bg-fn-rare/10 border-fn-rare/20'
 
+  const [installing, setInstalling] = useState(false)
+  const [bridgeStatus, setBridgeStatus] = useState<'unknown' | 'installed' | 'not_installed'>('unknown')
+  const [installMsg, setInstallMsg] = useState<string | null>(null)
+
+  // Check if bridge is already installed
+  useEffect(() => {
+    if (project.isUefnProject) {
+      // Simple check — does Content/Python/wellversed exist?
+      // We can't do fs checks from renderer, so we just show the button
+      setBridgeStatus('unknown')
+    }
+  }, [project.isUefnProject])
+
+  async function handleInstallBridge() {
+    try {
+      setInstalling(true)
+      setInstallMsg(null)
+      const result = await forgeInstallBridge(project.projectPath)
+      setBridgeStatus('installed')
+      setInstallMsg(result.message)
+    } catch (err) {
+      setInstallMsg(err instanceof Error ? err.message : 'Failed to install bridge')
+    } finally {
+      setInstalling(false)
+    }
+  }
+
   return (
     <div
       className={`bg-fn-panel border rounded-lg p-3 transition-colors ${
@@ -306,6 +334,11 @@ function ProjectCard({
             {project.isUefnProject && (
               <span className="text-[9px] text-gray-600">UEFN</span>
             )}
+            {bridgeStatus === 'installed' && (
+              <span className="text-[9px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded">
+                Bridge Installed
+              </span>
+            )}
           </div>
           <p className="text-[10px] text-gray-500 truncate">{project.projectPath}</p>
 
@@ -323,10 +356,27 @@ function ProjectCard({
               {project.verseFileCount} verse
             </span>
           </div>
+
+          {/* Install bridge feedback */}
+          {installMsg && (
+            <p className={`text-[9px] mt-1.5 ${bridgeStatus === 'installed' ? 'text-emerald-400/70' : 'text-amber-400/70'}`}>
+              {installMsg}
+            </p>
+          )}
         </div>
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {project.isUefnProject && !isLibrary && bridgeStatus !== 'installed' && (
+            <button
+              onClick={handleInstallBridge}
+              disabled={installing}
+              className="px-2 py-1 text-[10px] font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors disabled:opacity-40"
+              title="Install Python bridge for live UEFN control"
+            >
+              {installing ? 'Installing...' : 'Install Bridge'}
+            </button>
+          )}
           {!isActive && (
             <button
               onClick={onActivate}

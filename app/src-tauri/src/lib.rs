@@ -68,6 +68,7 @@ pub fn run() {
             commands::forge_status,
             commands::forge_list_projects,
             commands::forge_add_project,
+            commands::forge_install_bridge,
             commands::forge_remove_project,
             commands::forge_activate_project,
             commands::forge_scan_projects,

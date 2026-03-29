@@ -274,6 +274,18 @@ export async function forgeAddProject(
   return invoke('forge_add_project', { path, projectType: type })
 }
 
+export async function forgeInstallBridge(
+  projectPath: string
+): Promise<{
+  success: boolean
+  projectPath: string
+  pythonDir: string
+  installed: string[]
+  message: string
+}> {
+  return invoke('forge_install_bridge', { projectPath })
+}
+
 export async function forgeRemoveProject(
   id: string
 ): Promise<{ removed: boolean }> {

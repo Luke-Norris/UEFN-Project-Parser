@@ -62,6 +62,17 @@ pub async fn forge_add_project(
 }
 
 #[tauri::command]
+pub async fn forge_install_bridge(
+    state: State<'_, AppState>,
+    project_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("install-bridge", json!({"projectPath": project_path}))
+        .await
+}
+
+#[tauri::command]
 pub async fn forge_remove_project(
     state: State<'_, AppState>,
     id: String,
