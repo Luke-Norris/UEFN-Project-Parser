@@ -2,7 +2,92 @@ import { useEffect, useState } from 'react'
 import type { WellVersedProject, WellVersedProjectList, WellVersedDiscoveredProject } from '../../shared/types'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
-import { forgeInstallBridge, forgeCreateDevCopy } from '../lib/api'
+import { forgeInstallBridge, forgeCreateDevCopy, forgeOpenInUefn } from '../lib/api'
+
+// Helper to detect dev copy projects
+function isDevCopy(project: WellVersedProject): boolean {
+  return project.name.endsWith('_WellVersed_Dev')
+}
+
+function getBaseProjectName(project: WellVersedProject): string {
+  return project.name.replace(/_WellVersed_Dev$/, '')
+}
+
+// Clipboard copy with brief feedback
+function CopyPathButton({ path }: { path: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(path)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // fallback — ignore
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center px-1 py-0.5 text-gray-500 hover:text-gray-300 transition-colors"
+      title={copied ? 'Copied!' : 'Copy path to clipboard'}
+    >
+      {copied ? (
+        <span className="text-[9px] text-emerald-400">Copied!</span>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+// Group projects into linked pairs (main + dev copy)
+interface ProjectPair {
+  main: WellVersedProject | null
+  devCopy: WellVersedProject | null
+}
+
+function groupProjectPairs(projects: WellVersedProject[]): { pairs: ProjectPair[]; standalone: WellVersedProject[] } {
+  const devCopies = new Map<string, WellVersedProject>()
+  const mainProjects = new Map<string, WellVersedProject>()
+  const standalone: WellVersedProject[] = []
+
+  // First pass: categorize
+  for (const p of projects) {
+    if (isDevCopy(p)) {
+      const baseName = getBaseProjectName(p)
+      devCopies.set(baseName, p)
+    } else {
+      mainProjects.set(p.name, p)
+    }
+  }
+
+  // Second pass: create pairs
+  const pairs: ProjectPair[] = []
+  const pairedMains = new Set<string>()
+
+  for (const [baseName, devProject] of devCopies) {
+    const mainProject = mainProjects.get(baseName)
+    if (mainProject) {
+      pairs.push({ main: mainProject, devCopy: devProject })
+      pairedMains.add(baseName)
+    } else {
+      standalone.push(devProject)
+    }
+  }
+
+  // Add unpaired main projects as standalone
+  for (const [name, p] of mainProjects) {
+    if (!pairedMains.has(name)) {
+      standalone.push(p)
+    }
+  }
+
+  return { pairs, standalone }
+}
 
 export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (page: string) => void; onProjectChanged?: () => void }) {
   const storeProjectList = useForgeStore((s) => s.projectList)
@@ -163,15 +248,33 @@ export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (p
             </div>
           ) : (
             <div className="space-y-2">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  isActive={project.id === activeId}
-                  onActivate={() => handleActivateProject(project.id)}
-                  onRemove={() => handleRemoveProject(project.id)}
-                />
-              ))}
+              {(() => {
+                const { pairs, standalone } = groupProjectPairs(projects)
+                return (
+                  <>
+                    {/* Linked pairs */}
+                    {pairs.map((pair) => (
+                      <LinkedProjectPair
+                        key={pair.main?.id ?? pair.devCopy?.id ?? ''}
+                        pair={pair}
+                        activeId={activeId}
+                        onActivate={handleActivateProject}
+                        onRemove={handleRemoveProject}
+                      />
+                    ))}
+                    {/* Standalone projects */}
+                    {standalone.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        isActive={project.id === activeId}
+                        onActivate={() => handleActivateProject(project.id)}
+                        onRemove={() => handleRemoveProject(project.id)}
+                      />
+                    ))}
+                  </>
+                )
+              })()}
             </div>
           )}
         </div>
@@ -272,27 +375,78 @@ export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (p
   )
 }
 
+function LinkedProjectPair({
+  pair,
+  activeId,
+  onActivate,
+  onRemove
+}: {
+  pair: ProjectPair
+  activeId: string | null
+  onActivate: (id: string) => void
+  onRemove: (id: string) => void
+}) {
+  return (
+    <div className="rounded-lg border border-fn-border overflow-hidden">
+      {/* Main project */}
+      {pair.main && (
+        <ProjectCard
+          project={pair.main}
+          isActive={pair.main.id === activeId}
+          onActivate={() => onActivate(pair.main!.id)}
+          onRemove={() => onRemove(pair.main!.id)}
+          roleLabel="Main Copy (PUBLISHABLE)"
+          roleColor="text-emerald-400"
+        />
+      )}
+      {/* Divider */}
+      {pair.main && pair.devCopy && (
+        <div className="border-t border-dashed border-fn-border" />
+      )}
+      {/* Dev copy */}
+      {pair.devCopy && (
+        <ProjectCard
+          project={pair.devCopy}
+          isActive={pair.devCopy.id === activeId}
+          onActivate={() => onActivate(pair.devCopy!.id)}
+          onRemove={() => onRemove(pair.devCopy!.id)}
+          roleLabel="Dev Copy (BRIDGE ENABLED)"
+          roleColor="text-blue-400"
+        />
+      )}
+    </div>
+  )
+}
+
 function ProjectCard({
   project,
   isActive,
   onActivate,
-  onRemove
+  onRemove,
+  roleLabel,
+  roleColor,
 }: {
   project: WellVersedProject
   isActive: boolean
   onActivate: () => void
   onRemove: () => void
+  roleLabel?: string
+  roleColor?: string
 }) {
   const isLibrary = project.type === 'Library'
+  const isDev = isDevCopy(project)
   const typeBadge = isLibrary
     ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
-    : 'text-fn-rare bg-fn-rare/10 border-fn-rare/20'
+    : isDev
+      ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
+      : 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
 
   const [installing, setInstalling] = useState(false)
   const [creatingCopy, setCreatingCopy] = useState(false)
   const [bridgeStatus, setBridgeStatus] = useState<'unknown' | 'installed' | 'not_installed'>('unknown')
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [actionType, setActionType] = useState<'success' | 'error' | 'warning'>('success')
+  const [openingUefn, setOpeningUefn] = useState(false)
 
   async function handleCreateDevCopy() {
     try {
@@ -325,21 +479,45 @@ function ProjectCard({
     }
   }
 
+  async function handleOpenInUefn() {
+    try {
+      setOpeningUefn(true)
+      setActionMsg(null)
+      await forgeOpenInUefn(project.projectPath)
+      setActionType('success')
+      setActionMsg('Opening in UEFN...')
+      setTimeout(() => setActionMsg(null), 3000)
+    } catch (err) {
+      setActionType('error')
+      setActionMsg(err instanceof Error ? err.message : 'Failed to open in UEFN')
+    } finally {
+      setOpeningUefn(false)
+    }
+  }
+
+  const dotColor = isDev ? 'bg-blue-400' : 'bg-emerald-400'
+  const activeBorder = isDev ? 'border-blue-400/40 bg-blue-400/[0.03]' : 'border-emerald-400/40 bg-emerald-400/[0.03]'
+
   return (
     <div
-      className={`bg-fn-panel border rounded-lg p-3 transition-colors ${
-        isActive ? 'border-fn-rare/40 bg-fn-rare/[0.03]' : 'border-fn-border'
-      }`}
+      className={`bg-fn-panel p-3 transition-colors ${
+        isActive ? activeBorder : 'border-fn-border'
+      } ${roleLabel ? '' : 'border rounded-lg'}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5">
             {isActive && (
-              <span className="w-1.5 h-1.5 rounded-full bg-fn-rare shrink-0" />
+              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />
             )}
             <span className="text-[11px] font-medium text-white truncate">{project.name}</span>
+            {isActive && (
+              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold border shrink-0 text-fn-rare bg-fn-rare/10 border-fn-rare/20">
+                Active
+              </span>
+            )}
             <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-medium border shrink-0 ${typeBadge}`}>
-              {isLibrary ? 'Library' : 'My Project'}
+              {isLibrary ? 'Library' : isDev ? 'DEV' : 'SAFE'}
             </span>
             {project.isUefnProject && (
               <span className="text-[9px] text-gray-600">UEFN</span>
@@ -350,7 +528,19 @@ function ProjectCard({
               </span>
             )}
           </div>
-          <p className="text-[10px] text-gray-500 truncate">{project.projectPath}</p>
+
+          {/* Role label for paired projects */}
+          {roleLabel && (
+            <p className={`text-[9px] font-medium mb-0.5 ${roleColor ?? 'text-gray-400'}`}>
+              {roleLabel}
+            </p>
+          )}
+
+          {/* Path with copy button */}
+          <div className="flex items-center gap-1">
+            <p className="text-[10px] text-gray-500 truncate">{project.projectPath}</p>
+            <CopyPathButton path={project.projectPath} />
+          </div>
 
           {/* Stats row */}
           <div className="flex items-center gap-3 mt-1.5">
@@ -381,7 +571,24 @@ function ProjectCard({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {project.isUefnProject && !isLibrary && (
+          {/* Open in UEFN */}
+          {project.isUefnProject && (
+            <button
+              onClick={handleOpenInUefn}
+              disabled={openingUefn}
+              className="px-2 py-1 text-[10px] font-medium text-gray-400 bg-fn-darker border border-fn-border rounded hover:text-white hover:border-gray-500 transition-colors disabled:opacity-40"
+              title="Open this project in UEFN"
+            >
+              <span className="flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {openingUefn ? 'Opening...' : 'Open UEFN'}
+              </span>
+            </button>
+          )}
+          {project.isUefnProject && !isLibrary && !isDev && (
             <>
               <button
                 onClick={handleCreateDevCopy}
@@ -419,6 +626,60 @@ function ProjectCard({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function LinkedProjectPair({
+  pair,
+  activeId,
+  onActivate,
+  onRemove,
+}: {
+  pair: ProjectPair
+  activeId: string | null
+  onActivate: (id: string) => void
+  onRemove: (id: string) => void
+}) {
+  return (
+    <div className="border border-fn-border rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="px-3 py-1.5 bg-fn-dark/50 border-b border-fn-border flex items-center gap-2">
+        <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+          <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" />
+        </svg>
+        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">Linked Project Pair</span>
+      </div>
+
+      {/* Main copy */}
+      {pair.main && (
+        <ProjectCard
+          project={pair.main}
+          isActive={pair.main.id === activeId}
+          onActivate={() => onActivate(pair.main!.id)}
+          onRemove={() => onRemove(pair.main!.id)}
+          roleLabel="MAIN COPY — Publishable"
+          roleColor="text-emerald-400"
+        />
+      )}
+
+      {/* Divider */}
+      {pair.main && pair.devCopy && (
+        <div className="border-t border-fn-border border-dashed" />
+      )}
+
+      {/* Dev copy */}
+      {pair.devCopy && (
+        <ProjectCard
+          project={pair.devCopy}
+          isActive={pair.devCopy.id === activeId}
+          onActivate={() => onActivate(pair.devCopy!.id)}
+          onRemove={() => onRemove(pair.devCopy!.id)}
+          roleLabel="DEV COPY — Bridge Enabled (Experimental)"
+          roleColor="text-blue-400"
+        />
+      )}
     </div>
   )
 }

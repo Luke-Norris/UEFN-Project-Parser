@@ -84,6 +84,17 @@ pub async fn forge_install_bridge(
 }
 
 #[tauri::command]
+pub async fn forge_open_in_uefn(
+    state: State<'_, AppState>,
+    project_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("open-in-uefn", json!({"projectPath": project_path}))
+        .await
+}
+
+#[tauri::command]
 pub async fn forge_remove_project(
     state: State<'_, AppState>,
     id: String,

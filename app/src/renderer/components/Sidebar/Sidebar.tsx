@@ -183,12 +183,13 @@ const icons = {
   ),
 }
 
-// Green dot for active project
-const projectDot = (
-  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-)
-
 export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, collapsed, onToggleCollapse, width = 220 }: SidebarProps) {
+  // Dev copy detection for active project
+  const isActiveDevCopy = activeProject?.name?.endsWith('_WellVersed_Dev') ?? false
+  const projectDotColor = isActiveDevCopy ? 'bg-blue-400' : 'bg-emerald-400'
+  const projectDot = (
+    <span className={`w-2 h-2 rounded-full ${projectDotColor} shrink-0`} />
+  )
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [dropdownSearch, setDropdownSearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -404,9 +405,11 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
     )
   }
 
-  // All user projects are protected (copy-on-read)
-  const typeBadgeLabel = 'SAFE'
-  const typeBadgeColor = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
+  // Badge changes based on dev copy status
+  const typeBadgeLabel = isActiveDevCopy ? 'DEV' : 'SAFE'
+  const typeBadgeColor = isActiveDevCopy
+    ? 'text-blue-400 bg-blue-400/10 border-blue-400/20'
+    : 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
 
   return (
     <div

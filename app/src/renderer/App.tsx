@@ -84,6 +84,9 @@ export default function App() {
     ? { name: status.projectName, type: status.projectType ?? 'MyProject' }
     : null
 
+  // Determine if active project is a dev copy
+  const isActiveDevCopy = activeProject?.name?.endsWith('_WellVersed_Dev') ?? false
+
   const handleNavigate = useCallback((page: PageId) => {
     setActivePage(page)
     if (page === 'widget-editor') {
@@ -230,6 +233,39 @@ export default function App() {
             >
               Dismiss
             </button>
+          </div>
+        )}
+        {/* Active project safety banner */}
+        {activeProject && isActiveDevCopy && (
+          <div className="flex items-center px-3 py-1.5 bg-blue-900/30 border-b border-blue-700/20 shrink-0">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 mr-2 shrink-0" />
+            <div className="min-w-0">
+              <span className="text-[10px] font-semibold text-blue-300">
+                DEVELOPMENT COPY ACTIVE
+              </span>
+              <span className="text-[10px] text-blue-300/60 ml-1.5">
+                {activeProject.name}
+              </span>
+              <span className="text-[10px] text-blue-300/40 ml-1.5">
+                — Bridge automation enabled. Changes here do NOT affect your publishable project.
+              </span>
+            </div>
+          </div>
+        )}
+        {activeProject && !isActiveDevCopy && (
+          <div className="flex items-center px-3 py-1 bg-emerald-900/20 border-b border-emerald-700/10 shrink-0">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 shrink-0" />
+            <div className="min-w-0">
+              <span className="text-[10px] font-semibold text-emerald-300/70">
+                PUBLISHABLE PROJECT
+              </span>
+              <span className="text-[10px] text-emerald-300/40 ml-1.5">
+                {activeProject.name}
+              </span>
+              <span className="text-[10px] text-emerald-300/30 ml-1.5">
+                — Read-only safety mode. Use the dev copy for bridge automation.
+              </span>
+            </div>
           </div>
         )}
         <div className="flex-1 min-h-0 min-w-0 flex">

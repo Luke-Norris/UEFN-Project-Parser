@@ -287,6 +287,12 @@ export async function forgeCreateDevCopy(
   return invoke('forge_create_dev_copy', { projectPath })
 }
 
+export async function forgeOpenInUefn(
+  projectPath: string
+): Promise<{ opened: boolean; file: string }> {
+  return invoke('forge_open_in_uefn', { projectPath })
+}
+
 export async function forgeInstallBridge(
   projectPath: string
 ): Promise<{
@@ -782,6 +788,7 @@ const api = {
   wellVersedStatus,
   wellVersedListProjects,
   forgeAddProject,
+  forgeOpenInUefn,
   forgeRemoveProject,
   wellVersedActivateProject,
   forgeScanProjects,

@@ -585,6 +585,8 @@ public class Program
                 "list-epic-assets" => HandleListEpicAssets(req),
                 "read-verse" => HandleReadVerse(req),
                 "list-staged" => HandleListStaged(req),
+                "apply-staged" => HandleApplyStaged(req),
+                "discard-staged" => HandleDiscardStaged(req),
                 // Library management (separate from projects)
                 "list-libraries" => HandleListLibraries(req),
                 "add-library" => HandleAddLibrary(req),
@@ -635,6 +637,8 @@ public class Program
                 "simulate-event" => HandleSimulateEvent(req),
                 // Game Designer
                 "design-game" => HandleDesignGame(req),
+                // Open project in UEFN
+                "open-in-uefn" => HandleOpenInUefn(req),
                 _ => new SidecarResponse(req.Id, Error: new SidecarError("UNKNOWN_METHOD", $"Unknown method: {req.Method}"))
             };
         }
@@ -1446,6 +1450,62 @@ public class Program
         }
     }
 
+    private static SidecarResponse HandleApplyStaged(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        // MCP Safety Guard: block writes to publishable projects when dev copy exists
+        var (isSafe, reason) = IsDevCopyOrSafe(active.ProjectPath);
+        if (!isSafe)
+            return new SidecarResponse(req.Id, Error: new SidecarError("SAFETY_BLOCK", reason));
+
+        var cfg = new WellVersedConfig { ProjectPath = active.ProjectPath, ReadOnly = false, StagingDirectory = Path.Combine(active.ProjectPath, ".wellversed", "staged") };
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        var detector = new UefnDetector(cfg, loggerFactory.CreateLogger<UefnDetector>());
+        var fileAccess = new SafeFileAccess(cfg, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+
+        try
+        {
+            var staged = fileAccess.ListStagedFiles();
+            int applied = 0;
+            foreach (var s in staged)
+            {
+                var dest = Path.Combine(cfg.ContentPath, s.RelativePath);
+                var destDir = Path.GetDirectoryName(dest);
+                if (destDir != null) Directory.CreateDirectory(destDir);
+                File.Copy(s.StagedPath, dest, overwrite: true);
+                File.Delete(s.StagedPath);
+                applied++;
+            }
+            return new SidecarResponse(req.Id, new { applied });
+        }
+        finally
+        {
+            fileAccess.Dispose();
+        }
+    }
+
+    private static SidecarResponse HandleDiscardStaged(SidecarRequest req)
+    {
+        var pm = _sidecarProjects!;
+        var active = pm.GetActiveProject();
+        if (active == null)
+            return new SidecarResponse(req.Id, Error: new SidecarError("NO_PROJECT", "No active project"));
+
+        var stagingDir = Path.Combine(active.ProjectPath, ".wellversed", "staged");
+        int discarded = 0;
+        if (Directory.Exists(stagingDir))
+        {
+            var files = Directory.GetFiles(stagingDir, "*", SearchOption.AllDirectories);
+            discarded = files.Length;
+            foreach (var f in files) File.Delete(f);
+        }
+        return new SidecarResponse(req.Id, new { discarded });
+    }
+
     // ========= Simple Helpers for Sidecar Handlers (avoid Web dependency) =========
 
     /// <summary>
@@ -1543,6 +1603,15 @@ public class Program
 
     private static SidecarResponse HandleBuildUasset(SidecarRequest req, WellVersedConfig config)
     {
+        // MCP Safety Guard: block writes to publishable projects when dev copy exists
+        var activeProject = _sidecarProjects?.GetActiveProject();
+        if (activeProject != null)
+        {
+            var (isSafe, reason) = IsDevCopyOrSafe(activeProject.ProjectPath);
+            if (!isSafe)
+                return new SidecarResponse(req.Id, Error: new SidecarError("SAFETY_BLOCK", reason));
+        }
+
         var specJson = req.Params?.GetProperty("spec").GetRawText()
             ?? throw new ArgumentException("Missing 'spec' parameter");
         var outputDir = req.Params?.GetProperty("outputDir").GetString()
@@ -2950,6 +3019,58 @@ static SidecarResponse HandleCreateDevCopy(SidecarRequest req)
         }
         return new SidecarResponse(req.Id, Error: new SidecarError("COPY_FAILED", ex.Message));
     }
+}
+
+// ========= Open in UEFN =========
+
+static SidecarResponse HandleOpenInUefn(SidecarRequest req)
+{
+    var projectPath = req.Params?.GetProperty("projectPath").GetString()
+        ?? throw new ArgumentException("Missing 'projectPath'");
+
+    var uefnFiles = Directory.GetFiles(projectPath, "*.uefnproject");
+    if (uefnFiles.Length == 0)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", "No .uefnproject file found"));
+
+    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = uefnFiles[0],
+        UseShellExecute = true
+    });
+
+    return new SidecarResponse(req.Id, new { opened = true, file = uefnFiles[0] });
+}
+
+// ========= MCP Safety Guard =========
+
+/// <summary>
+/// Checks whether the active project is safe to modify.
+/// Returns (true, "") if the project is a dev copy or has no dev copy sibling.
+/// Returns (false, reason) if the project is a publishable main copy with a dev copy sibling.
+/// </summary>
+static (bool isSafe, string reason) IsDevCopyOrSafe(string projectPath)
+{
+    // Dev copies are always safe to modify
+    if (projectPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .EndsWith("_WellVersed_Dev", StringComparison.OrdinalIgnoreCase))
+        return (true, "");
+
+    // Check for .wellversed_dev_copy marker (in case of non-standard naming)
+    if (File.Exists(Path.Combine(projectPath, ".wellversed_dev_copy")))
+        return (true, "");
+
+    // Check if a dev copy sibling exists
+    var parentDir = Path.GetDirectoryName(projectPath);
+    if (parentDir != null)
+    {
+        var projectName = Path.GetFileName(projectPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var devCopyPath = Path.Combine(parentDir, $"{projectName}_WellVersed_Dev");
+        if (Directory.Exists(devCopyPath))
+            return (false, $"Cannot modify publishable project. A dev copy exists at '{devCopyPath}'. Activate the dev copy first.");
+    }
+
+    // No dev copy exists — safe to modify main project
+    return (true, "");
 }
 
 static void CopyDirectoryRecursive(string source, string dest)
