@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WellVersed — User Guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #1c2333; --bg4: #21262d;
+    --border: #30363d; --border-light: #3d444d;
+    --text: #e6edf3; --text-secondary: #c9d1d9; --muted: #8b949e; --dim: #6e7681;
+    --emerald: #10b981; --emerald-dim: #059669; --emerald-glow: rgba(16,185,129,0.15);
+    --blue: #58a6ff; --green: #3fb950; --red: #f85149; --yellow: #d29922;
+    --purple: #bc8cff; --cyan: #39d3d3; --orange: #f0883e; --pink: #f778ba;
+    --gradient-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-hero: linear-gradient(135deg, #0d1117 0%, #0f1a14 40%, #0d1117 100%);
+    --gradient-card: linear-gradient(135deg, var(--bg2), var(--bg3));
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text-secondary); line-height:1.6; font-size:14px; overflow-x:hidden; }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width:8px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+
+  /* ─── Header ─── */
+  .site-header {
+    background:var(--bg2); border-bottom:1px solid var(--border);
+    padding:16px 40px; display:flex; align-items:center; gap:16px;
+    position:sticky; top:0; z-index:100; backdrop-filter:blur(12px);
+    background:rgba(22,27,34,0.85);
+  }
+  .site-header h1 { font-size:1.2rem; font-weight:700; color:var(--text); letter-spacing:-0.01em; }
+  .site-header .accent { color:var(--emerald); }
+  .site-header .sub { color:var(--dim); font-size:13px; margin-left:auto; }
+
+  .nav-bar {
+    background:rgba(28,35,51,0.85); border-bottom:1px solid var(--border);
+    padding:6px 40px; display:flex; gap:4px; position:sticky; top:52px; z-index:99;
+    backdrop-filter:blur(12px);
+  }
+  .nav-link {
+    color:var(--muted); text-decoration:none; font-size:13px; font-weight:500;
+    padding:6px 14px; border-radius:6px; transition:all 0.2s;
+  }
+  .nav-link:hover { color:var(--text); background:rgba(16,185,129,0.08); }
+  .nav-link.active { color:var(--emerald); background:rgba(16,185,129,0.12); }
+
+  /* ─── Hero ─── */
+  .hero {
+    background:var(--gradient-hero);
+    padding:80px 40px 60px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::before {
+    content:''; position:absolute; top:0; left:0; right:0; bottom:0;
+    background:radial-gradient(ellipse 80% 60% at 50% 20%, rgba(16,185,129,0.06) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .hero::after {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent);
+  }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 16px; border-radius:20px; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.08em;
+    background:var(--emerald-glow); color:var(--emerald);
+    border:1px solid rgba(16,185,129,0.2); margin-bottom:24px;
+  }
+  .hero-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--emerald); animation:pulse 2s infinite; }
+  .hero h2 {
+    font-size:clamp(2rem,5vw,3.5rem); font-weight:800; color:var(--text);
+    letter-spacing:-0.03em; line-height:1.15; margin-bottom:12px;
+  }
+  .hero h2 .em { background:var(--gradient-emerald); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .hero .subtitle {
+    font-size:clamp(1rem,2vw,1.25rem); color:var(--muted); max-width:700px;
+    margin:0 auto 40px; font-weight:400; line-height:1.5;
+  }
+
+  /* ─── Stat Grid ─── */
+  .stat-grid {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:16px;
+    max-width:900px; margin:0 auto; position:relative; z-index:1;
+  }
+  .stat-card {
+    background:var(--gradient-card); border:1px solid var(--border);
+    border-radius:16px; padding:24px 20px; text-align:center;
+    transition:all 0.3s; position:relative; overflow:hidden;
+  }
+  .stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:var(--gradient-emerald); opacity:0; transition:opacity 0.3s;
+  }
+  .stat-card:hover { border-color:rgba(16,185,129,0.3); transform:translateY(-2px); }
+  .stat-card:hover::before { opacity:1; }
+  .stat-number {
+    font-size:2.4rem; font-weight:800; color:var(--emerald);
+    font-variant-numeric:tabular-nums; line-height:1;
+  }
+  .stat-label { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:0.08em; margin-top:8px; }
+  .stat-detail { font-size:12px; color:var(--muted); margin-top:4px; }
+
+  /* ─── Section ─── */
+  .section { max-width:1100px; margin:0 auto; padding:60px 40px; }
+  .section-anchor { scroll-margin-top:120px; }
+  .section-header {
+    display:flex; align-items:center; gap:12px; margin-bottom:32px;
+    padding-bottom:12px; border-bottom:2px solid var(--border);
+  }
+  .section-header .icon {
+    width:36px; height:36px; border-radius:10px; display:flex;
+    align-items:center; justify-content:center; font-size:18px;
+    background:var(--emerald-glow); color:var(--emerald);
+    font-family:'Material Symbols Outlined';
+  }
+  .section-header h3 {
+    font-size:1.4rem; font-weight:700; color:var(--text); letter-spacing:-0.01em;
+  }
+  .section-header .count {
+    margin-left:auto; font-size:12px; color:var(--dim);
+    background:var(--bg3); padding:4px 12px; border-radius:12px;
+    border:1px solid var(--border);
+  }
+
+  /* ─── Section Divider ─── */
+  .section-divider {
+    height:1px; max-width:1100px; margin:0 auto;
+    background:linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* ─── Table of Contents ─── */
+  .toc {
+    max-width:1100px; margin:0 auto; padding:40px 40px 0;
+  }
+  .toc-grid {
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:10px;
+  }
+  .toc-item {
+    display:flex; align-items:center; gap:12px; padding:12px 16px;
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    text-decoration:none; transition:all 0.25s; cursor:pointer;
+  }
+  .toc-item:hover { border-color:rgba(16,185,129,0.3); transform:translateX(4px); background:var(--bg3); }
+  .toc-num {
+    width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; flex-shrink:0;
+    background:var(--emerald-glow); color:var(--emerald);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .toc-label { color:var(--text-secondary); font-size:13px; font-weight:500; }
+  .toc-label:hover { color:var(--text); }
+
+  /* ─── Guide Content ─── */
+  .guide-text { font-size:14px; color:var(--text-secondary); line-height:1.75; margin-bottom:20px; }
+  .guide-text strong { color:var(--text); font-weight:600; }
+  .guide-text a { color:var(--emerald); text-decoration:none; border-bottom:1px solid rgba(16,185,129,0.3); }
+  .guide-text a:hover { border-color:var(--emerald); }
+
+  .guide-h4 {
+    font-size:16px; font-weight:700; color:var(--text); margin:28px 0 12px;
+    padding-left:12px; border-left:3px solid var(--emerald);
+  }
+  .guide-h5 {
+    font-size:14px; font-weight:600; color:var(--text); margin:20px 0 8px;
+  }
+
+  /* ─── Code Blocks ─── */
+  .code-block {
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    padding:16px 20px; margin:16px 0; overflow-x:auto;
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.7;
+    color:var(--cyan);
+  }
+  .code-block .comment { color:var(--dim); }
+  .code-block .cmd { color:var(--emerald); }
+  .code-block .flag { color:var(--purple); }
+  .code-block .path { color:var(--yellow); }
+  .code-block .output { color:var(--muted); font-style:italic; }
+
+  code {
+    font-family:'JetBrains Mono',monospace; font-size:12px;
+    background:var(--bg3); padding:2px 7px; border-radius:4px; color:var(--cyan);
+  }
+
+  /* ─── Callout Boxes ─── */
+  .callout {
+    padding:16px 20px; border-radius:12px; margin:20px 0;
+    display:flex; gap:12px; align-items:flex-start;
+    font-size:13px; line-height:1.6;
+  }
+  .callout-icon {
+    font-family:'Material Symbols Outlined'; font-size:20px; flex-shrink:0; margin-top:1px;
+  }
+  .callout-body { flex:1; }
+  .callout-body strong { display:block; margin-bottom:2px; }
+
+  .callout-info {
+    background:rgba(88,166,255,0.06); border:1px solid rgba(88,166,255,0.15);
+    color:var(--text-secondary);
+  }
+  .callout-info .callout-icon { color:var(--blue); }
+  .callout-info strong { color:var(--blue); }
+
+  .callout-warning {
+    background:rgba(210,153,34,0.06); border:1px solid rgba(210,153,34,0.15);
+    color:var(--text-secondary);
+  }
+  .callout-warning .callout-icon { color:var(--yellow); }
+  .callout-warning strong { color:var(--yellow); }
+
+  .callout-danger {
+    background:rgba(248,81,73,0.06); border:1px solid rgba(248,81,73,0.15);
+    color:var(--text-secondary);
+  }
+  .callout-danger .callout-icon { color:var(--red); }
+  .callout-danger strong { color:var(--red); }
+
+  .callout-success {
+    background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.15);
+    color:var(--text-secondary);
+  }
+  .callout-success .callout-icon { color:var(--emerald); }
+  .callout-success strong { color:var(--emerald); }
+
+  .callout-purple {
+    background:rgba(188,140,255,0.06); border:1px solid rgba(188,140,255,0.15);
+    color:var(--text-secondary);
+  }
+  .callout-purple .callout-icon { color:var(--purple); }
+  .callout-purple strong { color:var(--purple); }
+
+  /* ─── Step Lists ─── */
+  .steps { list-style:none; counter-reset:step; margin:16px 0; }
+  .steps li {
+    counter-increment:step; position:relative; padding:12px 16px 12px 56px;
+    margin-bottom:8px; background:var(--bg2); border:1px solid var(--border);
+    border-radius:10px; font-size:13px; color:var(--text-secondary);
+    transition:all 0.2s;
+  }
+  .steps li:hover { border-color:var(--border-light); }
+  .steps li::before {
+    content:counter(step); position:absolute; left:16px; top:12px;
+    width:26px; height:26px; border-radius:8px; display:flex;
+    align-items:center; justify-content:center;
+    font-size:12px; font-weight:700;
+    background:var(--emerald-glow); color:var(--emerald);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .steps li strong { color:var(--text); }
+  .steps li code { font-size:11.5px; }
+
+  /* ─── Feature Cards ─── */
+  .feature-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px; margin:20px 0; }
+  .feature-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:20px; transition:all 0.3s; position:relative; overflow:hidden;
+  }
+  .feature-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:var(--gradient-emerald); opacity:0; transition:opacity 0.3s;
+  }
+  .feature-card:hover { border-color:rgba(16,185,129,0.3); transform:translateY(-2px); }
+  .feature-card:hover::before { opacity:1; }
+  .feature-card .fc-title { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .feature-card .fc-tech {
+    font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--dim);
+    margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;
+  }
+  .feature-card .fc-desc { font-size:12.5px; color:var(--muted); line-height:1.5; }
+
+  /* ─── Template Grid ─── */
+  .template-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; margin:20px 0; }
+  .template-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; transition:all 0.2s;
+  }
+  .template-card:hover { border-color:var(--border-light); transform:translateY(-1px); }
+  .template-card .tc-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
+  .template-card .tc-cat {
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;
+    margin-bottom:6px; padding:2px 8px; border-radius:6px; display:inline-block;
+  }
+  .tc-combat { color:var(--red); background:rgba(248,81,73,0.1); }
+  .tc-economy { color:var(--yellow); background:rgba(210,153,34,0.1); }
+  .tc-objective { color:var(--blue); background:rgba(88,166,255,0.1); }
+  .tc-progression { color:var(--emerald); background:rgba(16,185,129,0.1); }
+  .tc-meta { color:var(--purple); background:rgba(188,140,255,0.1); }
+  .tc-utility { color:var(--cyan); background:rgba(57,211,211,0.1); }
+  .template-card .tc-desc { font-size:11.5px; color:var(--muted); line-height:1.4; }
+
+  /* ─── Issue Lists ─── */
+  .issue-list { margin:16px 0; }
+  .issue-item {
+    display:flex; gap:12px; align-items:flex-start; padding:12px 16px;
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:6px; font-size:13px; transition:all 0.2s;
+  }
+  .issue-item:hover { border-color:var(--border-light); }
+  .issue-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+  .dot-critical { background:var(--red); box-shadow:0 0 8px rgba(248,81,73,0.4); }
+  .dot-warning { background:var(--yellow); box-shadow:0 0 8px rgba(210,153,34,0.4); }
+  .dot-future { background:var(--blue); box-shadow:0 0 8px rgba(88,166,255,0.4); }
+  .issue-text { color:var(--text-secondary); }
+  .issue-text strong { color:var(--text); }
+
+  /* ─── Tables ─── */
+  .guide-table-wrap {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    overflow:hidden; margin:16px 0;
+  }
+  .guide-table {
+    width:100%; border-collapse:collapse; font-size:13px;
+  }
+  .guide-table thead th {
+    padding:12px 16px; background:var(--bg3);
+    color:var(--muted); font-weight:600; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.05em;
+    border-bottom:1px solid var(--border); text-align:left;
+  }
+  .guide-table tbody td {
+    padding:10px 16px; border-bottom:1px solid rgba(48,54,61,0.5);
+    vertical-align:top;
+  }
+  .guide-table tbody tr:hover { background:rgba(16,185,129,0.03); }
+  .guide-table tbody tr:last-child td { border-bottom:none; }
+
+  /* ─── Quick Action Pills ─── */
+  .pill-row { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .pill {
+    padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500;
+    background:var(--bg3); color:var(--muted); border:1px solid var(--border);
+    transition:all 0.2s;
+  }
+  .pill:hover { border-color:var(--border-light); color:var(--text); }
+  .pill-emerald { background:var(--emerald-glow); color:var(--emerald); border-color:rgba(16,185,129,0.2); }
+  .pill-blue { background:rgba(88,166,255,0.1); color:var(--blue); border-color:rgba(88,166,255,0.2); }
+  .pill-purple { background:rgba(188,140,255,0.1); color:var(--purple); border-color:rgba(188,140,255,0.2); }
+
+  /* ─── Architecture Layer Blocks ─── */
+  .arch-stack { display:flex; flex-direction:column; gap:0; margin:20px 0; }
+  .arch-block {
+    padding:16px 20px; border-radius:0; border:1px solid; position:relative;
+    display:flex; align-items:center; gap:14px;
+  }
+  .arch-block:first-child { border-radius:12px 12px 0 0; }
+  .arch-block:last-child { border-radius:0 0 12px 12px; }
+  .arch-block .ab-icon { font-family:'Material Symbols Outlined'; font-size:22px; }
+  .arch-block .ab-name { font-size:14px; font-weight:700; }
+  .arch-block .ab-tech { font-size:11px; opacity:0.7; }
+  .arch-block .ab-desc { font-size:12px; opacity:0.7; margin-left:auto; }
+
+  .ab-frontend {
+    background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02));
+    border-color:rgba(16,185,129,0.25); color:var(--emerald);
+  }
+  .ab-sidecar {
+    background:linear-gradient(135deg, rgba(88,166,255,0.08), rgba(88,166,255,0.02));
+    border-color:rgba(88,166,255,0.25); color:var(--blue); margin-top:-1px;
+  }
+  .ab-bridge {
+    background:linear-gradient(135deg, rgba(188,140,255,0.08), rgba(188,140,255,0.02));
+    border-color:rgba(188,140,255,0.25); color:var(--purple); margin-top:-1px;
+  }
+  .ab-uefn {
+    background:linear-gradient(135deg, rgba(210,153,34,0.08), rgba(210,153,34,0.02));
+    border-color:rgba(210,153,34,0.25); color:var(--yellow); margin-top:-1px;
+  }
+
+  /* ─── Collapsible Chapters ─── */
+  .chapter { margin-bottom:8px; }
+  .chapter-toggle {
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:14px 20px; background:var(--bg2); border:1px solid var(--border);
+    border-radius:12px; cursor:pointer; user-select:none; transition:all 0.25s;
+    font-family:inherit; color:var(--text); font-size:14px; font-weight:600;
+    text-align:left;
+  }
+  .chapter-toggle:hover { border-color:rgba(16,185,129,0.3); background:var(--bg3); }
+  .chapter.open .chapter-toggle { border-radius:12px 12px 0 0; border-bottom-color:transparent; background:var(--bg3); }
+  .chapter-num {
+    width:28px; height:28px; border-radius:8px; display:flex;
+    align-items:center; justify-content:center; flex-shrink:0;
+    font-size:12px; font-weight:700;
+    background:var(--emerald-glow); color:var(--emerald);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .chapter-chevron {
+    font-family:'Material Symbols Outlined'; font-size:20px; color:var(--dim);
+    margin-left:auto; transition:transform 0.25s;
+  }
+  .chapter.open .chapter-chevron { transform:rotate(180deg); }
+  .chapter-content {
+    max-height:0; overflow:hidden; transition:max-height 0.4s ease;
+    border:1px solid var(--border); border-top:none;
+    border-radius:0 0 12px 12px; background:var(--bg2);
+  }
+  .chapter.open .chapter-content { max-height:none; }
+  .chapter-inner { padding:24px 28px; }
+
+  /* ─── DFA Colors ─── */
+  .dfa-colors { display:flex; gap:16px; flex-wrap:wrap; margin:12px 0; }
+  .dfa-color { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .dfa-swatch { width:14px; height:14px; border-radius:4px; }
+
+  /* ─── Footer ─── */
+  .footer {
+    text-align:center; padding:40px; color:var(--dim); font-size:12px;
+    border-top:1px solid var(--border);
+  }
+  .footer .brand { color:var(--emerald); font-weight:600; }
+
+  /* ─── Animations ─── */
+  @keyframes pulse {
+    0%, 100% { opacity:1; }
+    50% { opacity:0.5; }
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  .animate-in {
+    opacity:0; transform:translateY(20px);
+    animation:fadeUp 0.6s ease forwards;
+  }
+  .delay-1 { animation-delay:0.1s; }
+  .delay-2 { animation-delay:0.2s; }
+  .delay-3 { animation-delay:0.3s; }
+  .delay-4 { animation-delay:0.4s; }
+
+  /* ─── Responsive ─── */
+  @media (max-width:900px) {
+    .stat-grid { grid-template-columns:repeat(2,1fr); }
+    .feature-grid { grid-template-columns:1fr; }
+    .template-grid { grid-template-columns:1fr 1fr; }
+    .toc-grid { grid-template-columns:1fr; }
+    .section { padding:40px 20px; }
+    .hero { padding:60px 20px 40px; }
+  }
+  @media (max-width:600px) {
+    .stat-grid { grid-template-columns:1fr 1fr; gap:10px; }
+    .template-grid { grid-template-columns:1fr; }
+    .site-header { padding:12px 20px; }
+    .nav-bar { padding:6px 20px; overflow-x:auto; }
+    .chapter-inner { padding:16px; }
+  }
+
+  /* ─── Print ─── */
+  @media print {
+    body { background:#fff; color:#1a1a1a; }
+    .site-header, .nav-bar { position:static; background:#f8f8f8; }
+    .hero { background:none; }
+    .chapter-content { max-height:none !important; }
+    .stat-card, .feature-card, .template-card { border-color:#ddd; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+<header class="site-header">
+  <h1><span class="accent">Well</span>Versed</h1>
+  <span class="sub">User Guide</span>
+</header>
+<nav class="nav-bar">
+  <a href="changelog.html" class="nav-link">Changelog</a>
+  <a href="documentation.html" class="nav-link">Documentation</a>
+  <a href="backlog.html" class="nav-link">Backlog</a>
+  <a href="analysis.html" class="nav-link">Analysis</a>
+  <a href="userguide.html" class="nav-link active">User Guide</a>
+</nav>
+
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> Comprehensive Reference</div>
+  <h2 class="animate-in">WellVersed<br><span class="em">User Guide</span></h2>
+  <p class="subtitle animate-in delay-1">
+    Everything you need to know about WellVersed, from first launch to advanced AI generation.
+    Honest about what works, what's in progress, and what's untested.
+  </p>
+  <p style="font-size:12px; color:var(--dim); margin-bottom:32px;" class="animate-in delay-2">
+    March 29, 2026 &middot; v0.9.0-preview
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-card animate-in delay-1">
+      <div class="stat-number" data-target="15">0</div>
+      <div class="stat-label">Chapters</div>
+      <div class="stat-detail">End-to-end coverage</div>
+    </div>
+    <div class="stat-card animate-in delay-2">
+      <div class="stat-number" data-target="114">0</div>
+      <div class="stat-label">Bridge Commands</div>
+      <div class="stat-detail">UEFN Python integration</div>
+    </div>
+    <div class="stat-card animate-in delay-3">
+      <div class="stat-number" data-target="90">0</div>
+      <div class="stat-label">MCP Tools</div>
+      <div class="stat-detail">Claude Code interface</div>
+    </div>
+    <div class="stat-card animate-in delay-4">
+      <div class="stat-number" data-target="20">0</div>
+      <div class="stat-label">Smart Templates</div>
+      <div class="stat-detail">Game mechanic generators</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ TABLE OF CONTENTS ═══════════════════════════════ -->
+<div class="toc">
+  <div class="toc-grid">
+    <a class="toc-item" href="#ch1"><span class="toc-num">1</span><span class="toc-label">Getting Started</span></a>
+    <a class="toc-item" href="#ch2"><span class="toc-num">2</span><span class="toc-label">Setting Up Your First Project</span></a>
+    <a class="toc-item" href="#ch3"><span class="toc-num">3</span><span class="toc-label">The Python Bridge (UEFN Integration)</span></a>
+    <a class="toc-item" href="#ch4"><span class="toc-num">4</span><span class="toc-label">Studio (Chat) &mdash; AI Generation</span></a>
+    <a class="toc-item" href="#ch5"><span class="toc-num">5</span><span class="toc-label">Widget Editor</span></a>
+    <a class="toc-item" href="#ch6"><span class="toc-num">6</span><span class="toc-label">Device Inspector &amp; Wiring</span></a>
+    <a class="toc-item" href="#ch7"><span class="toc-num">7</span><span class="toc-label">DFA Simulator</span></a>
+    <a class="toc-item" href="#ch8"><span class="toc-num">8</span><span class="toc-label">QA Analysis</span></a>
+    <a class="toc-item" href="#ch9"><span class="toc-num">9</span><span class="toc-label">Verse Tools</span></a>
+    <a class="toc-item" href="#ch10"><span class="toc-num">10</span><span class="toc-label">Project Management</span></a>
+    <a class="toc-item" href="#ch11"><span class="toc-num">11</span><span class="toc-label">Reference Library</span></a>
+    <a class="toc-item" href="#ch12"><span class="toc-num">12</span><span class="toc-label">Smart Templates (20 Game Mechanics)</span></a>
+    <a class="toc-item" href="#ch13"><span class="toc-num">13</span><span class="toc-label">Claude Code MCP Integration</span></a>
+    <a class="toc-item" href="#ch14"><span class="toc-num">14</span><span class="toc-label">Known Issues &amp; Items Needing Work</span></a>
+    <a class="toc-item" href="#ch15"><span class="toc-num">15</span><span class="toc-label">Architecture Overview</span></a>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════ CHAPTER 1 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch1" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">rocket_launch</div>
+    <h3>1. Getting Started</h3>
+    <span class="count">First steps</span>
+  </div>
+
+  <div class="guide-h4">What is WellVersed?</div>
+  <p class="guide-text">
+    WellVersed is an AI-powered development studio for <strong>Unreal Editor for Fortnite (UEFN)</strong> projects.
+    It combines a desktop application, a .NET intelligence layer, and an optional Python bridge that runs inside UEFN itself
+    to give you deep introspection and generation capabilities for Creative maps.
+  </p>
+  <p class="guide-text">
+    WellVersed can read and understand your project's binary <code>.uasset</code> files, parse device configurations,
+    visualize wiring graphs, generate Verse code, build UMG widget blueprints, run QA analysis, and
+    &mdash; with the Python bridge connected &mdash; execute changes live inside UEFN.
+  </p>
+
+  <div class="guide-h4">System Requirements</div>
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead>
+        <tr><th>Requirement</th><th>Version</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Operating System</strong></td><td>Windows 10/11</td><td>UEFN is Windows-only; WellVersed follows suit</td></tr>
+        <tr><td><strong>.NET SDK</strong></td><td>8.0+</td><td>Required for the sidecar intelligence layer</td></tr>
+        <tr><td><strong>Node.js</strong></td><td>18+</td><td>Required for the Tauri frontend build</td></tr>
+        <tr><td><strong>Rust</strong></td><td>1.70+</td><td>Required by Tauri v2 (installed via rustup)</td></tr>
+        <tr><td><strong>UEFN</strong></td><td>v40.00+</td><td>Only needed for the Python bridge; WellVersed works offline without it</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="guide-h4">Installation</div>
+  <ol class="steps">
+    <li><strong>Clone the repository</strong> (includes the UAssetAPI submodule):<br>
+      <div class="code-block"><span class="cmd">git clone</span> <span class="flag">--recursive</span> https://github.com/your-org/wellversed.git<br><span class="cmd">cd</span> wellversed</div>
+    </li>
+    <li><strong>Build the .NET sidecar</strong> (intelligence layer + MCP tools):<br>
+      <div class="code-block"><span class="cmd">dotnet build</span> FortniteForge.sln</div>
+    </li>
+    <li><strong>Install frontend dependencies and launch</strong>:<br>
+      <div class="code-block"><span class="cmd">cd</span> app<br><span class="cmd">npm install</span><br><span class="cmd">npm run dev</span></div>
+      This starts the Tauri desktop app with the .NET sidecar automatically.
+    </li>
+  </ol>
+
+  <div class="guide-h4">First Launch</div>
+  <p class="guide-text">
+    When WellVersed opens for the first time, you will see the <strong>sidebar</strong> on the left with navigation sections:
+    Studio, Project, Create, Explore, Verse, Analyze, Library, and Settings. The main area shows the <strong>Home page</strong>
+    with a welcome message and quick-start actions.
+  </p>
+  <p class="guide-text">
+    Your first step will be adding a UEFN project. Until you do, most pages will show placeholder states prompting
+    you to set up a project.
+  </p>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 2 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch2" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">folder_open</div>
+    <h3>2. Setting Up Your First Project</h3>
+    <span class="count">Project management</span>
+  </div>
+
+  <div class="guide-h4">Adding a UEFN Project</div>
+  <ol class="steps">
+    <li>Click <strong>Projects</strong> in the sidebar (or the setup prompt on the Home page).</li>
+    <li>Click <strong>Add Project</strong>.</li>
+    <li>Browse to the folder containing your <code>.uefnproject</code> file. This is your project root &mdash; typically something like <code>C:\Users\You\Documents\Fortnite Projects\MyMap</code>.</li>
+    <li>Choose the project type: <strong>My Project</strong> or <strong>Library</strong>.</li>
+    <li>WellVersed scans the project structure, discovers levels, and indexes assets.</li>
+  </ol>
+
+  <div class="guide-h4">Project Types</div>
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead>
+        <tr><th>Type</th><th>Reads</th><th>Writes</th><th>Use Case</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>My Project</strong></td>
+          <td>Full access (copy-on-read)</td>
+          <td>Staged writes when UEFN open; direct with backup when UEFN closed</td>
+          <td>Your active map &mdash; the one you're building</td>
+        </tr>
+        <tr>
+          <td><strong>Library</strong></td>
+          <td>Full access (copy-on-read)</td>
+          <td>Always read-only</td>
+          <td>Reference projects for browsing, searching, and learning from</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="guide-h4">Selecting a Level</div>
+  <p class="guide-text">
+    After adding a project, navigate to the <strong>Levels</strong> page in the sidebar. You will see all <code>.umap</code> files
+    in your project. Click a level to select it as your active level. Many features &mdash; devices, wiring, scene preview,
+    audit &mdash; require a selected level to operate.
+  </p>
+
+  <div class="guide-h4">Safety Model</div>
+  <p class="guide-text">
+    WellVersed is built with an uncompromising safety model. Your project files are <strong>never</strong> at risk.
+  </p>
+
+  <div class="callout callout-success">
+    <span class="callout-icon">verified_user</span>
+    <div class="callout-body">
+      <strong>Copy-on-Read</strong>
+      Every file read goes through <code>SafeFileAccess</code>, which copies the file to a temporary location before opening it.
+      WellVersed never holds a lock on your source files. This means it is safe to run alongside UEFN with your map open.
+    </div>
+  </div>
+
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead>
+        <tr><th>Mode</th><th>When Active</th><th>Read Behavior</th><th>Write Behavior</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Read-Only</strong></td>
+          <td><code>readOnly: true</code> in config, or Library project</td>
+          <td>Copy-on-read</td>
+          <td>Blocked entirely</td>
+        </tr>
+        <tr>
+          <td><strong>Staged</strong></td>
+          <td>UEFN is running or URC (Unreal Revision Control) is active</td>
+          <td>Copy-on-read</td>
+          <td>Written to <code>.wellversed/staged/</code></td>
+        </tr>
+        <tr>
+          <td><strong>Direct</strong></td>
+          <td>UEFN is not running, project is "My Project"</td>
+          <td>Copy-on-read</td>
+          <td>Written to source (automatic backup created first)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">warning</span>
+    <div class="callout-body">
+      <strong>Cooked Assets are Never Modified</strong>
+      <code>AssetGuard.CanModify()</code> gates all write operations. Cooked/compiled assets are always rejected, even in Direct mode.
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 3 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch3" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">cable</div>
+    <h3>3. The Python Bridge (UEFN Integration)</h3>
+    <span class="count">114 commands</span>
+  </div>
+
+  <div class="guide-h4">What It Does</div>
+  <p class="guide-text">
+    The Python bridge is a WebSocket server that runs <strong>inside UEFN</strong> via its experimental Python 3.11 scripting support.
+    It exposes 114 commands that WellVersed can call to execute actions directly in UEFN &mdash; placing actors, creating geometry,
+    compiling Verse, adjusting lighting, managing materials, and much more.
+  </p>
+
+  <div class="callout callout-danger">
+    <span class="callout-icon">science</span>
+    <div class="callout-body">
+      <strong>Untested in Production</strong>
+      The Python bridge has been built against UEFN's Python scripting API documentation but has <strong>not been tested with a real
+      running UEFN instance</strong>. All 114 commands are implemented but should be considered experimental. Your mileage may vary
+      with different UEFN versions.
+    </div>
+  </div>
+
+  <div class="guide-h4">Setup</div>
+  <ol class="steps">
+    <li><strong>Enable Python Editor Scripting</strong> in UEFN: go to <code>Edit &gt; Project Settings</code>, search for "Python",
+      and enable <strong>Python Editor Script Plugin</strong>. This is an experimental feature in UEFN.</li>
+    <li><strong>Copy the bridge folder</strong>: Copy the entire <code>bridge/wellversed/</code> directory from the WellVersed repository
+      into your UEFN project at <code>Content/Python/wellversed/</code>.</li>
+    <li><strong>Copy the init script</strong>: Copy <code>bridge/init_unreal.py</code> to <code>Content/Python/init_unreal.py</code>.</li>
+    <li><strong>Restart UEFN</strong>. The <code>init_unreal.py</code> script runs on startup and initializes the WebSocket listener on port <strong>9220</strong>.</li>
+    <li><strong>Verify connection</strong>: In WellVersed, look for a <strong>green connection indicator</strong> in the status area. If connected, you can execute bridge commands.</li>
+  </ol>
+
+  <div class="guide-h4">Bridge Command Categories</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">Actors</div>
+      <div class="fc-tech">actors.py</div>
+      <div class="fc-desc">Spawn, move, rotate, scale, delete actors. Clone existing actors. Batch placement with transform arrays.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Geometry</div>
+      <div class="fc-tech">geometry.py</div>
+      <div class="fc-desc">Create BSP brushes, mesh primitives, custom shapes. Boolean operations on geometry.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Materials</div>
+      <div class="fc-tech">materials.py</div>
+      <div class="fc-desc">Create and assign materials, modify parameters, set textures, configure material instances.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Lighting</div>
+      <div class="fc-tech">lighting.py</div>
+      <div class="fc-desc">Place and configure point lights, spot lights, directional lights. Adjust intensity, color, attenuation.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Verse</div>
+      <div class="fc-tech">verse.py</div>
+      <div class="fc-desc">Compile Verse files, check for errors, hot-reload scripts during development.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Environment</div>
+      <div class="fc-tech">environment.py</div>
+      <div class="fc-desc">Fog, sky, water, time-of-day settings. Post-processing volume configuration.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Splines</div>
+      <div class="fc-tech">splines.py</div>
+      <div class="fc-desc">Create spline actors, add/modify control points, attach meshes along spline paths.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Organization</div>
+      <div class="fc-tech">organization.py</div>
+      <div class="fc-desc">Folder management, actor grouping, layer assignment, world outliner organization.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Viewport</div>
+      <div class="fc-tech">viewport.py</div>
+      <div class="fc-desc">Camera control, viewport focus, screenshot capture, editor camera manipulation.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Plan Executor</div>
+      <div class="fc-tech">plan_executor.py</div>
+      <div class="fc-desc">Execute full generation plans from the Studio chat &mdash; orchestrates actors, devices, wiring, and Verse deployment.</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">What Works With vs Without the Bridge</div>
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead>
+        <tr><th>Feature</th><th>Without Bridge</th><th>With Bridge</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Verse generation</td><td>Full &mdash; generates .verse files to disk</td><td>Full + live compilation</td></tr>
+        <tr><td>Widget blueprints</td><td>Full &mdash; exports .uasset binaries</td><td>Full + live preview in UEFN</td></tr>
+        <tr><td>QA analysis</td><td>Full &mdash; reads binary assets offline</td><td>Full (same approach)</td></tr>
+        <tr><td>Device inspection</td><td>Full &mdash; parses .uasset properties</td><td>Full (same approach)</td></tr>
+        <tr><td>Actor placement</td><td>Not available</td><td>Live placement in editor</td></tr>
+        <tr><td>Geometry creation</td><td>Not available</td><td>BSP brushes, mesh primitives</td></tr>
+        <tr><td>Material assignment</td><td>Not available</td><td>Create and assign materials</td></tr>
+        <tr><td>Project planning</td><td>Full &mdash; generates plans as JSON/Verse</td><td>Full + "Execute in UEFN" button</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">info</span>
+    <div class="callout-body">
+      <strong>Port Configuration</strong>
+      The bridge defaults to port <strong>9220</strong>. This can be changed in the bridge's <code>listener.py</code> file and in WellVersed's settings.
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 4 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch4" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">smart_toy</div>
+    <h3>4. Studio (Chat) &mdash; AI Generation</h3>
+    <span class="count">Game design pipeline</span>
+  </div>
+
+  <div class="guide-h4">How to Use</div>
+  <p class="guide-text">
+    The <strong>Studio</strong> page (labeled "Chat" in the sidebar) is where you describe what you want to build.
+    Type a game description in natural language and WellVersed generates a complete implementation plan
+    including devices, wiring connections, Verse code, and spatial layouts.
+  </p>
+
+  <div class="guide-h4">Quick Actions</div>
+  <p class="guide-text">
+    Below the chat input, you will find quick-action buttons for common game types:
+  </p>
+  <div class="pill-row">
+    <span class="pill pill-emerald">Capture Point</span>
+    <span class="pill pill-emerald">Elimination</span>
+    <span class="pill pill-emerald">Item Shop</span>
+    <span class="pill pill-emerald">Tycoon</span>
+    <span class="pill pill-blue">Analyze</span>
+    <span class="pill pill-purple">HUD Widget</span>
+    <span class="pill pill-purple">Custom Verse</span>
+  </div>
+
+  <div class="guide-h4">The Generation Pipeline</div>
+  <p class="guide-text">
+    When you submit a description, WellVersed runs it through a multi-stage pipeline:
+  </p>
+  <ol class="steps">
+    <li><strong>Natural language parsing</strong> &mdash; the GameDesigner module extracts game type, player count, mechanics, and constraints from your description.</li>
+    <li><strong>Generation plan creation</strong> &mdash; builds a <code>GenerationPlan</code> with specific device placements, property overrides, and wiring connections.</li>
+    <li><strong>Verse code generation</strong> &mdash; produces complete, compilable Verse files for game logic (timers, scoring, round management, etc.).</li>
+    <li><strong>Spatial layout</strong> &mdash; calculates positions for all devices relative to a spawn origin.</li>
+    <li><strong>Review &amp; execute</strong> &mdash; you review the plan, then either save it or execute it in UEFN via the bridge.</li>
+  </ol>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">psychology</span>
+    <div class="callout-body">
+      <strong>Honest Disclosure: Not Real AI</strong>
+      The ChatPage calls the <strong>GameDesigner</strong> module, which is a keyword-based template system &mdash; not an actual
+      AI language model. It matches your description against known patterns and assembles pre-built templates.
+      This is effective for common game types but does not perform true reasoning.
+      Real Claude API integration (requiring an Anthropic API key) is planned but not yet implemented.
+    </div>
+  </div>
+
+  <div class="guide-h4">"Execute in UEFN" vs "Save Plan"</div>
+  <p class="guide-text">
+    After generation completes, you have two options:
+  </p>
+  <ul style="margin:12px 0 12px 24px; color:var(--text-secondary); font-size:13px; line-height:1.8;">
+    <li><strong>Execute in UEFN</strong> (requires Python bridge) &mdash; sends the plan to the bridge for live execution inside UEFN. Actors are placed, properties are set, and Verse files are deployed.</li>
+    <li><strong>Save Plan</strong> (always available) &mdash; saves the generation plan as JSON + Verse files to disk. You can manually import these or execute them later.</li>
+  </ul>
+
+  <div class="guide-h4">Example</div>
+  <div class="code-block">
+    <span class="comment">// Input:</span><br>
+    "8 player box fight FFA with rounds"<br><br>
+    <span class="comment">// Output includes:</span><br>
+    <span class="path">- 8x Player Spawner devices (arranged in circle)</span><br>
+    <span class="path">- 1x Round Settings Device (RoundCount: 5, TimeLimit: 120)</span><br>
+    <span class="path">- 1x Elimination Manager (ScoreToWin: 10)</span><br>
+    <span class="path">- 1x HUD Message Device (round announcements)</span><br>
+    <span class="path">- 1x box_fight_manager.verse (round logic + scoring)</span><br>
+    <span class="path">- Wiring: Spawners -> RoundSettings -> EliminationManager</span>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 5 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch5" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">widgets</div>
+    <h3>5. Widget Editor</h3>
+    <span class="count">Visual UMG builder</span>
+  </div>
+
+  <div class="guide-h4">Opening the Widget Editor</div>
+  <p class="guide-text">
+    Navigate to <strong>Create &gt; Widget Editor</strong> in the sidebar. The editor opens with three panels:
+    a <strong>Widget Browser</strong> on the left, the <strong>Canvas</strong> in the center, and the <strong>Properties Panel</strong> on the right.
+    A <strong>Layers Panel</strong> is available for managing the widget hierarchy.
+  </p>
+
+  <div class="guide-h4">Loading Widgets</div>
+  <p class="guide-text">
+    The Widget Browser panel lists available widget types. Click any widget to add it to the canvas.
+    You can also load existing widget blueprints from your project using the file browser at the top of the panel.
+  </p>
+
+  <div class="guide-h4">Editing</div>
+  <ul style="margin:12px 0 12px 24px; color:var(--text-secondary); font-size:13px; line-height:1.8;">
+    <li><strong>Drag and drop</strong> widgets on the canvas to reposition them</li>
+    <li><strong>Properties Panel</strong> (right side) shows all editable properties for the selected widget &mdash; size, color, text content, font, opacity, visibility</li>
+    <li><strong>Layers Panel</strong> shows the widget tree hierarchy &mdash; drag to reorder, click to select</li>
+    <li><strong>Containment rules</strong> are enforced automatically based on data from 883 real UEFN widgets &mdash; only valid children can be placed inside containers</li>
+  </ul>
+
+  <div class="guide-h4">Exporting</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">Export .uasset</div>
+      <div class="fc-tech">Binary widget blueprint</div>
+      <div class="fc-desc">Click "Export .uasset" in the toolbar, select an output directory, and WellVersed builds a binary widget blueprint
+        file that UEFN can import directly. Uses UAssetAPI to construct the binary format.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Gen Verse</div>
+      <div class="fc-tech">Verse controller code</div>
+      <div class="fc-desc">Click "Gen Verse" to generate a complete Verse controller class for the widget. The code is copied to your clipboard
+        and includes all data bindings, event handlers, and UI update logic.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">warning</span>
+    <div class="callout-body">
+      <strong>Widget Fidelity: ~80%</strong>
+      The .uasset roundtrip (build binary widget from visual editor) works for most widget types but is approximately
+      80% fidelity, not 100%. Anchors are currently hardcoded to TopLeft. Complex nested widgets with
+      custom materials may not export perfectly.
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 6 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch6" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">hub</div>
+    <h3>6. Device Inspector &amp; Wiring</h3>
+    <span class="count">Deep introspection</span>
+  </div>
+
+  <div class="guide-h4">Device Inspector</div>
+  <p class="guide-text">
+    Navigate to <strong>Devices</strong> in the sidebar (requires a selected level). WellVersed parses every external actor
+    in the level and classifies them as either <strong>Creative Devices</strong> or <strong>Props/Terrain</strong>.
+    Devices are grouped by type &mdash; all Spawn Pads together, all Elimination Managers together, etc.
+  </p>
+  <p class="guide-text">
+    Click any device to see its full property sheet. WellVersed reads <strong>130+ properties</strong> from the binary
+    .uasset file using the patched UAssetAPI (with the ScriptSerializationOffset fix for UE5.4 external actors).
+    Properties are ranked by importance &mdash; meaningful configuration (team index, score-to-win, time limit) appears first,
+    while rendering noise (collision presets, LOD settings) is collapsed at the bottom.
+  </p>
+
+  <div class="guide-h4">Device Wiring</div>
+  <p class="guide-text">
+    The <strong>Device Wiring</strong> page shows a force-directed graph of all signal connections between devices.
+    Each device is a node, and each wiring connection (Event &rarr; Receiver) is a directed edge.
+    This gives you a bird's-eye view of your entire game logic flow.
+  </p>
+
+  <div class="guide-h4">Blueprint Graph</div>
+  <p class="guide-text">
+    The <strong>Blueprint Graph</strong> page shows a pin-based visualization similar to Unreal's Blueprint editor.
+    Each device appears as a node with input pins (events it receives) and output pins (events it sends).
+    Connections are drawn as bezier curves between pins.
+  </p>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">speed</span>
+    <div class="callout-body">
+      <strong>Performance Note</strong>
+      The Blueprint Graph renders well with typical device counts (10-30 devices). Maps with 50+ devices
+      in a single level may experience slower rendering. The force-directed layout does stabilize
+      but can take a few seconds on complex graphs.
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 7 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch7" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">schema</div>
+    <h3>7. DFA Simulator</h3>
+    <span class="count">Device behavior modeling</span>
+  </div>
+
+  <div class="guide-h4">What It Does</div>
+  <p class="guide-text">
+    The DFA (Deterministic Finite Automaton) Simulator models each Creative device in your level as a state machine.
+    It reads the device wiring graph and allows you to simulate event propagation &mdash; fire an event on one device
+    and watch the signal cascade through connected devices, changing their states.
+  </p>
+
+  <div class="guide-h4">How to Use</div>
+  <ol class="steps">
+    <li>Select a level that has devices with wiring connections.</li>
+    <li>Navigate to the <strong>DFA Simulator</strong> (under Analyze in the sidebar).</li>
+    <li>Click <strong>Run Simulation</strong> to initialize all devices to their starting states.</li>
+    <li>Each device appears as a <strong>colored node</strong>. Wiring connections are <strong>directed edges</strong> between nodes.</li>
+    <li>Click any edge to <strong>simulate that transition</strong> &mdash; the source device fires its event, and the receiving device processes it.</li>
+    <li>Watch state changes <strong>cascade</strong> through the graph as downstream devices react.</li>
+  </ol>
+
+  <div class="guide-h4">State Colors</div>
+  <div class="dfa-colors">
+    <div class="dfa-color"><div class="dfa-swatch" style="background:var(--green);"></div> <strong>Active</strong> &mdash; device is running</div>
+    <div class="dfa-color"><div class="dfa-swatch" style="background:var(--muted);"></div> <strong>Idle</strong> &mdash; waiting for input</div>
+    <div class="dfa-color"><div class="dfa-swatch" style="background:var(--red);"></div> <strong>Disabled</strong> &mdash; turned off</div>
+    <div class="dfa-color"><div class="dfa-swatch" style="background:var(--yellow);"></div> <strong>Triggered</strong> &mdash; just fired</div>
+    <div class="dfa-color"><div class="dfa-swatch" style="background:var(--purple);"></div> <strong>Completed</strong> &mdash; finished its cycle</div>
+  </div>
+
+  <div class="guide-h4">Controls</div>
+  <ul style="margin:12px 0 12px 24px; color:var(--text-secondary); font-size:13px; line-height:1.8;">
+    <li><strong>Step Forward / Step Back</strong> &mdash; navigate through simulation history one transition at a time</li>
+    <li><strong>Fire Event panel</strong> &mdash; select a device and a specific event to manually trigger a custom simulation</li>
+    <li><strong>Reset</strong> &mdash; return all devices to their initial states</li>
+  </ul>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 8 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch8" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">bug_report</div>
+    <h3>8. QA Analysis</h3>
+    <span class="count">10 analysis passes</span>
+  </div>
+
+  <div class="guide-h4">Running an Audit</div>
+  <p class="guide-text">
+    Navigate to <strong>Audit</strong> in the sidebar. You can run either a <strong>project-level audit</strong> (all levels)
+    or a <strong>level-specific audit</strong> (current selected level). The audit reads all binary assets, analyzes device
+    configurations and wiring, and produces findings with severity codes.
+  </p>
+
+  <div class="guide-h4">Health Score</div>
+  <p class="guide-text">
+    Every audit produces a <strong>letter grade from A+ through F</strong>. The score is calculated from the number and severity
+    of findings. Critical issues weigh heavily; informational notes have minimal impact.
+  </p>
+
+  <div class="guide-h4">The 10 Analysis Passes</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">Dead Devices</div>
+      <div class="fc-tech">Pass 1</div>
+      <div class="fc-desc">Detects devices with no wiring connections &mdash; neither sending nor receiving any events. These are likely forgotten or misconfigured.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Orphaned Outputs</div>
+      <div class="fc-tech">Pass 2</div>
+      <div class="fc-desc">Finds devices that send events to nowhere &mdash; output wires that are not connected to any receiver.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Infinite Loops</div>
+      <div class="fc-tech">Pass 3</div>
+      <div class="fc-desc">Detects circular wiring chains where device A triggers B triggers C triggers A. These cause infinite event loops at runtime.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Timing Conflicts</div>
+      <div class="fc-tech">Pass 4</div>
+      <div class="fc-desc">Identifies devices that fire events with conflicting timing &mdash; e.g., two round-start signals that could race.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Unreachable Spawns</div>
+      <div class="fc-tech">Pass 5</div>
+      <div class="fc-desc">Checks spawn points for spatial isolation &mdash; spawns that are far from any gameplay area or inside geometry.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Missing Win Conditions</div>
+      <div class="fc-tech">Pass 6</div>
+      <div class="fc-desc">Verifies that the level has at least one path to triggering a game-over or victory state.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Team Configuration</div>
+      <div class="fc-tech">Pass 7</div>
+      <div class="fc-desc">Validates team assignments &mdash; spawns per team, balanced device distribution, team index consistency.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Unused Verse</div>
+      <div class="fc-tech">Pass 8</div>
+      <div class="fc-desc">Finds Verse scripts that are not referenced by any device in the level.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Property Anomalies</div>
+      <div class="fc-tech">Pass 9</div>
+      <div class="fc-desc">Detects unusual property values &mdash; negative timers, zero-health settings, score-to-win of 0, etc.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Duplicate Wiring</div>
+      <div class="fc-tech">Pass 10</div>
+      <div class="fc-desc">Finds identical wiring connections (same source event, same target) that fire redundant signals.</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">Publish Checklist</div>
+  <p class="guide-text">
+    The <strong>Publish</strong> page provides pre-publish validation: actor budget check (is the map under UEFN's actor limit?),
+    required device verification (does every team have spawns?), and Verse build status (do all scripts compile?).
+  </p>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 9 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch9" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">code</div>
+    <h3>9. Verse Tools</h3>
+    <span class="count">Generation + analysis</span>
+  </div>
+
+  <div class="guide-h4">Verse Files Browser</div>
+  <p class="guide-text">
+    Navigate to <strong>Verse &gt; Verse Files</strong> to browse all <code>.verse</code> files in your project.
+    Files are displayed with syntax highlighting in a code viewer. You can search across all Verse files
+    and navigate between them.
+  </p>
+
+  <div class="guide-h4">Verse Error Explainer</div>
+  <p class="guide-text">
+    Paste a Verse compiler error message into the <strong>Verse Error Explainer</strong> and get a human-readable explanation
+    of what went wrong, plus a suggested fix. Covers common issues like type mismatches, missing imports,
+    incorrect event signatures, and scope problems.
+  </p>
+
+  <div class="guide-h4">Verse Reference</div>
+  <p class="guide-text">
+    The <strong>Verse Reference</strong> page lets you search all device APIs, properties, events, and functions.
+    Data is parsed from UEFN's <code>.digest</code> files which contain Verse class/property schema definitions.
+  </p>
+
+  <div class="guide-h4">Verse Intelligence</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">Anti-Pattern Detection</div>
+      <div class="fc-tech">Code quality</div>
+      <div class="fc-desc">Scans Verse code for common mistakes: polling when events exist, hardcoded player counts, missing null checks on optionals.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Device Binding Generation</div>
+      <div class="fc-tech">Scaffolding</div>
+      <div class="fc-desc">Given a set of devices, generates the Verse <code>@editable</code> declarations and binding boilerplate.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Refactoring Suggestions</div>
+      <div class="fc-tech">Improvement</div>
+      <div class="fc-desc">Analyzes existing Verse code and suggests structural improvements &mdash; extracting shared logic, using events instead of polling.</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">Verse Generation</div>
+  <p class="guide-text">
+    WellVersed includes <strong>15 base templates</strong> and <strong>20 smart templates</strong> for generating Verse code.
+    Base templates cover common patterns (timer manager, score tracker, UI controller). Smart templates generate
+    complete game mechanics (see Chapter 12). All generated Verse is syntactically valid for the UEFN Verse compiler.
+  </p>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">warning</span>
+    <div class="callout-body">
+      <strong>Compilation Status</strong>
+      Smart templates generate syntactically valid Verse, but the generated code has <strong>not been compiled in a real
+      UEFN instance</strong>. It follows Epic's Verse language spec and patterns from verified reference code, but edge cases
+      may exist. Always test-compile in UEFN before shipping.
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 10 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch10" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">difference</div>
+    <h3>10. Project Management</h3>
+    <span class="count">Diff + watch + backup</span>
+  </div>
+
+  <div class="guide-h4">Project Diff</div>
+  <p class="guide-text">
+    The <strong>Project Diff</strong> page lets you take a snapshot of your project state, make changes in UEFN,
+    and then compare to see exactly what changed. This is particularly useful for understanding what UEFN
+    modifies when you move an actor or change a device property.
+  </p>
+  <ol class="steps">
+    <li><strong>Take Snapshot</strong> &mdash; WellVersed records the current state of all .uasset files (hashes + metadata).</li>
+    <li><strong>Make changes in UEFN</strong> &mdash; move actors, adjust properties, add devices.</li>
+    <li><strong>Compare</strong> &mdash; WellVersed scans again and shows a diff: added files, removed files, modified files with property-level changes.</li>
+  </ol>
+
+  <div class="guide-h4">File Watcher</div>
+  <p class="guide-text">
+    When enabled, the file watcher monitors your UEFN project directory for changes.
+    When UEFN saves files (after Ctrl+S or auto-save), WellVersed automatically takes a snapshot.
+    This builds a timeline of changes that you can browse through.
+  </p>
+
+  <div class="guide-h4">Staged Changes</div>
+  <p class="guide-text">
+    When WellVersed operates in <strong>Staged mode</strong> (UEFN is running), all modifications are written to
+    <code>.wellversed/staged/</code> instead of the source directory. The Staged Changes page shows all pending
+    modifications with a diff preview. You review each change and choose to apply (when UEFN is closed)
+    or discard.
+  </p>
+
+  <div class="guide-h4">Backup System</div>
+  <p class="guide-text">
+    Every time WellVersed performs a direct modification (in Direct mode, UEFN closed), it automatically
+    creates a backup of the original file in <code>.wellversed/backups/</code>. Backups are timestamped
+    and can be restored from the UI.
+  </p>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 11 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch11" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">local_library</div>
+    <h3>11. Reference Library</h3>
+    <span class="count">92+ reference projects</span>
+  </div>
+
+  <div class="guide-h4">Adding a Library</div>
+  <p class="guide-text">
+    Navigate to <strong>Library &gt; Manage</strong> in the sidebar. Click <strong>Add Library</strong> and browse
+    to a directory containing UEFN projects. WellVersed will scan recursively and discover all projects
+    (folders containing <code>.uefnproject</code> files). Libraries are always read-only.
+  </p>
+
+  <div class="guide-h4">Browsing Reference Projects</div>
+  <p class="guide-text">
+    The Library section provides the same browsing capabilities as your active project &mdash; assets, devices,
+    Verse files, widget blueprints, materials &mdash; but across all projects in the library. This is invaluable
+    for understanding how other creators solved similar problems.
+  </p>
+
+  <div class="guide-h4">Cross-Project Search</div>
+  <p class="guide-text">
+    Use <strong>Asset Search</strong> to search across all library projects simultaneously. Find specific device types,
+    Verse patterns, material configurations, or widget layouts. Results link back to the source project
+    for full context.
+  </p>
+
+  <div class="guide-h4">System Extraction</div>
+  <p class="guide-text">
+    The <strong>Recipes</strong> page detects multi-device patterns in reference projects &mdash; groups of devices
+    that work together (e.g., a scoring system with elimination manager + score tracker + HUD display).
+    These patterns can be extracted as "recipes" for importing into your own project.
+  </p>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">info</span>
+    <div class="callout-body">
+      <strong>Spatial Clustering</strong>
+      System extraction uses spatial clustering to group nearby devices. This works well for typical map layouts
+      but may produce suboptimal groupings on very large maps (devices far apart) or very small maps
+      (everything clustered together).
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 12 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch12" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">auto_awesome</div>
+    <h3>12. Smart Templates (20 Game Mechanics)</h3>
+    <span class="count">Complete generators</span>
+  </div>
+
+  <p class="guide-text">
+    Smart Templates are complete game mechanic generators. Each produces a full implementation:
+    Verse code, device list with property overrides, wiring connections, and spatial layout.
+    They accept parameters (player count, score limits, timers) and generate customized output.
+  </p>
+
+  <div class="guide-h5">Combat</div>
+  <div class="template-grid">
+    <div class="template-card">
+      <span class="tc-cat tc-combat">Combat</span>
+      <div class="tc-name">Class Selector</div>
+      <div class="tc-desc">Players choose from predefined loadout classes at round start. Configurable class count, switching rules, and per-class equipment.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-combat">Combat</span>
+      <div class="tc-name">Gun Game</div>
+      <div class="tc-desc">Weapon progression on each elimination. Configurable weapon tiers, demotion rules, and final weapon challenge.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-combat">Combat</span>
+      <div class="tc-name">Last Man Standing</div>
+      <div class="tc-desc">No respawns &mdash; last player alive wins. Configurable shrinking zone, spectator mode, and round count.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-combat">Combat</span>
+      <div class="tc-name">Team Elimination</div>
+      <div class="tc-desc">Team-based elimination with configurable team count, respawn tickets, and overtime rules.</div>
+    </div>
+  </div>
+
+  <div class="guide-h5">Economy</div>
+  <div class="template-grid">
+    <div class="template-card">
+      <span class="tc-cat tc-economy">Economy</span>
+      <div class="tc-name">Currency System</div>
+      <div class="tc-desc">Earn-and-spend economy with configurable starting gold, earn rates, and spending categories.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-economy">Economy</span>
+      <div class="tc-name">Upgrade Station</div>
+      <div class="tc-desc">Progressive upgrade paths for weapons, armor, or abilities. Tiered pricing and visual feedback.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-economy">Economy</span>
+      <div class="tc-name">Trading Post</div>
+      <div class="tc-desc">Player-to-player or NPC trading with configurable exchange rates and inventory limits.</div>
+    </div>
+  </div>
+
+  <div class="guide-h5">Objective</div>
+  <div class="template-grid">
+    <div class="template-card">
+      <span class="tc-cat tc-objective">Objective</span>
+      <div class="tc-name">King of the Hill</div>
+      <div class="tc-desc">Capture and hold a zone to score points. Configurable capture time, score rate, and hill rotation.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-objective">Objective</span>
+      <div class="tc-name">Domination</div>
+      <div class="tc-desc">Multiple capture points, teams earn points for each held. Configurable point count and score limits.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-objective">Objective</span>
+      <div class="tc-name">Search &amp; Destroy</div>
+      <div class="tc-desc">Attackers plant at bomb sites, defenders prevent. No respawns per round, bomb timer configurable.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-objective">Objective</span>
+      <div class="tc-name">Capture the Flag</div>
+      <div class="tc-desc">Steal the enemy flag and return it to base. Configurable flag return timer and capture score.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-objective">Objective</span>
+      <div class="tc-name">Payload</div>
+      <div class="tc-desc">Push an objective along a path while opponents defend. Configurable checkpoints and time extensions.</div>
+    </div>
+  </div>
+
+  <div class="guide-h5">Progression</div>
+  <div class="template-grid">
+    <div class="template-card">
+      <span class="tc-cat tc-progression">Progression</span>
+      <div class="tc-name">Wave Defense</div>
+      <div class="tc-desc">Survive increasingly difficult enemy waves. Configurable wave count, enemy scaling, and intermission time.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-progression">Progression</span>
+      <div class="tc-name">Parkour</div>
+      <div class="tc-desc">Timed obstacle course with checkpoints. Configurable difficulty tiers and checkpoint respawns.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-progression">Progression</span>
+      <div class="tc-name">Deathrun</div>
+      <div class="tc-desc">Trap-filled course where one player controls hazards. Configurable trap types and survivor lives.</div>
+    </div>
+  </div>
+
+  <div class="guide-h5">Meta</div>
+  <div class="template-grid">
+    <div class="template-card">
+      <span class="tc-cat tc-meta">Meta</span>
+      <div class="tc-name">Voting System</div>
+      <div class="tc-desc">Players vote on maps, modes, or options between rounds. Configurable vote time and option count.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-meta">Meta</span>
+      <div class="tc-name">Matchmaking</div>
+      <div class="tc-desc">Lobby management with ready-up, team balancing, and game-start countdown.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-meta">Meta</span>
+      <div class="tc-name">Achievement System</div>
+      <div class="tc-desc">Track player milestones with configurable achievement definitions and reward triggers.</div>
+    </div>
+  </div>
+
+  <div class="guide-h5">Utility</div>
+  <div class="template-grid">
+    <div class="template-card">
+      <span class="tc-cat tc-utility">Utility</span>
+      <div class="tc-name">Spectator Mode</div>
+      <div class="tc-desc">Eliminated players spectate with camera controls. Free-cam and follow-player modes.</div>
+    </div>
+    <div class="template-card">
+      <span class="tc-cat tc-utility">Utility</span>
+      <div class="tc-name">Replay System</div>
+      <div class="tc-desc">Record and replay match highlights. Configurable recording duration and playback speed.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 13 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch13" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">terminal</div>
+    <h3>13. Claude Code MCP Integration</h3>
+    <span class="count">90+ tools</span>
+  </div>
+
+  <div class="guide-h4">What It Is</div>
+  <p class="guide-text">
+    WellVersed exposes <strong>90+ tools</strong> via the Model Context Protocol (MCP), allowing Claude Code (Anthropic's terminal AI)
+    to interact with your UEFN project programmatically. This is the "AI-native" interface &mdash; Claude Code can read assets,
+    generate Verse, run audits, design games, and execute plans using the same intelligence layer that powers the desktop app.
+  </p>
+
+  <div class="guide-h4">Setup</div>
+  <p class="guide-text">
+    Add WellVersed to your Claude Code MCP configuration:
+  </p>
+  <div class="code-block">
+    <span class="comment">// In .mcp.json or Claude Code settings</span><br>
+    {<br>
+    &nbsp;&nbsp;<span class="path">"mcpServers"</span>: {<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="path">"wellversed"</span>: {<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="path">"command"</span>: <span class="cmd">"dotnet"</span>,<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="path">"args"</span>: [<span class="cmd">"run"</span>, <span class="flag">"--project"</span>, <span class="path">"src/FortniteForge.MCP"</span>, <span class="cmd">"--"</span>, <span class="path">"path/to/forge.config.json"</span>]<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+    &nbsp;&nbsp;}<br>
+    }
+  </div>
+
+  <div class="guide-h4">Key Commands</div>
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead>
+        <tr><th>Tool</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>design_game</code></td><td>Full game design from natural language description</td></tr>
+        <tr><td><code>execute_generation_plan</code></td><td>Execute a plan via the Python bridge in UEFN</td></tr>
+        <tr><td><code>run_qa_analysis</code></td><td>Run all 10 QA analysis passes on a level</td></tr>
+        <tr><td><code>generate_verse_file</code></td><td>Generate a Verse file from a template or description</td></tr>
+        <tr><td><code>analyze_game_balance</code></td><td>Balance analysis: team fairness, spawn distribution, resource access</td></tr>
+        <tr><td><code>profile_map</code></td><td>Performance profiling: actor count, memory estimates, complexity metrics</td></tr>
+        <tr><td><code>list_devices</code></td><td>List all devices in a level with their configurations</td></tr>
+        <tr><td><code>read_asset</code></td><td>Read any .uasset file and return parsed properties</td></tr>
+        <tr><td><code>search_assets</code></td><td>Search across all project assets by name, type, or property</td></tr>
+        <tr><td><code>generate_smart_template</code></td><td>Generate a specific smart template with parameters</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="guide-h4">Example Workflow</div>
+  <div class="code-block">
+    <span class="comment"># In Claude Code terminal:</span><br><br>
+    <span class="output">&gt; "Design an 8-player FFA box fight with 5 rounds, 2 minute rounds, score to win 10"</span><br><br>
+    <span class="comment"># Claude Code calls design_game, gets a GenerationPlan, then:</span><br>
+    <span class="comment"># 1. Reviews the plan with you</span><br>
+    <span class="comment"># 2. Calls generate_verse_file for the game logic</span><br>
+    <span class="comment"># 3. Calls execute_generation_plan to deploy to UEFN (if bridge connected)</span><br>
+    <span class="comment"># 4. Calls run_qa_analysis to validate the result</span>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 14 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch14" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">report</div>
+    <h3>14. Known Issues &amp; Items Needing Work</h3>
+    <span class="count">Honest assessment</span>
+  </div>
+
+  <p class="guide-text">
+    WellVersed is in active development. This section is an honest accounting of what is untested, incomplete, or needs improvement.
+    We believe transparency builds trust.
+  </p>
+
+  <div class="guide-h4">Critical: Untested in Production</div>
+  <div class="issue-list">
+    <div class="issue-item">
+      <div class="issue-dot dot-critical"></div>
+      <div class="issue-text"><strong>Python bridge has NOT been tested with real UEFN.</strong> All 114 commands are implemented against UEFN's Python scripting API docs, but none have been executed in a running UEFN instance. Command signatures, object paths, and API availability may differ from documentation.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-critical"></div>
+      <div class="issue-text"><strong>ChatPage calls GameDesigner, not actual Claude AI.</strong> The Studio chat uses a keyword-based template system for plan generation. It is not connected to any language model API. "AI generation" refers to the rule-based pipeline, not neural network inference.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-critical"></div>
+      <div class="issue-text"><strong>Widget .uasset roundtrip fidelity is approximately 80%.</strong> Most widget types export correctly, but complex nested widgets, custom materials, and some edge cases may not round-trip perfectly. Always validate exported widgets in UEFN.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-critical"></div>
+      <div class="issue-text"><strong>Widget anchors are hardcoded to TopLeft.</strong> The widget editor supports only the TopLeft anchor preset. The remaining 12 anchor presets (TopCenter, TopRight, Fill, etc.) are not yet implemented in the binary export.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-critical"></div>
+      <div class="issue-text"><strong>3D scene preview shows colored boxes for many meshes.</strong> Device positions are accurate, but actual mesh rendering falls back to colored placeholder boxes when CUE4Parse cannot resolve the mesh asset. This is common for custom/modded content.</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">Needs Improvement</div>
+  <div class="issue-list">
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>Asset browsers show raw class names</strong> for some unknown asset types. When WellVersed cannot classify an asset, it displays the internal UE class name (e.g., <code>BlueprintGeneratedClass</code>) instead of a friendly label.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>Blueprint graph can be slow with 50+ nodes.</strong> The force-directed layout and bezier curve rendering become noticeably laggy on complex levels. This is a rendering optimization issue, not a data issue.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>Verse LSP integration exists but is limited.</strong> The language server protocol connection works for basic features, but it does not yet power dependency trees, parameter signatures, or go-to-definition across files.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>Smart templates generate valid Verse but haven't been compiled in real UEFN.</strong> All 20 templates produce syntactically correct code following Epic's Verse spec, but actual compilation verification has not been performed.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>Device wiring binary execution is untested.</strong> Writing wiring connections back to .uasset files (the binary format) has been implemented but not verified with UEFN loading the modified assets.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>System extraction spatial clustering has edge cases.</strong> The recipe extraction algorithm may produce suboptimal device groupings on maps that are very large (devices far apart) or very small (everything overlapping).</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>GameDesigner NL parsing is keyword-based.</strong> The natural language parser uses pattern matching and keyword extraction, not true natural language understanding. Ambiguous or unusual phrasings may be misinterpreted.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-warning"></div>
+      <div class="issue-text"><strong>No actual Claude API integration.</strong> Using real AI reasoning in the generation pipeline would require an Anthropic API key. The current system is entirely rule-based.</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">Future Work</div>
+  <div class="issue-list">
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Test Python bridge with real UEFN v40.00+</strong> &mdash; validate all 114 commands against a running UEFN instance and fix any API discrepancies.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Dynamic UMG widgets</strong> &mdash; state changes, animations, and data binding in generated widget blueprints.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Full anchor preset support</strong> &mdash; all 13 UMG anchor presets instead of just TopLeft.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Verse LSP-powered dependency trees</strong> &mdash; full cross-file navigation with parameter signatures and type inference.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Real AI integration</strong> &mdash; Anthropic API connection in the ChatPage for true natural language game design.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Foliage, materials, and spline tools</strong> &mdash; bridge commands exist but are untested. Need real UEFN validation.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Performance profiling with real projects</strong> &mdash; validate memory estimates, actor budgets, and rendering cost predictions.</div>
+    </div>
+    <div class="issue-item">
+      <div class="issue-dot dot-future"></div>
+      <div class="issue-text"><strong>Cross-map asset import</strong> &mdash; importing assets from library projects into your active project requires complex dependency resolution for user-created content.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════ CHAPTER 15 ═══════════════════════════════ -->
+<div class="section">
+  <div id="ch15" class="section-anchor"></div>
+  <div class="section-header">
+    <div class="icon">architecture</div>
+    <h3>15. Architecture Overview</h3>
+    <span class="count">For developers</span>
+  </div>
+
+  <p class="guide-text">
+    WellVersed is a multi-layer system. The desktop app communicates with a .NET intelligence sidecar
+    via NDJSON over stdin/stdout. The sidecar optionally connects to a Python bridge running inside UEFN
+    via WebSocket. Here is the full stack:
+  </p>
+
+  <div class="arch-stack">
+    <div class="arch-block ab-frontend">
+      <span class="ab-icon">web</span>
+      <div>
+        <div class="ab-name">Desktop App (Frontend)</div>
+        <div class="ab-tech">Tauri v2 + React 19 + TypeScript + Tailwind</div>
+      </div>
+      <div class="ab-desc">UI, state management, canvas editors</div>
+    </div>
+    <div class="arch-block ab-sidecar">
+      <span class="ab-icon">dns</span>
+      <div>
+        <div class="ab-name">Intelligence Sidecar</div>
+        <div class="ab-tech">.NET 8 + UAssetAPI + CUE4Parse + 90+ MCP Tools</div>
+      </div>
+      <div class="ab-desc">Asset parsing, generation, analysis</div>
+    </div>
+    <div class="arch-block ab-bridge">
+      <span class="ab-icon">cable</span>
+      <div>
+        <div class="ab-name">Python Bridge</div>
+        <div class="ab-tech">Python 3.11 + WebSocket (port 9220) + 114 commands</div>
+      </div>
+      <div class="ab-desc">Live UEFN control channel</div>
+    </div>
+    <div class="arch-block ab-uefn">
+      <span class="ab-icon">sports_esports</span>
+      <div>
+        <div class="ab-name">UEFN (Unreal Editor for Fortnite)</div>
+        <div class="ab-tech">UE 5.4 + Python Editor Scripting + Verse</div>
+      </div>
+      <div class="ab-desc">The editor itself</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">Key Technologies</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">UAssetAPI</div>
+      <div class="fc-tech">Binary .uasset parsing</div>
+      <div class="fc-desc">Open-source library for reading and writing Unreal Engine .uasset files. WellVersed uses a patched version (submodule at <code>lib/UAssetAPI/</code>) with a ScriptSerializationOffset fix for UE5.4 external actor property parsing.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">CUE4Parse</div>
+      <div class="fc-tech">Fortnite PAK file reading</div>
+      <div class="fc-desc">Used for reading Fortnite's packaged assets &mdash; meshes, textures, materials. Powers the 3D scene preview and asset thumbnails.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Three.js</div>
+      <div class="fc-tech">3D preview rendering</div>
+      <div class="fc-desc">WebGL-based 3D renderer for the scene preview. Renders device positions, actor transforms, and resolved meshes in a navigable viewport.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Fabric.js</div>
+      <div class="fc-tech">Widget canvas editor</div>
+      <div class="fc-desc">HTML5 canvas library powering the widget editor's drag-and-drop interface, selection, grouping, and visual manipulation.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Tauri v2</div>
+      <div class="fc-tech">Desktop framework</div>
+      <div class="fc-desc">Rust-based desktop framework (replaces Electron). Provides native window management, file system access, and WebView2 rendering.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">Model Context Protocol</div>
+      <div class="fc-tech">AI tool interface</div>
+      <div class="fc-desc">MCP server SDK (NuGet 0.1.0-preview.9) exposes all WellVersed capabilities as tools for Claude Code and other MCP clients.</div>
+    </div>
+  </div>
+
+  <div class="guide-h4">Project Structure</div>
+  <div class="code-block">
+    <span class="comment"># Solution layout (disk names use FortniteForge, namespaces use WellVersed)</span><br><br>
+    FortniteForge.sln<br>
+    <span class="path">src/FortniteForge.Core/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Business logic — models, services, safety</span><br>
+    <span class="path">src/FortniteForge.MCP/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># MCP server — stdio transport, 90+ tools</span><br>
+    <span class="path">src/FortniteForge.CLI/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># CLI + .NET sidecar for desktop app</span><br>
+    <span class="path">src/FortniteForge.Web/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Legacy web dashboard (localhost SPA)</span><br>
+    <span class="path">tests/FortniteForge.Tests/</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Unit + integration + sandbox tests</span><br>
+    <span class="path">app/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Tauri v2 desktop app (React + TypeScript)</span><br>
+    <span class="path">bridge/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Python bridge for UEFN integration</span><br>
+    <span class="path">lib/UAssetAPI/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Git submodule — patched UAssetAPI</span><br>
+    <span class="path">docs/dashboard/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Project documentation (this guide)</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<footer class="footer">
+  <span class="brand">WellVersed</span> &middot; User Guide &middot; March 29, 2026
+  <br>
+  <span style="color:var(--dim);">15 chapters &middot; 114 bridge commands &middot; 90+ MCP tools &middot; 20 smart templates</span>
+</footer>
+
+<!-- ═══════════════════════════════ SCRIPTS ═══════════════════════════════ -->
+<script>
+// Animated stat counters
+function animateCounters() {
+  document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const duration = 1800;
+    const start = performance.now();
+    function tick(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(target * eased);
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+// Intersection observer for scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = 'running';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.animate-in').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  observer.observe(el);
+});
+
+// Start counter animation when hero is visible
+const heroObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) {
+    animateCounters();
+    heroObserver.disconnect();
+  }
+}, { threshold: 0.3 });
+heroObserver.observe(document.querySelector('.hero'));
+
+// Smooth scroll for TOC links
+document.querySelectorAll('.toc-item').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

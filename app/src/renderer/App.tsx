@@ -39,6 +39,7 @@ import { StampsPage } from './pages/StampsPage'
 import { GeometryPage } from './pages/GeometryPage'
 import { PublishPage } from './pages/PublishPage'
 import { GameLoopPage } from './pages/GameLoopPage'
+import { GuidePage } from './pages/GuidePage'
 import { useTheme } from './hooks/useTheme'
 import { useFileWatcher } from './hooks/useFileWatcher'
 import { useSettingsStore } from './stores/settingsStore'
@@ -192,6 +193,8 @@ export default function App() {
         return <GameLoopPage selectedLevel={selectedLevel} onNavigate={handleNavigate} />
       case 'publish':
         return <PublishPage />
+      case 'guide':
+        return <GuidePage />
       case 'settings':
         return <SettingsPage />
       default:
