@@ -625,6 +625,7 @@ public class Program
                 "unwatch-project" => HandleUnwatchProject(req),
                 // Bridge installation
                 "install-bridge" => HandleInstallBridge(req),
+                "create-dev-copy" => HandleCreateDevCopy(req),
                 // UEFN Bridge passthrough
                 "bridge-connect" => HandleBridgeConnect(req),
                 "bridge-status" => HandleBridgeStatus(req),
@@ -2757,6 +2758,114 @@ static SidecarResponse HandleInstallBridge(SidecarRequest req)
     catch (Exception ex)
     {
         return new SidecarResponse(req.Id, Error: new SidecarError("INSTALL_FAILED", ex.Message));
+    }
+}
+
+/// <summary>
+/// Creates a development copy of a UEFN project with the Python bridge pre-installed.
+/// The original project stays clean and publishable. The dev copy has experimental
+/// features ready for WellVersed bridge automation.
+/// </summary>
+static SidecarResponse HandleCreateDevCopy(SidecarRequest req)
+{
+    var projectPath = req.Params?.GetProperty("projectPath").GetString()
+        ?? throw new ArgumentException("Missing 'projectPath'");
+
+    // Validate it's a UEFN project
+    var uefnFiles = Directory.GetFiles(projectPath, "*.uefnproject");
+    if (uefnFiles.Length == 0)
+        return new SidecarResponse(req.Id, Error: new SidecarError("NOT_UEFN", $"No .uefnproject file found in: {projectPath}"));
+
+    var projectName = Path.GetFileName(projectPath);
+    var parentDir = Path.GetDirectoryName(projectPath) ?? projectPath;
+    var devCopyName = $"{projectName}_WellVersed_Dev";
+    var devCopyPath = Path.Combine(parentDir, devCopyName);
+
+    // Check if dev copy already exists
+    if (Directory.Exists(devCopyPath))
+        return new SidecarResponse(req.Id, Error: new SidecarError("ALREADY_EXISTS",
+            $"Dev copy already exists at: {devCopyPath}. Delete it first or use install-bridge on the existing copy."));
+
+    try
+    {
+        // Copy entire project
+        CopyDirectoryRecursive(projectPath, devCopyPath);
+
+        // Count what was copied
+        var fileCount = Directory.EnumerateFiles(devCopyPath, "*", SearchOption.AllDirectories).Count();
+
+        // Now install bridge into the dev copy
+        var pythonDir = Path.Combine(devCopyPath, "Content", "Python");
+        Directory.CreateDirectory(pythonDir);
+
+        var repoRoot = AppDomain.CurrentDomain.BaseDirectory;
+        for (int i = 0; i < 6; i++)
+        {
+            var bridgeDir = Path.Combine(repoRoot, "bridge", "wellversed");
+            if (Directory.Exists(bridgeDir)) break;
+            repoRoot = Path.GetDirectoryName(repoRoot) ?? repoRoot;
+        }
+
+        var sourceBridgeDir = Path.Combine(repoRoot, "bridge", "wellversed");
+        var sourceInitFile = Path.Combine(repoRoot, "bridge", "init_unreal.py");
+
+        var installed = new List<string>();
+
+        if (Directory.Exists(sourceBridgeDir))
+        {
+            CopyDirectoryRecursive(sourceBridgeDir, Path.Combine(pythonDir, "wellversed"));
+            installed.Add("wellversed/ bridge package");
+        }
+
+        if (File.Exists(sourceInitFile))
+        {
+            var destInit = Path.Combine(pythonDir, "init_unreal.py");
+            if (File.Exists(destInit))
+            {
+                var content = File.ReadAllText(destInit);
+                if (!content.Contains("wellversed"))
+                {
+                    File.AppendAllText(destInit,
+                        "\n# WellVersed Bridge auto-start\ntry:\n    import wellversed\n    wellversed.start()\n    print(\"[WellVersed] Bridge started\")\nexcept Exception as e:\n    print(f\"[WellVersed] Failed: {e}\")\n");
+                    installed.Add("init_unreal.py (appended)");
+                }
+            }
+            else
+            {
+                File.Copy(sourceInitFile, destInit);
+                installed.Add("init_unreal.py");
+            }
+        }
+
+        CleanPycache(devCopyPath);
+
+        // Create a marker file so WellVersed knows this is a dev copy
+        File.WriteAllText(Path.Combine(devCopyPath, ".wellversed_dev_copy"), System.Text.Json.JsonSerializer.Serialize(new
+        {
+            sourceProject = projectPath,
+            createdAt = DateTime.UtcNow.ToString("O"),
+            createdBy = "WellVersed",
+            note = "This is a development copy with experimental features. Do NOT publish this project. Use the original for publishing."
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+
+        return new SidecarResponse(req.Id, new
+        {
+            success = true,
+            devCopyPath,
+            sourceProject = projectPath,
+            filesCopied = fileCount,
+            bridgeInstalled = installed,
+            message = $"Dev copy created at: {devCopyPath}. Open this project in UEFN, enable Python Editor Scripting in Experimental Access, then restart UEFN."
+        });
+    }
+    catch (Exception ex)
+    {
+        // Clean up partial copy on failure
+        if (Directory.Exists(devCopyPath))
+        {
+            try { Directory.Delete(devCopyPath, true); } catch { }
+        }
+        return new SidecarResponse(req.Id, Error: new SidecarError("COPY_FAILED", ex.Message));
     }
 }
 

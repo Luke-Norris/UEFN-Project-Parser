@@ -274,6 +274,19 @@ export async function forgeAddProject(
   return invoke('forge_add_project', { path, projectType: type })
 }
 
+export async function forgeCreateDevCopy(
+  projectPath: string
+): Promise<{
+  success: boolean
+  devCopyPath: string
+  sourceProject: string
+  filesCopied: number
+  bridgeInstalled: string[]
+  message: string
+}> {
+  return invoke('forge_create_dev_copy', { projectPath })
+}
+
 export async function forgeInstallBridge(
   projectPath: string
 ): Promise<{

@@ -62,6 +62,17 @@ pub async fn forge_add_project(
 }
 
 #[tauri::command]
+pub async fn forge_create_dev_copy(
+    state: State<'_, AppState>,
+    project_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("create-dev-copy", json!({"projectPath": project_path}))
+        .await
+}
+
+#[tauri::command]
 pub async fn forge_install_bridge(
     state: State<'_, AppState>,
     project_path: String,

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { WellVersedProject, WellVersedProjectList, WellVersedDiscoveredProject } from '../../shared/types'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
-import { forgeInstallBridge } from '../lib/api'
+import { forgeInstallBridge, forgeCreateDevCopy } from '../lib/api'
 
 export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (page: string) => void; onProjectChanged?: () => void }) {
   const storeProjectList = useForgeStore((s) => s.projectList)
@@ -289,27 +289,37 @@ function ProjectCard({
     : 'text-fn-rare bg-fn-rare/10 border-fn-rare/20'
 
   const [installing, setInstalling] = useState(false)
+  const [creatingCopy, setCreatingCopy] = useState(false)
   const [bridgeStatus, setBridgeStatus] = useState<'unknown' | 'installed' | 'not_installed'>('unknown')
-  const [installMsg, setInstallMsg] = useState<string | null>(null)
+  const [actionMsg, setActionMsg] = useState<string | null>(null)
+  const [actionType, setActionType] = useState<'success' | 'error' | 'warning'>('success')
 
-  // Check if bridge is already installed
-  useEffect(() => {
-    if (project.isUefnProject) {
-      // Simple check — does Content/Python/wellversed exist?
-      // We can't do fs checks from renderer, so we just show the button
-      setBridgeStatus('unknown')
+  async function handleCreateDevCopy() {
+    try {
+      setCreatingCopy(true)
+      setActionMsg(null)
+      const result = await forgeCreateDevCopy(project.projectPath)
+      setActionType('success')
+      setActionMsg(`Dev copy created with bridge installed (${result.filesCopied} files). Open "${result.devCopyPath}" in UEFN and enable Python Editor Scripting.`)
+    } catch (err) {
+      setActionType('error')
+      setActionMsg(err instanceof Error ? err.message : 'Failed to create dev copy')
+    } finally {
+      setCreatingCopy(false)
     }
-  }, [project.isUefnProject])
+  }
 
   async function handleInstallBridge() {
     try {
       setInstalling(true)
-      setInstallMsg(null)
+      setActionMsg(null)
       const result = await forgeInstallBridge(project.projectPath)
       setBridgeStatus('installed')
-      setInstallMsg(result.message)
+      setActionType('warning')
+      setActionMsg(result.message + ' WARNING: This enables experimental features which prevent publishing.')
     } catch (err) {
-      setInstallMsg(err instanceof Error ? err.message : 'Failed to install bridge')
+      setActionType('error')
+      setActionMsg(err instanceof Error ? err.message : 'Failed to install bridge')
     } finally {
       setInstalling(false)
     }
@@ -357,25 +367,41 @@ function ProjectCard({
             </span>
           </div>
 
-          {/* Install bridge feedback */}
-          {installMsg && (
-            <p className={`text-[9px] mt-1.5 ${bridgeStatus === 'installed' ? 'text-emerald-400/70' : 'text-amber-400/70'}`}>
-              {installMsg}
+          {/* Action feedback */}
+          {actionMsg && (
+            <p className={`text-[9px] mt-1.5 leading-relaxed ${
+              actionType === 'success' ? 'text-emerald-400/70' :
+              actionType === 'warning' ? 'text-amber-400/70' :
+              'text-red-400/70'
+            }`}>
+              {actionMsg}
             </p>
           )}
         </div>
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {project.isUefnProject && !isLibrary && bridgeStatus !== 'installed' && (
-            <button
-              onClick={handleInstallBridge}
-              disabled={installing}
-              className="px-2 py-1 text-[10px] font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors disabled:opacity-40"
-              title="Install Python bridge for live UEFN control"
-            >
-              {installing ? 'Installing...' : 'Install Bridge'}
-            </button>
+          {project.isUefnProject && !isLibrary && (
+            <>
+              <button
+                onClick={handleCreateDevCopy}
+                disabled={creatingCopy}
+                className="px-2 py-1 text-[10px] font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors disabled:opacity-40"
+                title="Create a development copy with bridge pre-installed. Your original project stays clean and publishable."
+              >
+                {creatingCopy ? 'Copying...' : 'Create Dev Copy'}
+              </button>
+              {bridgeStatus !== 'installed' && (
+                <button
+                  onClick={handleInstallBridge}
+                  disabled={installing}
+                  className="px-2 py-1 text-[10px] font-medium text-gray-500 bg-fn-darker border border-fn-border rounded hover:text-amber-400 hover:border-amber-400/30 transition-colors disabled:opacity-40"
+                  title="Install bridge directly (WARNING: requires experimental features, prevents publishing)"
+                >
+                  {installing ? '...' : 'Bridge Only'}
+                </button>
+              )}
+            </>
           )}
           {!isActive && (
             <button
