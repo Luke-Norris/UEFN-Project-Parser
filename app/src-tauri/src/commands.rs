@@ -99,11 +99,13 @@ pub async fn forge_install_bridge(
 pub async fn forge_open_in_uefn(
     state: State<'_, AppState>,
     project_path: String,
+    force: Option<bool>,
 ) -> Result<Value, String> {
-    state
-        .bridge
-        .call("open-in-uefn", json!({"projectPath": project_path}))
-        .await
+    let mut params = json!({"projectPath": project_path});
+    if let Some(true) = force {
+        params["force"] = json!(true);
+    }
+    state.bridge.call("open-in-uefn", params).await
 }
 
 #[tauri::command]

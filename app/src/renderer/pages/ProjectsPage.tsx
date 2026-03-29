@@ -404,6 +404,7 @@ function ProjectCard({
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [actionType, setActionType] = useState<'success' | 'error' | 'warning'>('success')
   const [openingUefn, setOpeningUefn] = useState(false)
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false)
 
   async function handleCreateDevCopy() {
     try {
@@ -436,14 +437,22 @@ function ProjectCard({
     }
   }
 
-  async function handleOpenInUefn() {
+  async function handleOpenInUefn(force = false) {
     try {
       setOpeningUefn(true)
       setActionMsg(null)
-      await forgeOpenInUefn(project.projectPath)
-      setActionType('success')
-      setActionMsg('Opening in UEFN...')
-      setTimeout(() => setActionMsg(null), 3000)
+      const result = await forgeOpenInUefn(project.projectPath, force) as Record<string, unknown>
+
+      if (result.uefnBusy && !force) {
+        setActionType('warning')
+        setActionMsg(`UEFN is already running. Save your work, then click "Switch" to open this project.`)
+        setShowSwitchConfirm(true)
+      } else if (result.opened) {
+        setActionType('success')
+        setActionMsg('Opening in UEFN...')
+        setShowSwitchConfirm(false)
+        setTimeout(() => setActionMsg(null), 3000)
+      }
     } catch (err) {
       setActionType('error')
       setActionMsg(err instanceof Error ? err.message : 'Failed to open in UEFN')
@@ -530,20 +539,30 @@ function ProjectCard({
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Open in UEFN */}
           {project.isUefnProject && (
-            <button
-              onClick={handleOpenInUefn}
-              disabled={openingUefn}
-              className="px-2 py-1 text-[10px] font-medium text-gray-400 bg-fn-darker border border-fn-border rounded hover:text-white hover:border-gray-500 transition-colors disabled:opacity-40"
-              title="Open this project in UEFN"
-            >
-              <span className="flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {openingUefn ? 'Opening...' : 'Open UEFN'}
-              </span>
-            </button>
+            <>
+              <button
+                onClick={() => handleOpenInUefn(false)}
+                disabled={openingUefn}
+                className="px-2 py-1 text-[10px] font-medium text-gray-400 bg-fn-darker border border-fn-border rounded hover:text-white hover:border-gray-500 transition-colors disabled:opacity-40"
+                title="Open this project in UEFN"
+              >
+                <span className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {openingUefn ? 'Opening...' : 'Open UEFN'}
+                </span>
+              </button>
+              {showSwitchConfirm && (
+                <button
+                  onClick={() => handleOpenInUefn(true)}
+                  className="px-2 py-1 text-[10px] font-medium text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded hover:bg-amber-400/20 transition-colors"
+                >
+                  Switch
+                </button>
+              )}
+            </>
           )}
           {project.isUefnProject && !isLibrary && !isDev && (
             <>

@@ -3033,13 +3033,103 @@ static SidecarResponse HandleOpenInUefn(SidecarRequest req)
     if (uefnFiles.Length == 0)
         return new SidecarResponse(req.Id, Error: new SidecarError("NOT_FOUND", "No .uefnproject file found"));
 
+    // Find UEFN executable
+    var uefnExe = FindUefnExecutable();
+    if (uefnExe == null)
+        return new SidecarResponse(req.Id, Error: new SidecarError("UEFN_NOT_FOUND",
+            "Could not find UnrealEditorFortnite executable. Make sure UEFN/Fortnite is installed."));
+
+    // Check if UEFN is already running
+    var uefnProcesses = System.Diagnostics.Process.GetProcesses()
+        .Where(p => p.ProcessName.Contains("UnrealEditorFortnite", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    if (uefnProcesses.Count > 0)
+    {
+        // UEFN is running — check if it's the same project
+        // We can't easily detect which project is open, so warn the user
+        var force = false;
+        if (req.Params?.TryGetProperty("force", out var forceEl) == true)
+            force = forceEl.GetBoolean();
+
+        if (!force)
+        {
+            return new SidecarResponse(req.Id, new
+            {
+                opened = false,
+                uefnBusy = true,
+                uefnPid = uefnProcesses[0].Id,
+                message = "UEFN is already running. Save your work before switching projects.",
+                projectFile = uefnFiles[0]
+            });
+        }
+    }
+
+    // Launch UEFN with the project
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
     {
-        FileName = uefnFiles[0],
-        UseShellExecute = true
+        FileName = uefnExe,
+        Arguments = $"\"{uefnFiles[0]}\"",
+        UseShellExecute = false
     });
 
     return new SidecarResponse(req.Id, new { opened = true, file = uefnFiles[0] });
+}
+
+static string? FindUefnExecutable()
+{
+    // Check running processes first (most reliable — tells us exactly where it is)
+    try
+    {
+        var running = System.Diagnostics.Process.GetProcesses()
+            .FirstOrDefault(p => p.ProcessName.Contains("UnrealEditorFortnite", StringComparison.OrdinalIgnoreCase));
+        if (running != null)
+        {
+            try { return running.MainModule?.FileName; } catch { }
+        }
+    }
+    catch { }
+
+    // Common install paths
+    var candidates = new[]
+    {
+        @"Z:\EpicGamesGames\Fortnite\FortniteGame\Binaries\Win64\UnrealEditorFortnite-Win64-Shipping.exe",
+        @"C:\Program Files\Epic Games\Fortnite\FortniteGame\Binaries\Win64\UnrealEditorFortnite-Win64-Shipping.exe",
+        @"D:\EpicGames\Fortnite\FortniteGame\Binaries\Win64\UnrealEditorFortnite-Win64-Shipping.exe",
+        @"E:\EpicGames\Fortnite\FortniteGame\Binaries\Win64\UnrealEditorFortnite-Win64-Shipping.exe",
+    };
+
+    foreach (var path in candidates)
+    {
+        if (File.Exists(path)) return path;
+    }
+
+    // Search common Epic Games locations
+    var drives = new[] { "C", "D", "E", "Z" };
+    foreach (var drive in drives)
+    {
+        var searchPaths = new[]
+        {
+            $@"{drive}:\EpicGamesGames\Fortnite",
+            $@"{drive}:\Program Files\Epic Games\Fortnite",
+            $@"{drive}:\Epic Games\Fortnite",
+            $@"{drive}:\Games\Fortnite",
+        };
+
+        foreach (var searchPath in searchPaths)
+        {
+            if (!Directory.Exists(searchPath)) continue;
+            try
+            {
+                var found = Directory.EnumerateFiles(searchPath, "UnrealEditorFortnite*.exe", SearchOption.AllDirectories)
+                    .FirstOrDefault();
+                if (found != null) return found;
+            }
+            catch { }
+        }
+    }
+
+    return null;
 }
 
 // ========= MCP Safety Guard =========

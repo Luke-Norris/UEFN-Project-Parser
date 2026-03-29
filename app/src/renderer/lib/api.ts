@@ -311,9 +311,10 @@ export async function forgeCreateDevCopy(
 }
 
 export async function forgeOpenInUefn(
-  projectPath: string
-): Promise<{ opened: boolean; file: string }> {
-  return invoke('forge_open_in_uefn', { projectPath })
+  projectPath: string,
+  force?: boolean
+): Promise<{ opened: boolean; file?: string; uefnBusy?: boolean; message?: string }> {
+  return invoke('forge_open_in_uefn', { projectPath, force: force ?? false })
 }
 
 export async function forgeInstallBridge(
