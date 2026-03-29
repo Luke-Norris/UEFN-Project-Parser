@@ -2794,6 +2794,89 @@ static SidecarResponse HandleCreateDevCopy(SidecarRequest req)
         // Count what was copied
         var fileCount = Directory.EnumerateFiles(devCopyPath, "*", SearchOption.AllDirectories).Count();
 
+        // ── Fix .uefnproject file: clear bindings + rename ──
+        var copiedUefnFiles = Directory.GetFiles(devCopyPath, "*.uefnproject");
+        foreach (var uefnFile in copiedUefnFiles)
+        {
+            try
+            {
+                var json = File.ReadAllText(uefnFile);
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                var root = new Dictionary<string, System.Text.Json.JsonElement>();
+
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                    root[prop.Name] = prop.Value;
+
+                // Rebuild with cleared bindings and updated title
+                using var ms = new MemoryStream();
+                using var writer = new System.Text.Json.Utf8JsonWriter(ms, new System.Text.Json.JsonWriterOptions { Indented = true });
+                writer.WriteStartObject();
+
+                foreach (var kvp in root)
+                {
+                    if (kvp.Key == "bindings")
+                    {
+                        // Clear bindings — empty object so UEFN assigns new IDs
+                        writer.WriteStartObject("bindings");
+                        writer.WriteEndObject();
+                    }
+                    else if (kvp.Key == "title")
+                    {
+                        writer.WriteString("title", devCopyName);
+                    }
+                    else if (kvp.Key == "plugins")
+                    {
+                        // Update plugin name to match new project name
+                        writer.WriteStartArray("plugins");
+                        foreach (var plugin in kvp.Value.EnumerateArray())
+                        {
+                            writer.WriteStartObject();
+                            foreach (var pp in plugin.EnumerateObject())
+                            {
+                                if (pp.Name == "name")
+                                    writer.WriteString("name", devCopyName);
+                                else
+                                    pp.WriteTo(writer);
+                            }
+                            writer.WriteEndObject();
+                        }
+                        writer.WriteEndArray();
+                    }
+                    else
+                    {
+                        kvp.Value.WriteTo(writer);
+                    }
+                }
+
+                writer.WriteEndObject();
+                writer.Flush();
+
+                var newJson = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+                File.WriteAllText(uefnFile, newJson);
+
+                // Rename the .uefnproject file to match new project name
+                var newUefnFileName = Path.Combine(devCopyPath, $"{devCopyName}.uefnproject");
+                if (uefnFile != newUefnFileName)
+                {
+                    if (File.Exists(newUefnFileName)) File.Delete(newUefnFileName);
+                    File.Move(uefnFile, newUefnFileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Non-fatal — project may still work with original bindings
+                System.Console.Error.WriteLine($"[WellVersed] Warning: Could not clean .uefnproject bindings: {ex.Message}");
+            }
+        }
+
+        // ── Rename Plugins folder if it matches original name ──
+        var origPluginDir = Path.Combine(devCopyPath, "Plugins", projectName);
+        var newPluginDir = Path.Combine(devCopyPath, "Plugins", devCopyName);
+        if (Directory.Exists(origPluginDir) && !Directory.Exists(newPluginDir))
+        {
+            try { Directory.Move(origPluginDir, newPluginDir); } catch { }
+        }
+
         // Now install bridge into the dev copy
         var pythonDir = Path.Combine(devCopyPath, "Content", "Python");
         Directory.CreateDirectory(pythonDir);
