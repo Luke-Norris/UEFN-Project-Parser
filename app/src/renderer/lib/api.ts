@@ -274,6 +274,18 @@ export async function forgeAddProject(
   return invoke('forge_add_project', { path, projectType: type })
 }
 
+export async function forgeCheckDevCopy(
+  projectPath: string
+): Promise<{
+  isDevCopy: boolean
+  mainExists: boolean
+  mainPath: string | null
+  devCopyExists: boolean
+  devCopyPath: string | null
+}> {
+  return invoke('forge_check_dev_copy', { projectPath })
+}
+
 export async function forgeDiffProjects(
   projectPathA: string,
   projectPathB: string,

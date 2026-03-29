@@ -629,6 +629,7 @@ public class Program
                 "install-bridge" => HandleInstallBridge(req),
                 "create-dev-copy" => HandleCreateDevCopy(req),
                 "diff-projects" => HandleDiffProjects(req),
+                "check-dev-copy" => HandleCheckDevCopy(req),
                 // UEFN Bridge passthrough
                 "bridge-connect" => HandleBridgeConnect(req),
                 "bridge-status" => HandleBridgeStatus(req),
@@ -3001,6 +3002,13 @@ static SidecarResponse HandleCreateDevCopy(SidecarRequest req)
             note = "This is a development copy with experimental features. Do NOT publish this project. Use the original for publishing."
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
 
+        // Auto-register the dev copy as a project in WellVersed
+        try
+        {
+            _sidecarProjects?.AddProject(devCopyPath, "MyProject");
+        }
+        catch { /* non-fatal — may already exist */ }
+
         return new SidecarResponse(req.Id, new
         {
             success = true,
@@ -3162,6 +3170,44 @@ static (bool isSafe, string reason) IsDevCopyOrSafe(string projectPath)
 
     // No dev copy exists — safe to modify main project
     return (true, "");
+}
+
+static SidecarResponse HandleCheckDevCopy(SidecarRequest req)
+{
+    var projectPath = req.Params?.GetProperty("projectPath").GetString()
+        ?? throw new ArgumentException("Missing 'projectPath'");
+
+    var projectName = Path.GetFileName(projectPath);
+    var parentDir = Path.GetDirectoryName(projectPath) ?? projectPath;
+
+    // Check if this IS a dev copy
+    if (projectName.EndsWith("_WellVersed_Dev"))
+    {
+        var mainName = projectName.Replace("_WellVersed_Dev", "");
+        var mainPath = Path.Combine(parentDir, mainName);
+        return new SidecarResponse(req.Id, new
+        {
+            isDevCopy = true,
+            mainExists = Directory.Exists(mainPath),
+            mainPath = Directory.Exists(mainPath) ? mainPath : (string?)null,
+            devCopyExists = true,
+            devCopyPath = projectPath,
+        });
+    }
+
+    // Check if a dev copy exists for this project
+    var devCopyPath2 = Path.Combine(parentDir, $"{projectName}_WellVersed_Dev");
+    var devExists = Directory.Exists(devCopyPath2)
+        && Directory.GetFiles(devCopyPath2, "*.uefnproject").Length > 0;
+
+    return new SidecarResponse(req.Id, new
+    {
+        isDevCopy = false,
+        mainExists = true,
+        mainPath = projectPath,
+        devCopyExists = devExists,
+        devCopyPath = devExists ? devCopyPath2 : (string?)null,
+    });
 }
 
 static SidecarResponse HandleDiffProjects(SidecarRequest req)

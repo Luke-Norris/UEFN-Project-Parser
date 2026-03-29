@@ -73,6 +73,17 @@ pub async fn forge_create_dev_copy(
 }
 
 #[tauri::command]
+pub async fn forge_check_dev_copy(
+    state: State<'_, AppState>,
+    project_path: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("check-dev-copy", json!({"projectPath": project_path}))
+        .await
+}
+
+#[tauri::command]
 pub async fn forge_diff_projects(
     state: State<'_, AppState>,
     project_path_a: String,

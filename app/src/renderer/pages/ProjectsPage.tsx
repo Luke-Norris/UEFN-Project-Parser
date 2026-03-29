@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { WellVersedProject, WellVersedProjectList, WellVersedDiscoveredProject } from '../../shared/types'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
-import { forgeInstallBridge, forgeCreateDevCopy, forgeOpenInUefn, forgeDiffProjects } from '../lib/api'
+import { forgeInstallBridge, forgeCreateDevCopy, forgeOpenInUefn, forgeDiffProjects, forgeCheckDevCopy } from '../lib/api'
 
 // Helper to detect dev copy projects
 function isDevCopy(project: WellVersedProject): boolean {
@@ -50,12 +50,17 @@ interface ProjectPair {
   devCopy: WellVersedProject | null
 }
 
-function groupProjectPairs(projects: WellVersedProject[]): { pairs: ProjectPair[]; standalone: WellVersedProject[] } {
+// Extended pair that can include unregistered dev copies detected on disk
+interface ProjectPairExtended extends ProjectPair {
+  devCopyPath?: string // path on disk even if not registered as a project
+}
+
+function groupProjectPairs(projects: WellVersedProject[]): { pairs: ProjectPairExtended[]; standalone: WellVersedProject[] } {
   const devCopies = new Map<string, WellVersedProject>()
   const mainProjects = new Map<string, WellVersedProject>()
   const standalone: WellVersedProject[] = []
 
-  // First pass: categorize
+  // First pass: categorize registered projects
   for (const p of projects) {
     if (isDevCopy(p)) {
       const baseName = getBaseProjectName(p)
@@ -65,8 +70,8 @@ function groupProjectPairs(projects: WellVersedProject[]): { pairs: ProjectPair[
     }
   }
 
-  // Second pass: create pairs
-  const pairs: ProjectPair[] = []
+  // Second pass: create pairs from registered projects
+  const pairs: ProjectPairExtended[] = []
   const pairedMains = new Set<string>()
 
   for (const [baseName, devProject] of devCopies) {
@@ -405,6 +410,20 @@ function ProjectCard({
   const [actionType, setActionType] = useState<'success' | 'error' | 'warning'>('success')
   const [openingUefn, setOpeningUefn] = useState(false)
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false)
+  const [detectedDevCopy, setDetectedDevCopy] = useState<string | null>(null)
+
+  // Check if a dev copy exists on disk for this project
+  useEffect(() => {
+    if (project.isUefnProject && !isDevCopy(project) && !isLibrary) {
+      forgeCheckDevCopy(project.projectPath)
+        .then((result) => {
+          if (result.devCopyExists && result.devCopyPath) {
+            setDetectedDevCopy(result.devCopyPath)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [project.projectPath, project.isUefnProject, isLibrary])
 
   async function handleCreateDevCopy() {
     try {
@@ -522,6 +541,15 @@ function ProjectCard({
               {project.verseFileCount} verse
             </span>
           </div>
+
+          {/* Detected dev copy on disk */}
+          {detectedDevCopy && !roleLabel && (
+            <div className="flex items-center gap-2 mt-1.5 text-[9px]">
+              <span className="text-blue-400/70">Dev copy exists on disk:</span>
+              <span className="text-gray-500 truncate font-mono">{detectedDevCopy.split(/[/\\]/).pop()}</span>
+              <CopyPathButton path={detectedDevCopy} />
+            </div>
+          )}
 
           {/* Action feedback */}
           {actionMsg && (
