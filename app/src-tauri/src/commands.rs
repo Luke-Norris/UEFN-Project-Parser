@@ -73,6 +73,18 @@ pub async fn forge_create_dev_copy(
 }
 
 #[tauri::command]
+pub async fn forge_diff_projects(
+    state: State<'_, AppState>,
+    project_path_a: String,
+    project_path_b: String,
+) -> Result<Value, String> {
+    state
+        .bridge
+        .call("diff-projects", json!({"projectPathA": project_path_a, "projectPathB": project_path_b}))
+        .await
+}
+
+#[tauri::command]
 pub async fn forge_install_bridge(
     state: State<'_, AppState>,
     project_path: String,

@@ -470,6 +470,11 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
                   <span className="text-[11px] font-semibold text-gray-200 truncate flex-1 text-left">
                     {activeProject?.name ?? 'No Project'}
                   </span>
+                  {activeProject && (
+                    <span className={`inline-block px-1 py-0 rounded text-[8px] font-bold border shrink-0 ${typeBadgeColor}`}>
+                      {typeBadgeLabel}
+                    </span>
+                  )}
                   <span className="text-gray-500 shrink-0">{icons.chevronDown}</span>
                 </button>
                 {activeProject && (
@@ -578,9 +583,9 @@ export function Sidebar({ activePage, onNavigate, activeProject, selectedLevel, 
         ) : (
           /* Collapsed: project section */
           activeProject && (
-            <div className="py-1 mx-1 my-1 rounded border border-emerald-400/20 bg-emerald-400/[0.03]">
-              <div className="flex justify-center py-1" title={`${activeProject.name} (Protected)`}>
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <div className={`py-1 mx-1 my-1 rounded border ${isActiveDevCopy ? 'border-blue-400/20 bg-blue-400/[0.03]' : 'border-emerald-400/20 bg-emerald-400/[0.03]'}`}>
+              <div className="flex justify-center py-1" title={`${activeProject.name} (${isActiveDevCopy ? 'Dev Copy' : 'Protected'})`}>
+                <span className={`w-2 h-2 rounded-full ${projectDotColor}`} />
               </div>
               {allProjectItems.map(renderNavButton)}
             </div>

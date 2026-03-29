@@ -312,6 +312,161 @@ public class ProjectDiffService
     }
 
     /// <summary>
+    /// Compares two live project directories — e.g., main copy vs dev copy.
+    /// Takes a snapshot of each project on the fly and diffs them.
+    /// Returns file-level changes: what was added, modified, or deleted in projectB relative to projectA.
+    /// </summary>
+    public ProjectDiff CompareProjects(string projectPathA, string projectPathB)
+    {
+        _logger.LogInformation("Comparing projects: {A} vs {B}",
+            Path.GetFileName(projectPathA), Path.GetFileName(projectPathB));
+
+        // Take ephemeral snapshots of both (not saved to disk)
+        var snapshotA = TakeEphemeralSnapshot(projectPathA, "main");
+        var snapshotB = TakeEphemeralSnapshot(projectPathB, "dev");
+
+        // Diff by relative path
+        var aFiles = new Dictionary<string, SnapshotFileEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in snapshotA.Files)
+            aFiles[entry.RelativePath] = entry;
+
+        var bFiles = new Dictionary<string, SnapshotFileEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in snapshotB.Files)
+            bFiles[entry.RelativePath] = entry;
+
+        var changes = new List<FileDiff>();
+
+        // Files in A but not B (deleted in dev copy)
+        foreach (var (relativePath, aEntry) in aFiles)
+        {
+            if (!bFiles.ContainsKey(relativePath))
+            {
+                changes.Add(new FileDiff
+                {
+                    FilePath = relativePath,
+                    Type = DiffType.Deleted,
+                    OldHash = aEntry.Hash,
+                    OldSize = aEntry.FileSize,
+                    ActorClass = aEntry.ActorClass,
+                    ActorName = aEntry.ActorName,
+                });
+            }
+        }
+
+        // Files in both — check for modifications
+        foreach (var (relativePath, aEntry) in aFiles)
+        {
+            if (bFiles.TryGetValue(relativePath, out var bEntry))
+            {
+                if (aEntry.Hash != bEntry.Hash)
+                {
+                    changes.Add(new FileDiff
+                    {
+                        FilePath = relativePath,
+                        Type = DiffType.Modified,
+                        OldHash = aEntry.Hash,
+                        NewHash = bEntry.Hash,
+                        OldSize = aEntry.FileSize,
+                        NewSize = bEntry.FileSize,
+                        ActorClass = bEntry.ActorClass ?? aEntry.ActorClass,
+                        ActorName = bEntry.ActorName ?? aEntry.ActorName,
+                    });
+                }
+            }
+        }
+
+        // Files in B but not A (added in dev copy)
+        foreach (var (relativePath, bEntry) in bFiles)
+        {
+            if (!aFiles.ContainsKey(relativePath))
+            {
+                // Skip wellversed bridge files — those are expected
+                if (relativePath.Contains("Python/wellversed", StringComparison.OrdinalIgnoreCase) ||
+                    relativePath.Contains("init_unreal.py", StringComparison.OrdinalIgnoreCase) ||
+                    relativePath.Contains(".wellversed", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                changes.Add(new FileDiff
+                {
+                    FilePath = relativePath,
+                    Type = DiffType.Added,
+                    NewHash = bEntry.Hash,
+                    NewSize = bEntry.FileSize,
+                    ActorClass = bEntry.ActorClass,
+                    ActorName = bEntry.ActorName,
+                });
+            }
+        }
+
+        var result = new ProjectDiff
+        {
+            OlderTimestamp = DateTime.UtcNow,
+            NewerTimestamp = DateTime.UtcNow,
+            Changes = changes.OrderBy(c => c.Type).ThenBy(c => c.FilePath).ToList(),
+        };
+        result.Description = $"Main vs Dev: {BuildDiffDescription(result)}";
+        return result;
+    }
+
+    /// <summary>
+    /// Takes a snapshot without saving to disk — for ephemeral comparisons.
+    /// </summary>
+    private ProjectSnapshot TakeEphemeralSnapshot(string projectPath, string label)
+    {
+        var config = new WellVersedConfig { ProjectPath = projectPath };
+        var contentPath = config.ContentPath;
+
+        var snapshot = new ProjectSnapshot
+        {
+            Id = label,
+            Description = $"Ephemeral: {label}",
+            Timestamp = DateTime.UtcNow,
+            ProjectPath = projectPath,
+        };
+
+        if (!Directory.Exists(contentPath))
+            return snapshot;
+
+        var extensions = new[] { ".uasset", ".umap", ".verse", ".uexp" };
+        foreach (var file in Directory.EnumerateFiles(contentPath, "*.*", SearchOption.AllDirectories))
+        {
+            var ext = Path.GetExtension(file).ToLowerInvariant();
+            if (!extensions.Contains(ext)) continue;
+
+            var relativePath = Path.GetRelativePath(contentPath, file);
+
+            try
+            {
+                var fileInfo = new FileInfo(file);
+                using var stream = File.OpenRead(file);
+                var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream)).ToLowerInvariant();
+
+                var entry = new SnapshotFileEntry
+                {
+                    RelativePath = relativePath,
+                    Hash = hash,
+                    FileSize = fileInfo.Length,
+                    LastModified = fileInfo.LastWriteTimeUtc,
+                    Extension = ext,
+                };
+
+                if (ext == ".verse")
+                {
+                    entry.LineCount = File.ReadAllLines(file).Length;
+                    snapshot.VerseCount++;
+                }
+                else if (ext == ".uasset")
+                    snapshot.UassetCount++;
+
+                snapshot.Files.Add(entry);
+            }
+            catch { /* skip unreadable files */ }
+        }
+
+        return snapshot;
+    }
+
+    /// <summary>
     /// Lists all available snapshots for a project, sorted newest first.
     /// </summary>
     public List<SnapshotSummary> ListSnapshots(string projectPath)

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { WellVersedProject, WellVersedProjectList, WellVersedDiscoveredProject } from '../../shared/types'
 import { useForgeStore } from '../stores/forgeStore'
 import { ErrorMessage } from '../components/ErrorMessage'
-import { forgeInstallBridge, forgeCreateDevCopy, forgeOpenInUefn } from '../lib/api'
+import { forgeInstallBridge, forgeCreateDevCopy, forgeOpenInUefn, forgeDiffProjects } from '../lib/api'
 
 // Helper to detect dev copy projects
 function isDevCopy(project: WellVersedProject): boolean {
@@ -375,49 +375,6 @@ export function ProjectsPage({ onNavigate, onProjectChanged }: { onNavigate?: (p
   )
 }
 
-function LinkedProjectPair({
-  pair,
-  activeId,
-  onActivate,
-  onRemove
-}: {
-  pair: ProjectPair
-  activeId: string | null
-  onActivate: (id: string) => void
-  onRemove: (id: string) => void
-}) {
-  return (
-    <div className="rounded-lg border border-fn-border overflow-hidden">
-      {/* Main project */}
-      {pair.main && (
-        <ProjectCard
-          project={pair.main}
-          isActive={pair.main.id === activeId}
-          onActivate={() => onActivate(pair.main!.id)}
-          onRemove={() => onRemove(pair.main!.id)}
-          roleLabel="Main Copy (PUBLISHABLE)"
-          roleColor="text-emerald-400"
-        />
-      )}
-      {/* Divider */}
-      {pair.main && pair.devCopy && (
-        <div className="border-t border-dashed border-fn-border" />
-      )}
-      {/* Dev copy */}
-      {pair.devCopy && (
-        <ProjectCard
-          project={pair.devCopy}
-          isActive={pair.devCopy.id === activeId}
-          onActivate={() => onActivate(pair.devCopy!.id)}
-          onRemove={() => onRemove(pair.devCopy!.id)}
-          roleLabel="Dev Copy (BRIDGE ENABLED)"
-          roleColor="text-blue-400"
-        />
-      )}
-    </div>
-  )
-}
-
 function ProjectCard({
   project,
   isActive,
@@ -641,6 +598,31 @@ function LinkedProjectPair({
   onActivate: (id: string) => void
   onRemove: (id: string) => void
 }) {
+  const [diffing, setDiffing] = useState(false)
+  const [diffResult, setDiffResult] = useState<{
+    description: string
+    addedCount: number
+    modifiedCount: number
+    deletedCount: number
+    changes: Array<{ path: string; type: string; actorName?: string }>
+  } | null>(null)
+  const [diffError, setDiffError] = useState<string | null>(null)
+
+  async function handleDiff() {
+    if (!pair.main || !pair.devCopy) return
+    try {
+      setDiffing(true)
+      setDiffError(null)
+      setDiffResult(null)
+      const result = await forgeDiffProjects(pair.main.projectPath, pair.devCopy.projectPath)
+      setDiffResult(result)
+    } catch (err) {
+      setDiffError(err instanceof Error ? err.message : 'Diff failed')
+    } finally {
+      setDiffing(false)
+    }
+  }
+
   return (
     <div className="border border-fn-border rounded-lg overflow-hidden">
       {/* Header */}
@@ -650,6 +632,15 @@ function LinkedProjectPair({
           <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" />
         </svg>
         <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">Linked Project Pair</span>
+        <div className="ml-auto">
+          <button
+            onClick={handleDiff}
+            disabled={diffing || !pair.main || !pair.devCopy}
+            className="px-2 py-0.5 text-[9px] font-medium text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded hover:bg-amber-400/20 transition-colors disabled:opacity-40"
+          >
+            {diffing ? 'Diffing...' : 'Diff Main vs Dev'}
+          </button>
+        </div>
       </div>
 
       {/* Main copy */}
@@ -679,6 +670,57 @@ function LinkedProjectPair({
           roleLabel="DEV COPY — Bridge Enabled (Experimental)"
           roleColor="text-blue-400"
         />
+      )}
+
+      {/* Diff results */}
+      {diffError && (
+        <div className="px-3 py-2 border-t border-fn-border">
+          <p className="text-[9px] text-red-400">{diffError}</p>
+        </div>
+      )}
+      {diffResult && (
+        <div className="px-3 py-2 border-t border-fn-border bg-fn-darker/50">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-[10px] font-semibold text-gray-400">{diffResult.description}</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            {diffResult.addedCount > 0 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
+                +{diffResult.addedCount} added
+              </span>
+            )}
+            {diffResult.modifiedCount > 0 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                ~{diffResult.modifiedCount} modified
+              </span>
+            )}
+            {diffResult.deletedCount > 0 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-400/10 text-red-400 border border-red-400/20">
+                -{diffResult.deletedCount} deleted
+              </span>
+            )}
+            {diffResult.addedCount === 0 && diffResult.modifiedCount === 0 && diffResult.deletedCount === 0 && (
+              <span className="text-[9px] text-gray-500">No differences — projects are in sync</span>
+            )}
+          </div>
+          {diffResult.changes.length > 0 && (
+            <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+              {diffResult.changes.slice(0, 50).map((c, i) => (
+                <div key={i} className="flex items-center gap-2 text-[9px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    c.type === 'Added' ? 'bg-emerald-400' :
+                    c.type === 'Modified' ? 'bg-amber-400' : 'bg-red-400'
+                  }`} />
+                  <span className="text-gray-500 truncate">{c.path}</span>
+                  {c.actorName && <span className="text-gray-600 shrink-0">{c.actorName}</span>}
+                </div>
+              ))}
+              {diffResult.changes.length > 50 && (
+                <p className="text-[9px] text-gray-600 pt-1">...and {diffResult.changes.length - 50} more</p>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

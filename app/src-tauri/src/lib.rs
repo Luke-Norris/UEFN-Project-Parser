@@ -69,6 +69,7 @@ pub fn run() {
             commands::forge_list_projects,
             commands::forge_add_project,
             commands::forge_create_dev_copy,
+            commands::forge_diff_projects,
             commands::forge_install_bridge,
             commands::forge_open_in_uefn,
             commands::forge_remove_project,

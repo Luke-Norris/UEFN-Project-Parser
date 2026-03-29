@@ -628,6 +628,7 @@ public class Program
                 // Bridge installation
                 "install-bridge" => HandleInstallBridge(req),
                 "create-dev-copy" => HandleCreateDevCopy(req),
+                "diff-projects" => HandleDiffProjects(req),
                 // UEFN Bridge passthrough
                 "bridge-connect" => HandleBridgeConnect(req),
                 "bridge-status" => HandleBridgeStatus(req),
@@ -3071,6 +3072,42 @@ static (bool isSafe, string reason) IsDevCopyOrSafe(string projectPath)
 
     // No dev copy exists — safe to modify main project
     return (true, "");
+}
+
+static SidecarResponse HandleDiffProjects(SidecarRequest req)
+{
+    var projectPathA = req.Params?.GetProperty("projectPathA").GetString()
+        ?? throw new ArgumentException("Missing 'projectPathA'");
+    var projectPathB = req.Params?.GetProperty("projectPathB").GetString()
+        ?? throw new ArgumentException("Missing 'projectPathB'");
+
+    var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+    var configA = new WellVersed.Core.Config.WellVersedConfig { ProjectPath = projectPathA, ReadOnly = true };
+    var detector = new UefnDetector(configA, loggerFactory.CreateLogger<UefnDetector>());
+    var fileAccess = new SafeFileAccess(configA, detector, loggerFactory.CreateLogger<SafeFileAccess>());
+    var diffService = new ProjectDiffService(configA, fileAccess, loggerFactory.CreateLogger<ProjectDiffService>());
+
+    var diff = diffService.CompareProjects(projectPathA, projectPathB);
+
+    return new SidecarResponse(req.Id, new
+    {
+        projectA = Path.GetFileName(projectPathA),
+        projectB = Path.GetFileName(projectPathB),
+        description = diff.Description,
+        addedCount = diff.AddedCount,
+        modifiedCount = diff.ModifiedCount,
+        deletedCount = diff.DeletedCount,
+        totalChanges = diff.Changes.Count,
+        changes = diff.Changes.Take(200).Select(c => new
+        {
+            path = c.FilePath,
+            type = c.Type.ToString(),
+            oldSize = c.OldSize,
+            newSize = c.NewSize,
+            actorClass = c.ActorClass,
+            actorName = c.ActorName,
+        })
+    });
 }
 
 static void CopyDirectoryRecursive(string source, string dest)

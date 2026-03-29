@@ -274,6 +274,29 @@ export async function forgeAddProject(
   return invoke('forge_add_project', { path, projectType: type })
 }
 
+export async function forgeDiffProjects(
+  projectPathA: string,
+  projectPathB: string,
+): Promise<{
+  projectA: string
+  projectB: string
+  description: string
+  addedCount: number
+  modifiedCount: number
+  deletedCount: number
+  totalChanges: number
+  changes: Array<{
+    path: string
+    type: string
+    oldSize: number
+    newSize: number
+    actorClass?: string
+    actorName?: string
+  }>
+}> {
+  return invoke('forge_diff_projects', { projectPathA, projectPathB })
+}
+
 export async function forgeCreateDevCopy(
   projectPath: string
 ): Promise<{
